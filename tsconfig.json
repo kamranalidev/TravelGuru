@@ -1,4 +1,15 @@
 {
+  "compilerOptions": {
+    "types": ["node"],               // ✅ Add this
+    "moduleResolution": "node",     // ✅ Recommended
+    "esModuleInterop": true,        // ✅ Recommended
+    "module": "ESNext",             // Usually fine for Vite
+    "target": "ESNext",             // Usually fine for Vite
+    "baseUrl": ".",                 // Optional
+    "paths": {
+      "@/*": ["src/*"]              // ✅ Your alias path
+    }
+  },
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },
