@@ -19,7 +19,7 @@ const CustomButton = styled(Button, {
   },
 }));
 
-export const ButtonComponent = (props:{title:string,bgColor:string}) => {
+export const ButtonComponent = (props:{title:string,bgColor?:string}) => {
   return (
     <div><CustomButton variant="contained" bgColor={props.bgColor}>{props.title}</CustomButton></div>
   )

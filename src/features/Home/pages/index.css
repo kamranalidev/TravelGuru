@@ -32,3 +32,148 @@
     gap: 20px;
     margin-top: 20px;
 }
+.carouselMain{
+    background-color: #F7F8FC;
+   
+}
+.carouselHeader{
+    text-align: left;
+    font-size: 4rem;
+    margin-top: 2rem;
+    padding: 1rem;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+.subscribe{
+    margin:1rem auto 0;
+    border-radius: 10px;
+}
+
+.subscribeHeader{
+    color:white;
+    text-align: center;
+    padding-top: 4rem;
+}
+
+.subscribeInput{
+    background-color: white;
+    display: flex;
+    justify-content: space-around;
+    width: 50%;
+     margin:0 auto -50px;
+     height:60px;
+     align-items: center;
+     border-radius: 15px;
+}
+.circleImage{
+    /* margin-bottom:-2rem ; */
+   position: relative;
+   top: 20px;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9fb;
+}
+
+.footer {
+  padding: 40px 60px;
+  background-color: #f9f9fb;
+  color: #333;
+}
+
+.footer-top {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  max-width: 250px;
+}
+
+.logo {
+  color: #1ca58f;
+  font-weight: 600;
+  font-size: 24px;
+}
+
+.footer-brand p {
+  margin: 10px 0 20px;
+  color: #555;
+}
+
+.social-icons a {
+  margin-right: 10px;
+  background: #fff;
+  border-radius: 50%;
+  padding: 10px;
+  text-align: center;
+  display: inline-block;
+  color: #ff7c5b;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+  transition: background 0.3s ease;
+}
+
+.social-icons a:hover {
+  background: #ff7c5b;
+  color: #fff;
+}
+
+.footer-links {
+  display: flex;
+  gap: 90px;
+  flex-wrap: wrap;
+}
+
+.footer-links h4 {
+  font-size: 16px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.footer-links ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links ul li {
+  margin-bottom: 18px;
+}
+
+.footer-links ul li a {
+  text-decoration: none;
+  color: #555;
+  transition: color 0.3s ease;
+}
+
+.footer-links ul li a:hover {
+  color: #1ca58f;
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 30px;
+  font-size: 14px;
+  color: #888;
+}
+
+.footer-bottom a {
+  color: #888;
+  text-decoration: none;
+}
+
+.footer-bottom a:hover {
+  text-decoration: underline;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 30px 0;
+}

@@ -7,6 +7,7 @@ export default function AppRouter() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/login" element={<LoginPage />} />
       {/* Add more routes here as needed */}
+      
     </Routes>
   );
 }

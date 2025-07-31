@@ -2,8 +2,8 @@ import Card from '@mui/material/Card';
 import { ButtonComponent } from '../Button';
 export const CardComponent = (props:{title:string,buttonTitle:string,location?:string}) => {
   return (
-    <div>
-        <Card sx={{ maxWidth: 345, margin: '20px' }}>
+  
+        <Card sx={{ width:"auto", margin: '20px' }}>
           <img src="/assets/yachtdubai.jpg" alt="Card Image" style={{ width: '100%' }} />
           <div style={{ padding: '16px' }}>
             <h2>{props.title}</h2>
@@ -17,6 +17,6 @@ export const CardComponent = (props:{title:string,buttonTitle:string,location?:s
             </div>
           </div>        
         </Card>
-    </div>
+    
   )
 }
