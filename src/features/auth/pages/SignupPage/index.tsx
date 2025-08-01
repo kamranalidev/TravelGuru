@@ -1,42 +1,31 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-
+import "./index.css"
+import theme from "../../../../theme";
+import { CustomTextField , ButtonComponent} from "../../../../components";
+import { useNavigate } from "react-router-dom";
 export const SignupPage = () => {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const navigate = useNavigate()
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    // TODO: implement signup logic
-    navigate('/login')
-  }
-
+  const navigate = useNavigate();
+  const handleNavigate = (route:string) => {
+    navigate(route);
+  };
   return (
     <div className="main">
-      <h1 className="text-5xl font-bold mb-10">Sign up</h1>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Name:
-          <input type="text" value={name} onChange={e => setName(e.target.value)} />
-        </label>
-        <br />
-        <label>
-          Email:
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
-        </label>
-        <br />
-        <label>
-          Password:
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
-        </label>
-        <br />
-        <button type="submit">Sign up</button>
-        <p>
-          Already have an account? <Link to="/login">Log in</Link>
+        
+      <div className="loginContainer">
+        <div className="headlineLogin">
+         <img style={{height:"60px"}} src="/assets/travelguru.jpeg"/><p style={{color:theme.palette.secondary.main,fontSize:"3rem"}}>Travel Guroo</p> 
+        </div>
+        <CustomTextField placeholder='Name' />
+        <CustomTextField  placeholder='Email'/>
+        <CustomTextField placeholder='Password'/>
+        <div style={{minWidth:"350px"}}>
+        <ButtonComponent title="Sign Up" width="100%" />
+        </div>
+        <p 
+        onClick={()=>handleNavigate("/login")} style={{color: theme.palette.secondary.main, cursor: 'pointer'}}>
+          Already have an account? login
         </p>
-      </form>
+      </div>
+     
     </div>
-  )
-}
+  );
+};

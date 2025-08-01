@@ -52,8 +52,8 @@ export const Homepage = () => {
           <CardComponent title='Desert Safari' buttonTitle='details' location='Dubai' />
           <CardComponent title='Airport transport' buttonTitle='details' location='Dubai' />
           <CardComponent title='Abudhabi city tour' buttonTitle='details' location='Dubai' />
-          <CardComponent title='Yacht' buttonTitle='details' location='Dubai' />
-          <CardComponent title='Yacht' buttonTitle='details' location='Dubai' />
+          <CardComponent title='Yacht' buttonTitle='details' location='Dubai'  imageUrl='/assets/desertSafari.jpg'/>
+          <CardComponent title='Yacht' buttonTitle='details' location='Dubai' imageUrl='/assets/burjKhalifa.jpg' />
           <CardComponent title='Yacht' buttonTitle='details' location='Dubai' />
           <CardComponent title='Yacht' buttonTitle='details' location='Dubai' />
         </CustomCarousel>
@@ -85,12 +85,11 @@ export const Homepage = () => {
         </div>
       </Box>
       {/* Footer */}
-      {/* Footer */}
       <Box className='footer'>
         <Box className='footerContent'>
           <div className="footer-top">
             <div className="footer-brand">
-              <h2 className="logo"><span className="icon">🌍</span> Travor</h2>
+              <h2 className="logo"><span className="icon">🌍</span> Travel Guru</h2>
               <p style={{color:"#666666"}}>Book your trip in minute, get full <br /> Control for much longer.</p>
               <div className="social-icons">
                 <a href="#"><FacebookIcon /></a>

@@ -2,7 +2,7 @@ import * as React from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
-import IconButton from '@mui/material/IconButton';
+import theme from '../../theme';
 import Typography from '@mui/material/Typography';
 import { useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
@@ -21,7 +21,7 @@ export const Header = () => {
     const [anchorElUser, setAnchorElUser] = React.useState<HTMLElement | null>(null);
     const navigate = useNavigate();
 
-    const handleNavigate = (route: any) => {
+    const handleNavigate = (route: string) => {
         navigate(route);
     };
 
@@ -83,7 +83,7 @@ export const Header = () => {
                             <Button
                                 key={page.label}
                                 onClick={() => handleNavigate(page.route)}
-                                sx={{ my: 2, color: 'black', display: 'block' }}
+                                sx={{ my: 2, color: theme.palette.secondary.main, display: 'block' }}
                             >
                                 {page.label}
                             </Button>
@@ -93,9 +93,10 @@ export const Header = () => {
                         variant="h6"
                         noWrap
                         component="div"
-                        sx={{ display: { xs: 'none', sm: 'block' }, color: 'black' }}
+                        sx={{ display: { xs: 'none', sm: 'block' },cursor: 'pointer' ,color: theme.palette.secondary.main }}
+                        onClick={() => handleNavigate('/login')}
                     >
-                        Login
+                     <a >Login</a>   
                     </Typography>
 
                 </Toolbar>

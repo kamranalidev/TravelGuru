@@ -1,0 +1,17 @@
+.loginContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    gap:20px;
+     width: 50%;
+    margin:0 auto 0;
+
+}
+.headlineLogin{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap:20px
+}

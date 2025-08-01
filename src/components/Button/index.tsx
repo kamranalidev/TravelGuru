@@ -4,23 +4,25 @@ import Button from '@mui/material/Button';
 
 interface CustomButtonProps {
   bgColor?: string;
+  width?: string;
 }
 
 const CustomButton = styled(Button, {
   shouldForwardProp: (prop) => prop !== 'bgColor',
-})<CustomButtonProps>(({ bgColor }) => ({
+})<CustomButtonProps>(({ bgColor ,width}) => ({
   backgroundColor: bgColor || '#FF621F',
   color: 'white',
   padding: '10px 20px',
   borderRadius: '8px',
   textTransform: 'none',
+  width: width || '100%',
   '&:hover': {
     backgroundColor: bgColor || '#FF621F',
   },
 }));
 
-export const ButtonComponent = (props:{title:string,bgColor?:string}) => {
+export const ButtonComponent = (props:{title:string,bgColor?:string,width?:string}) => {
   return (
-    <div><CustomButton variant="contained" bgColor={props.bgColor}>{props.title}</CustomButton></div>
+    <div><CustomButton variant="contained" bgColor={props.bgColor} width={props.width}>{props.title}</CustomButton></div>
   )
 }

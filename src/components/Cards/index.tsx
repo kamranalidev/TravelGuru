@@ -1,10 +1,10 @@
 import Card from '@mui/material/Card';
 import { ButtonComponent } from '../Button';
-export const CardComponent = (props:{title:string,buttonTitle:string,location?:string}) => {
+export const CardComponent = (props:{title:string,buttonTitle:string,location?:string,imageUrl?:string}) => {
   return (
   
         <Card sx={{ width:"auto", margin: '20px' }}>
-          <img src="/assets/yachtdubai.jpg" alt="Card Image" style={{ width: '100%' }} />
+          <img src={props.imageUrl??"/assets/yachtdubai.jpg"} alt="Card Image" style={{ width: '100%' }} />
           <div style={{ padding: '16px' }}>
             <h2>{props.title}</h2>
             <p>This is a description of the card. It contains some brief information about the content of the card.</p>
