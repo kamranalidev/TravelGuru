@@ -15,11 +15,10 @@ export const LoginPage = () => {
         <div className="headlineLogin">
           <img style={{ height: "60px" }} src="/assets/travelguru.jpeg" /><p style={{ color: theme.palette.secondary.main, fontSize: "3rem" }}>Travel Guroo</p>
         </div>
-        <CustomTextField placeholder='Name' />
         <CustomTextField placeholder='Email' />
         <CustomTextField placeholder='Password' />
         <div style={{ minWidth: "350px" }}>
-          <ButtonComponent title="Login" width="100%" />
+          <ButtonComponent title="Login" width="100%" onClick={()=>handleNavigate("/")}/>
         </div>
         <div className="forgotSection">
           <Typography sx={{ color: theme.palette.secondary.main, fontSize: "1.2rem", cursor: "pointer" }} >

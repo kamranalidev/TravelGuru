@@ -1,4 +1,3 @@
-import React from 'react';
 import { styled } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 
@@ -21,8 +20,8 @@ const CustomButton = styled(Button, {
   },
 }));
 
-export const ButtonComponent = (props:{title:string,bgColor?:string,width?:string}) => {
+export const ButtonComponent = (props:{title:string,bgColor?:string,width?:string,onClick?: () => void;}) => {
   return (
-    <div><CustomButton variant="contained" bgColor={props.bgColor} width={props.width}>{props.title}</CustomButton></div>
+    <div><CustomButton variant="contained" bgColor={props.bgColor} width={props.width} onClick={props.onClick}>{props.title}</CustomButton></div>
   )
 }

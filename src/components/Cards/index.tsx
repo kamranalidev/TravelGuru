@@ -1,6 +1,8 @@
 import Card from '@mui/material/Card';
 import { ButtonComponent } from '../Button';
+import { useNavigate } from 'react-router-dom';
 export const CardComponent = (props:{title:string,buttonTitle:string,location?:string,imageUrl?:string}) => {
+  const navigate = useNavigate();
   return (
   
         <Card sx={{ width:"auto", margin: '20px' }}>
@@ -12,7 +14,9 @@ export const CardComponent = (props:{title:string,buttonTitle:string,location?:s
                 <span style={{ fontWeight: 'bold', color: '#999999' }}>
                  <img src='/assets/Vector.svg' />   {props.location ?? 'Dubai'}
                 </span>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}> <ButtonComponent title={props.buttonTitle} bgColor='red' /> </div>           
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}
+            
+           onClick={()=>navigate("/bookings")} > <ButtonComponent title={props.buttonTitle} bgColor='red' /> </div>           
 
             </div>
           </div>        

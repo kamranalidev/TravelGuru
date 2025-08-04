@@ -16,36 +16,19 @@ const pages = [
 ];
 
 export const Header = () => {
-    const [anchorElNav, setAnchorElNav] = React.useState<HTMLElement | null>(null);
-
-    const [anchorElUser, setAnchorElUser] = React.useState<HTMLElement | null>(null);
     const navigate = useNavigate();
 
     const handleNavigate = (route: string) => {
         navigate(route);
     };
 
-    const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorElNav(event.currentTarget);
-    };
-    const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorElUser(event.currentTarget);
-    };
-
-    const handleCloseNavMenu = () => {
-        setAnchorElNav(null);
-    };
-
-    const handleCloseUserMenu = () => {
-        setAnchorElUser(null);
-    };
     return (
         <Box sx={{ flexGrow: 1 }}>
 
             <AppBar position="static" sx={{ backgroundColor: '#FBFBEC', color: 'black', boxShadow: 'none' }}>
 
                 <Toolbar sx={{ display: 'flex', justifyContent: 'space-around' }}>
-                    <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, alignItems: 'center' }} >
+                    <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, alignItems: 'center' }} onClick={() => navigate('/')}  >
                         <div>
                             <img src="/assets/travelLogo.jpeg" alt="logo" style={{ width: '100px', height: '100px' }} />
                         </div>
@@ -70,16 +53,7 @@ export const Header = () => {
                         </Typography>
                     </Box>
                     <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-                        {/* {pages.map((page) => (
-                            <Button
-                                key={page}
-                                onClick={handleCloseNavMenu}
-                                sx={{ my: 2, color: 'black', display: 'block' }}
-                            >
-                                {page}
-                            </Button>   
-                        ))} */}
-                        {pages.map((page) => (
+                      {pages.map((page) => (
                             <Button
                                 key={page.label}
                                 onClick={() => handleNavigate(page.route)}

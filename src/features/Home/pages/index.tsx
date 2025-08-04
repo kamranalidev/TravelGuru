@@ -26,7 +26,7 @@ export const Homepage = () => {
         </div>
         <div >
           <img className='beardGuyImage' src="/assets/beardGuy.png" alt="homepage" />
-          
+
         </div>
       </Box>
       {/* Things you need to do */}
@@ -52,7 +52,7 @@ export const Homepage = () => {
           <CardComponent title='Desert Safari' buttonTitle='details' location='Dubai' />
           <CardComponent title='Airport transport' buttonTitle='details' location='Dubai' />
           <CardComponent title='Abudhabi city tour' buttonTitle='details' location='Dubai' />
-          <CardComponent title='Yacht' buttonTitle='details' location='Dubai'  imageUrl='/assets/desertSafari.jpg'/>
+          <CardComponent title='Yacht' buttonTitle='details' location='Dubai' imageUrl='/assets/desertSafari.jpg' />
           <CardComponent title='Yacht' buttonTitle='details' location='Dubai' imageUrl='/assets/burjKhalifa.jpg' />
           <CardComponent title='Yacht' buttonTitle='details' location='Dubai' />
           <CardComponent title='Yacht' buttonTitle='details' location='Dubai' />
@@ -78,7 +78,7 @@ export const Homepage = () => {
           height: '80%',
         }}>
           <div className='subscribeInput'>
-            <input placeholder='Enter your email' style={{border:'none',outline:'none'}} />
+            <input placeholder='Enter your email' style={{ border: 'none', outline: 'none' }} />
             <ButtonComponent title='Subscribe' />
           </div>
 
@@ -90,7 +90,7 @@ export const Homepage = () => {
           <div className="footer-top">
             <div className="footer-brand">
               <h2 className="logo"><span className="icon">🌍</span> Travel Guru</h2>
-              <p style={{color:"#666666"}}>Book your trip in minute, get full <br /> Control for much longer.</p>
+              <p style={{ color: "#666666" }}>Book your trip in minute, get full <br /> Control for much longer.</p>
               <div className="social-icons">
                 <a href="#"><FacebookIcon /></a>
                 <a href="#"><TwitterIcon /></a>
@@ -127,9 +127,9 @@ export const Homepage = () => {
             </div>
           </div>
 
-<hr style={{width:"80%",marginLeft:"auto",marginRight:"auto"}}/>
+          <hr style={{ width: "80%", marginLeft: "auto", marginRight: "auto" }} />
           <div className="footer-bottom">
-            <p>Copyright, Trabook 2022. All rights reserved .</p>
+            <p>Copyright, TravelGuroo 2022. All rights reserved .</p>
             <a href="#">Terms & Conditions</a>
           </div>
         </Box>
