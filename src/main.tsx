@@ -5,7 +5,7 @@ import './index.css'
 import { store } from './store/store.ts'
 import { Provider } from 'react-redux'
 import { ThemeProvider } from '@mui/material';
-import theme from './theme.ts'
+import theme from './theme.ts';
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

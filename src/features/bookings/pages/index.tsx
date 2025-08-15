@@ -1,11 +1,16 @@
-import  { useState } from "react";
-import { ButtonComponent, Header } from '../../../components'
+import React,{ useState } from "react";
+import { ButtonComponent, Header, ReviewComponent } from '../../../components'
 import { Box, Typography, Button, styled } from '@mui/material'
 import ImageList from '@mui/material/ImageList';
 import ImageListItem from '@mui/material/ImageListItem';
+import { LocalizationProvider, PickersDay } from "@mui/x-date-pickers";
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Dialog from "@mui/material/Dialog";
-import theme from "../../../theme";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import "./index.css"
+
+import dayjs from "dayjs";
 function StandardImageList(props: any) {
   const images = [
     { src: "/assets/desert1.jpg", rows: 3, cols: 1 }, // first image big
@@ -52,7 +57,7 @@ const SubscriptionBox = styled(Box)(({ theme }) => ({
   marginTop: "20px",
   gap: "20px",
   borderRadius: "30px",
-  background:"linear-gradient(135deg, rgb(255, 112, 67) 0%, rgb(255, 152, 0) 100%);",
+  background: "linear-gradient(135deg, rgb(255, 112, 67) 0%, rgb(255, 152, 0) 100%);",
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
@@ -61,10 +66,12 @@ const SubscriptionBox = styled(Box)(({ theme }) => ({
     background: theme.palette.secondary.main, // Slightly enlarge on hover  
   }
 }));
+
 export const BookingPage = () => {
   const [open, setOpen] = useState(false);
   const [selectedImg, setSelectedImg] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const [isViewDatePicker, setIsViewDatePicker] = useState(false);
   const handleClick = (imgSrc: string) => {
     setSelectedImg(imgSrc);
     setOpen(true);
@@ -121,9 +128,14 @@ export const BookingPage = () => {
           </Box>
           <Box className="priceBox" >
             <Typography style={{ display: "flex", justifyContent: "center", fontSize: "1.9rem" }} >
-               <span style={{ fontWeight: "900", fontSize: "1.9rem", marginLeft: "4px" }}> US $36.05</span>
+              <span style={{ fontWeight: "900", fontSize: "1.9rem", marginLeft: "4px" }}> US $36.05</span>
             </Typography>
-            <ButtonComponent title="Book Now" width="70%" bgColor="#FF621F" />
+            <ButtonComponent title="Book Now" width="70%" bgColor="#FF621F"
+            onClick={() => setIsViewDatePicker(!isViewDatePicker)} />
+         {!!isViewDatePicker &&   <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DateCalendar value={dayjs('2022-04-17')} />
+            </LocalizationProvider>}
+           
           </Box>
         </Box>
         {/* Choose your plan */}
@@ -144,47 +156,50 @@ export const BookingPage = () => {
           }}>
             <Box className="subscriptionContainer">
               <SubscriptionBox >
-                <Typography variant="h3" sx={{ textAlign: "center", color: "white",paddingTop:"13px" }}>Free</Typography>
+                <Typography variant="h3" sx={{ textAlign: "center", color: "white", paddingTop: "13px" }}>Free</Typography>
                 <Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
-                 Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </Typography>
                 <Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
-                 Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </Typography><Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
-                 Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </Typography>
-                <ButtonComponent title="Already Using" width="70%" bgColor="white" style={{ marginTop: "50px", color: "#c44109ff",marginBottom:"20px",fontSize:"1.2rem" }} />
+                <ButtonComponent title="Already Using" width="70%" bgColor="white" style={{ marginTop: "50px", color: "#c44109ff", marginBottom: "20px", fontSize: "1.2rem" }} />
               </SubscriptionBox>
             </Box>
             <Box className="subscriptionContainer">
               <SubscriptionBox >
-                <Typography variant="h3" sx={{ textAlign: "center", color: "white",paddingTop:"13px" }}>Premium</Typography>
+                <Typography variant="h3" sx={{ textAlign: "center", color: "white", paddingTop: "13px" }}>Premium</Typography>
                 <Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
-                 Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </Typography>
                 <Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
-                 incididunt ut labore et dolore magna aliqua.
+                  incididunt ut labore et dolore magna aliqua.
                 </Typography><Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
-                 incididunt ut labore et dolore magna aliqua.
+                  incididunt ut labore et dolore magna aliqua.
                 </Typography>
-                <ButtonComponent title="Buy Now" width="70%" bgColor="white" style={{ marginTop: "50px", color: "#c44109ff",marginBottom:"20px",fontSize:"1.2rem" }} />
+                <ButtonComponent title="Buy Now" width="70%" bgColor="white" style={{ marginTop: "50px", color: "#c44109ff", marginBottom: "20px", fontSize: "1.2rem" }} />
               </SubscriptionBox>
             </Box>
-             <Box className="subscriptionContainer">
+            <Box className="subscriptionContainer">
               <SubscriptionBox >
-                <Typography variant="h3" sx={{ textAlign: "center", color: "white",paddingTop:"13px" }}>Deluxe</Typography>
+                <Typography variant="h3" sx={{ textAlign: "center", color: "white", paddingTop: "13px" }}>Deluxe</Typography>
                 <Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
-                 incididunt ut labore et dolore magna aliqua.
+                  incididunt ut labore et dolore magna aliqua.
                 </Typography>
                 <Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
-                 incididunt ut labore et dolore magna aliqua.
+                  incididunt ut labore et dolore magna aliqua.
                 </Typography><Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
-                 incididunt ut labore et dolore magna aliqua.
+                  incididunt ut labore et dolore magna aliqua.
                 </Typography>
-                <ButtonComponent title="Buy Now" width="70%" bgColor="white" style={{ marginTop: "50px", color: "#c44109ff",marginBottom:"20px",fontSize:"1.2rem" }} />
+                <ButtonComponent title="Buy Now" width="70%" bgColor="white" style={{ marginTop: "50px", color: "#c44109ff", marginBottom: "20px", fontSize: "1.2rem" }} />
               </SubscriptionBox>
             </Box>
           </Box>
+
+          {/* Review component */}
+          < ReviewComponent />
         </Box>
 
       </Box>

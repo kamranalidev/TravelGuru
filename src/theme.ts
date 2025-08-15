@@ -1,5 +1,6 @@
 // theme.js or theme.ts
 import { createTheme } from '@mui/material/styles';
+import { enUS } from "@mui/material/locale";
 
 const theme = createTheme({
   palette: {
@@ -13,6 +14,6 @@ const theme = createTheme({
       default: '#F0F0F0'
     }
   },
-});
+},enUS);
 
 export default theme;
