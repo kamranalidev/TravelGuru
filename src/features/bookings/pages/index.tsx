@@ -7,7 +7,7 @@ import { LocalizationProvider, PickersDay } from "@mui/x-date-pickers";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Dialog from "@mui/material/Dialog";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { useNavigate } from "react-router-dom";
 import "./index.css"
 
 import dayjs from "dayjs";
@@ -72,6 +72,7 @@ export const BookingPage = () => {
   const [selectedImg, setSelectedImg] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [isViewDatePicker, setIsViewDatePicker] = useState(false);
+  const navigate = useNavigate();
   const handleClick = (imgSrc: string) => {
     setSelectedImg(imgSrc);
     setOpen(true);
@@ -91,7 +92,7 @@ export const BookingPage = () => {
       <Header />
       <Box sx={{ width: "80%", margin: "0 auto 0" }}>
         <Typography
-          variant="h3" sx={{ marginLeft: "auto" }}>Premium safari  in dubai
+          variant="h3" sx={{ marginLeft: "auto",marginTop:"40px" }}>Premium safari  in dubai
         </Typography>
 
         <div style={{ display: "flex", justifyContent: "center", margin: "0 auto 0", borderRadius: "20px" }} >
@@ -165,7 +166,9 @@ export const BookingPage = () => {
                 </Typography><Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
                   Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </Typography>
-                <ButtonComponent title="Already Using" width="70%" bgColor="white" style={{ marginTop: "50px", color: "#c44109ff", marginBottom: "20px", fontSize: "1.2rem" }} />
+                <ButtonComponent 
+                onClick={() => navigate("/payment-confirmation")}
+                title="Already Using" width="70%" bgColor="white" style={{ marginTop: "50px", color: "#c44109ff", marginBottom: "20px", fontSize: "1.2rem" }} />
               </SubscriptionBox>
             </Box>
             <Box className="subscriptionContainer">

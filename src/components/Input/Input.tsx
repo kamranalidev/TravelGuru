@@ -1,33 +1,45 @@
-import React from 'react'
-import TextField from '@mui/material/TextField';
-import { styled } from '@mui/material/styles';
-const StyledTextField = styled(TextField)`
-  & label {
-    color: #3f51b5;
-  }
+import { TextField} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import type { TextFieldProps } from "@mui/material/TextField";
+type CustomTextFieldProps = TextFieldProps & {
+  labelcolor?: string;
+  labelfocusedcolor?: string;
+  bordercolor?: string;
+  borderhovercolor?: string;
+  borderfocusedcolor?: string;
+};
 
-  & label.Mui-focused {
-    color: #ff5722;
-  }
+const StyledTextField = styled(TextField)<CustomTextFieldProps>(
+  ({ labelcolor = "#3f51b5", labelfocusedcolor = "#ff5722", bordercolor = "#ccc", borderhovercolor = "#3f51b5", borderfocusedcolor = "#ff5722" }) => ({
+    "& label": {
+      color: labelcolor,
+    },
+    "& label.Mui-focused": {
+      color: labelfocusedcolor,
+    },
+    "& .MuiOutlinedInput-root": {
+      borderRadius: 8,
+      minWidth: 350,
+      "& fieldset": {
+        borderColor: bordercolor,
+      },
+      "&:hover fieldset": {
+        borderColor: borderhovercolor,
+      },
+      "&.Mui-focused fieldset": {
+        borderColor: borderfocusedcolor,
+      },
+    },
+  })
+);
 
-  & .MuiOutlinedInput-root {
-    border-radius: 8px;
-    min-width:350px;
-    
-    & fieldset {
-      border-color: #ccc;
-    }
-
-    &:hover fieldset {
-      border-color: #3f51b5;
-    }
-
-    &.Mui-focused fieldset {
-      border-color: #ff5722;
-    }
-  }
-`;
-export const CustomTextField = (props:any) => {
-  return <StyledTextField title={props.title} placeholder={props.placeholder} variant="outlined" {...props} />;
-};  
-
+export const CustomTextField = (props: CustomTextFieldProps) => {
+  return (
+    <StyledTextField
+      label={props.label}
+      placeholder={props.placeholder}
+      variant="outlined"
+      {...props}
+    />
+  );
+};

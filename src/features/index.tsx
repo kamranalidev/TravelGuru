@@ -1,3 +1,4 @@
 export * from "./auth/pages"
 export * from "./Home/pages"
 export * from "./bookings/pages"
+export * from "./bookings/pages/PaymentConfirmation"

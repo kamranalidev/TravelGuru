@@ -2,8 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route, Router } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 function ProtectedRoute({ children }: any) {
-  const isAuthenticated = !!localStorage.getItem('token'); // Or use context
-
+  const isAuthenticated = !!localStorage.getItem('Token'); // Or use context
   return isAuthenticated ? children : <Navigate to="/login" />;
 }
 export function PublicRoute({ children }: any) {
@@ -15,6 +14,8 @@ const LoginPage = lazy(() => import('../features/auth/pages/LoginPage').then(mod
 const SignupPage = lazy(() => import('../features/auth/pages/SignupPage').then(module => ({ default: module.SignupPage })));
 const Homepage = lazy(() => import('../features/Home/pages').then(module => ({ default: module.Homepage })));
 const BookingPage = lazy(() => import('../features/bookings/pages').then(module => ({ default: module.BookingPage })));
+const PaymentCofirmation = lazy(() => import('../features/bookings/pages/PaymentConfirmation').then(module => ({ default: module.PaymentConfirmation })));
+const Checkout = lazy(() => import('../features/bookings/pages/Checkout').then(module => ({ default: module.Checkout })));
 export default function AppRouter() {
   return (
     <>
@@ -29,6 +30,13 @@ export default function AppRouter() {
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/bookings" element={
           <PublicRoute><BookingPage /></PublicRoute>} />
+        <Route path="/payment-confirmation" element={
+          <ProtectedRoute><PaymentCofirmation /></ProtectedRoute>} />
+        <Route path="/checkout" element={
+          <ProtectedRoute><Checkout /></ProtectedRoute>} />
+        {/* Add more routes here as needed */}
+
+        <Route path="*" element={<Navigate to="/" />} />
         {/* Add more routes here as needed */}
 
       </Routes>

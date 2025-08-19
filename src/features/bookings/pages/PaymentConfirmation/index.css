@@ -1,0 +1,10 @@
+.centerSection{
+    display: flex;
+    justify-content: center;
+    align-items: top;
+    gap:20px;
+}
+.textStyle{
+    font-size: 0.9rem;
+    color: #666;
+    }
