@@ -20,8 +20,8 @@ const CustomButton = styled(Button, {
   },
 }));
 
-export const ButtonComponent = (props:{title:string,bgColor?:string,width?:string,onClick?: () => void,style?: React.CSSProperties}) => {
+export const ButtonComponent = (props:{title:string,bgColor?:string,width?:string,onClick?: () => void,style?: React.CSSProperties ,type?:any}) => {
   return (
-    <><CustomButton variant="contained" bgColor={props.bgColor} width={props.width} onClick={props.onClick} style={props.style}>{props.title}</CustomButton></>
+    <><CustomButton type={props.type||"button"}variant="contained" bgColor={props.bgColor} width={props.width} onClick={props.onClick} style={props.style}>{props.title}</CustomButton></>
   )
 }
