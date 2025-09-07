@@ -1,4 +1,3 @@
-import * as React from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -22,6 +21,7 @@ export const Header = (props: { hidePages?: boolean }) => {
         navigate(route);
     };
 
+    const authenticated = localStorage.getItem("supabase_session") ? true : false;
     return (
         <Box sx={{ flexGrow: 1 }}>
 
@@ -64,7 +64,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                                 </Button>
                             ))}
                         </Box>
-                        <Typography
+                      {!authenticated &&  <Typography
                             variant="h6"
                             noWrap
                             component="div"
@@ -72,7 +72,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                             onClick={() => handleNavigate('/login')}
                         >
                             <a >Login</a>
-                        </Typography></>}
+                        </Typography>}</>}
 
                 </Toolbar>
             </AppBar>

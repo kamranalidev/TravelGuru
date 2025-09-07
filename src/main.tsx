@@ -7,13 +7,16 @@ import { Provider } from 'react-redux'
 import { ThemeProvider } from '@mui/material';
 import theme from './theme.ts';
 import App from './App.tsx'
+import { AuthProvider } from './hooks/useAuth.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Provider store={store}>
         <ThemeProvider theme={theme}>
+          <AuthProvider>
           <App />
+          </AuthProvider>
         </ThemeProvider>
       </Provider>
     </BrowserRouter>
