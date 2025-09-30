@@ -1,17 +1,21 @@
 import "./index.css"
 import theme from "../../../../theme";
+import { useState } from "react";
 import { CustomTextField, ButtonComponent } from "../../../../components";
 import { Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '../../../../supabaseClient'
 export const LoginPage = () => {
   const navigate = useNavigate();
+  const [popupMsg, setPopupMsg] = useState("");
+
   const handleNavigate = (route: string) => {
     navigate(route);
   };
 
   async function signInWithEmail(e: React.FormEvent<HTMLFormElement>) {
 
+    
     e.preventDefault();
 
     const formdata = new FormData(e.currentTarget);
@@ -23,8 +27,12 @@ export const LoginPage = () => {
     const { data, error } = await supabase.auth.signInWithPassword({ email: userData.email, password: userData.password });
 
     if (error) {
-      console.error('Error signing up:', error.message);
+      console.error('Error Signing in:', error.message);
+       setPopupMsg("Invalid email or password"); // show popup
+      // Hide popup after 3 seconds
     } else {
+      setPopupMsg("Login successful! Redirecting...");
+      setTimeout(() => setPopupMsg(""), 3000);
       if (data.session) {
         localStorage.setItem("supabase_session", JSON.stringify(data.session))
         handleNavigate('/');
@@ -33,7 +41,22 @@ export const LoginPage = () => {
   }
   return (
     <div className="main">
-
+ {popupMsg && (
+        <div
+          style={{
+            position: "fixed",
+            top: 20,
+            right: 20,
+            backgroundColor: "#f44336",
+            color: "white",
+            padding: "10px 20px",
+            borderRadius: "8px",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+          }}
+        >
+          {popupMsg}
+        </div>
+      )}
       <div className="loginContainer">
         <div className="headlineLogin">
           <img style={{ height: "60px" }} src="/assets/travelguru.jpeg" /><p style={{ color: theme.palette.secondary.main, fontSize: "3rem" }}>Travel Guroo</p>

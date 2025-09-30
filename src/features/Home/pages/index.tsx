@@ -1,11 +1,32 @@
+import {useState,useEffect} from 'react'
 import { Header, ButtonComponent,Footer } from '../../../components'
 import { Box, Typography } from '@mui/material'
 import { CardComponent, MiniCard } from '../../../components'
 import './index.css'
 import { CustomCarousel } from '../../../components/Carousel'
 import theme from '../../../theme'
-export const Homepage = () => {
+import { supabase } from '../../../supabaseClient'
 
+export const Homepage = () => {
+ const [trips, setTrips] = useState<any>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTrips = async () => {
+      const { data, error } = await supabase
+        .from("trips") // table name
+        .select("*");  // select all columns
+      console.log(data)
+      if (error) {
+        console.error("Error fetching trips:", error);
+      } else {
+        setTrips(data);
+      }
+      setLoading(false);
+    };
+
+    fetchTrips();
+  }, []);
   return (
     <div>
       <Header />

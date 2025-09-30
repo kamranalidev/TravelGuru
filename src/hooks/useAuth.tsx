@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         console.log("Session is either null or expired.");
         // expired or missing → sign out
+        localStorage.removeItem("supabase_session")
         await supabase.auth.signOut()
         setSession(null)
       

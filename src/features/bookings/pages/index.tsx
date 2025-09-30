@@ -1,4 +1,4 @@
-import React,{ useState } from "react";
+import React, { useState } from "react";
 import { ButtonComponent, Header, ReviewComponent } from '../../../components'
 import { Box, Typography, Button, styled } from '@mui/material'
 import ImageList from '@mui/material/ImageList';
@@ -72,6 +72,7 @@ export const BookingPage = () => {
   const [selectedImg, setSelectedImg] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [isViewDatePicker, setIsViewDatePicker] = useState(false);
+  const [date, setDate] = useState(dayjs()); // today's date
   const navigate = useNavigate();
   const handleClick = (imgSrc: string) => {
     setSelectedImg(imgSrc);
@@ -92,7 +93,7 @@ export const BookingPage = () => {
       <Header />
       <Box sx={{ width: "80%", margin: "0 auto 0" }}>
         <Typography
-          variant="h3" sx={{ marginLeft: "auto",marginTop:"40px" }}>Premium safari  in dubai
+          variant="h3" sx={{ marginLeft: "auto", marginTop: "40px" }}>Premium safari  in dubai
         </Typography>
 
         <div style={{ display: "flex", justifyContent: "center", margin: "0 auto 0", borderRadius: "20px" }} >
@@ -132,11 +133,12 @@ export const BookingPage = () => {
               <span style={{ fontWeight: "900", fontSize: "1.9rem", marginLeft: "4px" }}> US $36.05</span>
             </Typography>
             <ButtonComponent title="Book Now" width="70%" bgColor="#FF621F"
-            onClick={() => setIsViewDatePicker(!isViewDatePicker)} />
-         {!!isViewDatePicker &&   <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DateCalendar value={dayjs('2022-04-17')} />
+              onClick={() => setIsViewDatePicker(!isViewDatePicker)} />
+            {!!isViewDatePicker && <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DateCalendar value={date}
+                onChange={(newValue) => setDate(newValue)} />
             </LocalizationProvider>}
-           
+
           </Box>
         </Box>
         {/* Choose your plan */}
@@ -166,9 +168,9 @@ export const BookingPage = () => {
                 </Typography><Typography sx={{ color: "white", width: "70%", textAlign: "left" }}>
                   Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </Typography>
-                <ButtonComponent 
-                onClick={() => navigate("/payment-confirmation")}
-                title="Already Using" width="70%" bgColor="white" style={{ marginTop: "50px", color: "#c44109ff", marginBottom: "20px", fontSize: "1.2rem" }} />
+                <ButtonComponent
+                  onClick={() => navigate("/payment-confirmation")}
+                  title="Already Using" width="70%" bgColor="white" style={{ marginTop: "50px", color: "#c44109ff", marginBottom: "20px", fontSize: "1.2rem" }} />
               </SubscriptionBox>
             </Box>
             <Box className="subscriptionContainer">
