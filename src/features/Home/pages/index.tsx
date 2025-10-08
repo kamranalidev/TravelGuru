@@ -67,13 +67,26 @@ export const Homepage = () => {
         <p className='carouselHeader'>Popular Destination</p>
 
         <CustomCarousel>
-          <CardComponent title='Desert Safari' buttonTitle='details' location='Dubai' />
+          {trips.length > 0 ? (
+            trips.map((trip: any) => (
+              <CardComponent
+                key={trip.id}
+                title={trip.title}
+                buttonTitle='details' 
+                location={trip.location}
+                imageUrl={trip.Image[0]}
+              />
+            ))
+          ) : (
+            <p>Loading trips...</p>
+          )}
+          {/* <CardComponent title='Desert Safari' buttonTitle='details' location='Dubai' />
           <CardComponent title='Airport transport' buttonTitle='details' location='Dubai' />
           <CardComponent title='Abudhabi city tour' buttonTitle='details' location='Dubai' />
           <CardComponent title='Yacht' buttonTitle='details' location='Dubai' imageUrl='/assets/desertSafari.jpg' />
           <CardComponent title='Yacht' buttonTitle='details' location='Dubai' imageUrl='/assets/burjKhalifa.jpg' />
           <CardComponent title='Yacht' buttonTitle='details' location='Dubai' />
-          <CardComponent title='Yacht' buttonTitle='details' location='Dubai' />
+          <CardComponent title='Yacht' buttonTitle='details' location='Dubai' /> */}
         </CustomCarousel>
 
       </Box>
