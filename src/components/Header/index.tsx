@@ -11,7 +11,8 @@ const pages = [
     { label: 'Services', route: '/services' },
     { label: 'Destination', route: '/destination' },
     { label: 'Blog', route: '/blog' },
-    { label: 'About Us', route: '/about' }
+    { label: 'About Us', route: '/about' },
+    { label: 'FAQ', route: '/FAQ' }
 ];
 
 export const Header = (props: { hidePages?: boolean }) => {
