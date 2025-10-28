@@ -34,7 +34,7 @@ export default function AppRouter() {
         <Route path="/signup" element={
           <PublicRoute><SignupPage /></PublicRoute>} />
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-        <Route path="/bookings" element={
+        <Route path="/bookings/:id" element={
           <PublicRoute><BookingPage /></PublicRoute>} />
         <Route path="/payment-confirmation" element={
           <ProtectedRoute><PaymentConfirmation /></ProtectedRoute>} />

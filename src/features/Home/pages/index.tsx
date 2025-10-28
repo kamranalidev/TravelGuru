@@ -71,6 +71,8 @@ export const Homepage = () => {
             trips.map((trip: any) => (
               <CardComponent
                 key={trip.id}
+                bookingData ={trip}
+                id = {trip.id}
                 title={trip.title}
                 buttonTitle='details' 
                 location={trip.location}

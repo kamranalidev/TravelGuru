@@ -1,7 +1,16 @@
 import Card from '@mui/material/Card';
 import { ButtonComponent } from '../Button';
 import { useNavigate } from 'react-router-dom';
-export const CardComponent = (props:{title:string,buttonTitle:string,location?:string,imageUrl?:string}) => {
+interface Tour {
+  id: number;
+  name: string;
+  location: string;
+  description: string;
+  Image: string[]; // array of image URLs
+  created_at: string; // ISO date string
+  updated_at: string; // ISO date string
+}
+export const CardComponent = (props:{id:number,title:string,bookingData:Tour,buttonTitle:string,location?:string,imageUrl?:string}) => {
   const navigate = useNavigate();
   return (
   
@@ -16,7 +25,7 @@ export const CardComponent = (props:{title:string,buttonTitle:string,location?:s
                 </span>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}
             
-           onClick={()=>navigate("/bookings")} > <ButtonComponent title={props.buttonTitle} bgColor='red' /> </div>           
+           onClick={()=>navigate(`/bookings/${props.id}`,{state:props.bookingData})} > <ButtonComponent title={props.buttonTitle} bgColor='red' /> </div>           
 
             </div>
           </div>        
