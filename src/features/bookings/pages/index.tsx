@@ -32,7 +32,7 @@ function StandardImageList(props: any) {
       {/* {itemData.map((item) => (
        
       ))} */}
-      {images.map((item, idx) => (
+      {images.map((item:any, idx:any) => (
         <ImageListItem key={idx}
           cols={item.cols || 1}
           rows={item.rows || 1} onClick={() => props.handleClick(item.src)}>
@@ -174,13 +174,13 @@ export const BookingPage = () => {
           </Box>
           <Box className="priceBox" >
             <Typography style={{ display: "flex", justifyContent: "center", fontSize: "1.9rem" }} >
-              <span style={{ fontWeight: "900", fontSize: "1.9rem", marginLeft: "4px" }}> US $ {pageData.price}</span>
+              <span style={{ fontWeight: "900", fontSize: "1.9rem", marginLeft: "4px" }}> US $ {pageData.default_price}</span>
             </Typography>
             <ButtonComponent title="Book Now" width="70%" bgColor="#FF621F"
               onClick={() => setIsViewDatePicker(!isViewDatePicker)} />
             {!!isViewDatePicker && <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DateCalendar value={date}
-                onChange={(newValue) => setDate(newValue)} />
+                onChange={(newValue:any) => setDate(newValue)} />
             </LocalizationProvider>}
 
           </Box>
