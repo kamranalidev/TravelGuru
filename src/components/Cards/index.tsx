@@ -6,7 +6,7 @@ interface Tour {
   name: string;
   location: string;
   description: string;
-  Image: string[]; // array of image URLs
+  service_image: {url:string[]}; // array of image URLs
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
 }

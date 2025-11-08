@@ -14,9 +14,8 @@ export const Homepage = () => {
   useEffect(() => {
     const fetchTrips = async () => {
       const { data, error } = await supabase
-        .from("trips") // table name
+        .from("services") // table name
         .select("*");  // select all columns
-      console.log(data)
       if (error) {
         console.error("Error fetching trips:", error);
       } else {
@@ -73,10 +72,10 @@ export const Homepage = () => {
                 key={trip.id}
                 bookingData ={trip}
                 id = {trip.id}
-                title={trip.title}
+                title={trip.service_name}
                 buttonTitle='details' 
                 location={trip.location}
-                imageUrl={trip.Image[0]}
+                 imageUrl={trip.service_image?.url[0] || null}
               />
             ))
           ) : (

@@ -4,12 +4,24 @@ import { StepperComponent } from '../../../../components';
 import theme from '../../../../theme';
 import { Typography } from '@mui/material';
 import { CustomTextField ,ButtonComponent} from '../../../../components';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import dayjs from 'dayjs';
 import './index.css';
 
 
 export const PaymentConfirmation = () => {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  
+  // Extract booking data from navigation state
+  const bookingData = state || null;
+  const trip = bookingData?.trip || null;
+  const bookingDate = bookingData?.bookingDate || null;
+  const selectedPackage = bookingData?.selectedPackage || null;
+  const finalPrice = bookingData?.finalPrice || 0;
+  
+  // Format the date for display
+  const formattedDate = bookingDate ? dayjs(bookingDate).format("DD MMM YYYY") : "Not selected";
 
   return (
     <div style={{ backgroundColor: "#f5f5f5" }}>
@@ -89,44 +101,56 @@ export const PaymentConfirmation = () => {
         <Box sx={{   borderRadius: "20px", width: "30%" }}>
           <Box sx={{ boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",marginBottom: "20px",backgroundColor: "#fff",borderRadius: "20px", padding: "20px" }}>
             <Typography  sx={{ textAlign: "left", color: theme.palette.secondary.main, fontWeight: "bold", fontSize: "20px" }}>
-              Payment Successful
+              Booking Details
             </Typography>
             <Box >
-              <Typography>
-                Premium Desert Safari in Dubai - Morning, Evening and Overnight
+              <Typography sx={{ fontWeight: "bold", marginTop: "10px" }}>
+                {trip?.name || "Trip Name"}
               </Typography>
-              <Typography>
-                4hrs morning desert safari
+              <Typography sx={{ color: "#666", marginBottom: "10px" }}>
+                {trip?.location || "Location"}
               </Typography>
               <hr />
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <p>
-                  date
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px", marginBottom: "10px" }}>
+                <p style={{ margin: 0, color: "#666" }}>
+                  Booking Date
                 </p>
-                <p>
-                  21 Aug 2025
+                <p style={{ margin: 0, fontWeight: "bold" }}>
+                  {formattedDate}
                 </p>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <p>
-                  date
+              
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px", marginBottom: "10px" }}>
+                <p style={{ margin: 0, color: "#666" }}>
+                  Package
                 </p>
-                <p>
-                  21 Aug 2025
+                <p style={{ margin: 0, fontWeight: "bold" }}>
+                  {selectedPackage?.name || "Free"}
                 </p>
               </div>
 
               <hr />
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <p>
-                  date
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px" }}>
+                <p style={{ margin: 0, color: "#666" }}>
+                  Base Price
                 </p>
-                <p>
-                  21 Aug 2025
+                <p style={{ margin: 0 }}>
+                  US$ {trip?.default_price?.toFixed(2) || "0.00"}
                 </p>
               </div>
+
+              {selectedPackage && selectedPackage.name?.toLowerCase() !== "free" && selectedPackage.multiplier && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px" }}>
+                  <p style={{ margin: 0, color: "#666" }}>
+                    Package Multiplier ({selectedPackage.name})
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    {selectedPackage.multiplier}x
+                  </p>
+                </div>
+              )}
 
 
             </Box>
@@ -134,31 +158,31 @@ export const PaymentConfirmation = () => {
 
           <Box sx={{ boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",marginBottom: "20px",backgroundColor: "#fff",borderRadius: "20px", padding: "20px" }}>
             <Box >
-             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <p>
+             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                <p style={{ margin: 0 }}>
                   Subtotal
                 </p>
-                <p style={{fontWeight: "bold"}}>
-                  US$ 45.45
+                <p style={{fontWeight: "bold", margin: 0}}>
+                  US$ {finalPrice.toFixed(2)}
                 </p>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <p>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                <p style={{ margin: 0 }}>
                   Promotion Discount
                 </p>
-                <p>
-                  - US$ 5.00
+                <p style={{ margin: 0 }}>
+                  - US$ 0.00
                 </p>
               </div>
 
               <hr />
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <p>
-                  date
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "10px" }}>
+                <p style={{ margin: 0, fontWeight: "bold", fontSize: "1.1rem" }}>
+                  Total
                 </p>
-                <p>
-                  21 Aug 2025
+                <p style={{ margin: 0, fontWeight: "bold", fontSize: "1.1rem", color: theme.palette.secondary.main }}>
+                  US$ {finalPrice.toFixed(2)}
                 </p>
               </div>
 

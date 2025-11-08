@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { StepperComponent ,Header} from '../../../../components'
 export const Checkout = () => {
   return (
-    <Box sx={{backgroundColor: "#f5f5f5" }}>
+    <Box sx={{backgroundColor: "#f5f5f5",height: "100vh" }}>
       <Header hidePages={true} />
       <StepperComponent activeStep={2} />
        <Box className="centerSection">
@@ -40,7 +40,7 @@ export const Checkout = () => {
             </Box>
           </Box>
         </Box>
-        <Box sx={{   borderRadius: "20px", width: "20%" }}>
+        {/* <Box sx={{   borderRadius: "20px", width: "20%" }}>
           <Box sx={{ boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",marginBottom: "20px",backgroundColor: "#fff",borderRadius: "20px", padding: "20px" }}>
             <Typography  sx={{ textAlign: "left", color: "black", fontWeight: "bold", fontSize: "20px" }}>
               Payment Successful
@@ -119,7 +119,7 @@ export const Checkout = () => {
 
             </Box>
           </Box>
-        </Box>
+        </Box> */}
       
       </Box>
     </Box>
