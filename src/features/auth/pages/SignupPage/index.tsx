@@ -1,9 +1,10 @@
 import "./index.css"
 import theme from "../../../../theme";
-import { CustomTextField, ButtonComponent } from "../../../../components";
+import { CustomTextField, ButtonComponent, PasswordField } from "../../../../components";
 import { useNavigate } from "react-router-dom";
-import { Typography } from "@mui/material";
+import { Typography, Box } from "@mui/material";
 import { supabase } from '../../../../supabaseClient'
+import logo from '../../../../assets/Logo-02.png';
 export const SignupPage = () => {
 
   const navigate = useNavigate();
@@ -35,28 +36,86 @@ export const SignupPage = () => {
 
   return (
     <div className="main">
-
-      <div className="loginContainer">
-        <div className="headlineLogin">
-          <img style={{ height: "60px" }} src="/assets/travelguru.jpeg" /><p style={{ color: theme.palette.secondary.main, fontSize: "3rem" }}>Travel Guroo</p>
-        </div>
+      <Box className="loginContainer">
+        <Box className="headlineLogin">
+          <img 
+            src={logo} 
+            alt="Travel Guru Logo" 
+            style={{ 
+              height: "70px", 
+              width: "70px",
+              objectFit: "contain"
+            }} 
+          />
+          <Typography 
+            sx={{ 
+              color: theme.palette.primary.main, 
+              fontSize: "2.5rem",
+              fontWeight: 700,
+              fontFamily: 'Inter, sans-serif',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <span style={{ color: theme.palette.primary.main }}>Travel</span>
+            <span style={{ color: '#333333' }}>Guru</span>
+          </Typography>
+        </Box>
         <form style={{
-          display: "flex", flexDirection: "column", gap: "20px", width: "100%", alignItems: "center"
+          display: "flex", 
+          flexDirection: "column", 
+          gap: "24px", 
+          width: "100%", 
+          alignItems: "center",
+          marginTop: "2rem"
         }} onSubmit={signUpWithEmail}>
-          <CustomTextField placeholder='Name' name="name"/>
-          <CustomTextField placeholder='Email'name="email" />
-          <CustomTextField placeholder='Password' name="password"/>
-          <div style={{ minWidth: "350px" }}>
+          <CustomTextField 
+            placeholder='Name' 
+            name="name"
+            labelcolor={theme.palette.text.secondary}
+            labelfocusedcolor={theme.palette.primary.main}
+            bordercolor="#E0E0E0"
+            borderhovercolor={theme.palette.primary.light}
+            borderfocusedcolor={theme.palette.primary.main}
+          />
+          <CustomTextField 
+            placeholder='Email'
+            name="email"
+            labelcolor={theme.palette.text.secondary}
+            labelfocusedcolor={theme.palette.primary.main}
+            bordercolor="#E0E0E0"
+            borderhovercolor={theme.palette.primary.light}
+            borderfocusedcolor={theme.palette.primary.main}
+          />
+          <PasswordField placeholder='Password' name="password"
+            labelcolor={theme.palette.text.secondary}
+            labelfocusedcolor={theme.palette.primary.main}
+            bordercolor="#E0E0E0"
+            borderhovercolor={theme.palette.primary.light}
+            borderfocusedcolor={theme.palette.primary.main}
+          />
+          <Box style={{ minWidth: "350px" }}>
             <ButtonComponent title="Sign Up" width="100%" type="submit"/>
-          </div>
+          </Box>
         </form>
 
         <Typography
-          onClick={() => handleNavigate("/login")} sx={{ color: theme.palette.secondary.main, cursor: 'pointer', fontSize: "1.2rem" }} >
-          Already have an account? login
+          onClick={() => handleNavigate("/login")} 
+          sx={{ 
+            color: theme.palette.primary.main, 
+            cursor: 'pointer', 
+            fontSize: "1rem",
+            fontWeight: 500,
+            marginTop: "1rem",
+            '&:hover': {
+              textDecoration: 'underline',
+            }
+          }}
+        >
+          Already have an account? Login
         </Typography>
-      </div>
-
+      </Box>
     </div>
   );
 };

@@ -22,6 +22,8 @@ const Homepage = lazy(() => import('../features/Home/pages').then(module => ({ d
 const BookingPage = lazy(() => import('../features/bookings/pages').then(module => ({ default: module.BookingPage })));
 const PaymentConfirmation = lazy(() => import('../features/bookings/pages/PaymentConfirmation').then(module => ({ default: module.PaymentConfirmation })));
 const Checkout = lazy(() => import('../features/bookings/pages/Checkout').then(module => ({ default: module.Checkout })));
+const ForgotPasswordPage = lazy(() => import('../features/auth/pages/ForgotPassword').then(module => ({ default: module.ForgotPasswordPage })));
+const ResetPasswordPage = lazy(() => import('../features/auth/pages/ResetPassword').then(module => ({ default: module.ResetPasswordPage })));
 export default function AppRouter() {
   return (
     <>
@@ -34,6 +36,8 @@ export default function AppRouter() {
         <Route path="/signup" element={
           <PublicRoute><SignupPage /></PublicRoute>} />
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
         <Route path="/bookings/:id" element={
           <PublicRoute><BookingPage /></PublicRoute>} />
         <Route path="/payment-confirmation" element={

@@ -10,6 +10,7 @@ import Dialog from "@mui/material/Dialog";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../supabaseClient";
+import theme from "../../../theme";
 import "./index.css";
 
 import dayjs from "dayjs";
@@ -63,15 +64,17 @@ const SubscriptionBox = styled(Box)(({ theme }) => ({
   marginTop: "20px",
   gap: "20px",
   height: "421px",
-  borderRadius: "30px",
-  background:
-    "linear-gradient(135deg, rgb(255, 112, 67) 0%, rgb(255, 152, 0) 100%);",
+  borderRadius: "16px",
+  background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  padding: "3px",
+  padding: "24px",
+  transition: "all 0.3s ease-in-out",
+  fontFamily: "'Inter', sans-serif",
   ":hover": {
-    background: theme.palette.secondary.main, // Slightly enlarge on hover
+    transform: "translateY(-4px)",
+    boxShadow: `0 8px 24px rgba(255, 98, 31, 0.3)`,
   },
 }));
 
@@ -98,16 +101,16 @@ export const BookingPage = () => {
   const { state } = useLocation();
 
   useEffect(() => {
-    if (!!state) {
-      console.log(state);
+    if (state) {
+      const images = state?.service_image?.url ?? [];
       setPageData({
-        Image: state.service_image.url,
+        Image: images,
         description: state.description,
         id: state.id,
         location: state.location,
         service_name: state.service_name,
         updated_at: state.updated_at,
-        price: state.default_price,
+        default_price: state.default_price,
         ...state,
       });
     }
@@ -179,118 +182,102 @@ export const BookingPage = () => {
   return (
     <div>
       <Header />
-      <Box sx={{ width: "80%", margin: "0 auto 0" }}>
-        <Typography variant="h3" sx={{ marginLeft: "auto", marginTop: "40px" }}>
-          Premium safari in dubai
-        </Typography>
+      <Box className="booking-wrapper">
+        <Box className="booking-heading">
+          <Typography component="h1" variant="h3">
+            {pageData?.service_name || "Experience details"}
+          </Typography>
+          {pageData?.location && (
+            <Typography component="p">
+              {pageData.location}
+            </Typography>
+          )}
+        </Box>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            margin: "0 auto 0",
-            borderRadius: "20px",
-          }}
-        >
-          <StandardImageList
-            Images={pageData.Image}
-            handleClick={handleClick}
-          />
-        </div>
-        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Box sx={{ width: "60%" }}>
-            <Typography variant="h4" sx={{ margin: " 0" }}>
-              {pageData?.service_name}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: "1.2rem",
-                display: "-webkit-box",
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                WebkitLineClamp: expanded ? "none" : 4, // show only 4 lines if not expanded
-              }}
-            >
-              {pageData?.description}{" "}
-            </Typography>
-            {/* Show button only if text is longer */}
-            {isLong && (
-              <Button
-                onClick={() => setExpanded((prev) => !prev)}
-                sx={{
-                  mt: 1,
-                  textTransform: "none",
-                  color: "black",
-                  textDecoration: "underline",
-                }}
-              >
-                {expanded ? "Show less" : "Show more"}
-              </Button>
-            )}
-          </Box>
-          <Box className="priceBox">
-            <Typography
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                fontSize: "1.9rem",
-              }}
-            >
-              <span
-                style={{
-                  fontWeight: "900",
-                  fontSize: "1.9rem",
-                  marginLeft: "4px",
-                }}
-              >
-                {" "}
-                US $ {finalPrice.toFixed(2)}
-              </span>
-            </Typography>
-            <ButtonComponent
-              title="Book Now"
-              width="70%"
-              bgColor="#FF621F"
-              onClick={handleBookNow}
+        <Box className="booking-hero">
+          <Box className="booking-gallery">
+            <StandardImageList
+              Images={pageData.Image}
+              handleClick={handleClick}
             />
-            {!!isViewDatePicker && (
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DateCalendar
-                  value={date}
-                  onChange={(newValue: any) => {
-                    if (newValue) {
-                      setDate(newValue);
-                    }
+          </Box>
+
+          <Box className="booking-details">
+            <Box className="booking-description">
+              {pageData?.location && (
+                <Typography className="location" component="span">
+                  {pageData.location}
+                </Typography>
+              )}
+              <Typography variant="h4" component="h2">
+                {pageData?.service_name}
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: "1.05rem",
+                  display: "-webkit-box",
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  WebkitLineClamp: expanded ? "initial" : 5,
+                }}
+              >
+                {pageData?.description}
+              </Typography>
+              {isLong && (
+                <Button
+                  onClick={() => setExpanded((prev) => !prev)}
+                  sx={{
+                    alignSelf: "flex-start",
+                    mt: 1,
+                    textTransform: "none",
+                    color: theme.palette.primary.main,
+                    fontWeight: 600,
                   }}
-                />
-              </LocalizationProvider>
-            )}
+                >
+                  {expanded ? "Show less" : "Read more"}
+                </Button>
+              )}
+            </Box>
+
+            <Box className="booking-price-card">
+              <Typography className="price">
+                <Typography component="span">US$</Typography>
+                <span>{finalPrice.toFixed(2)}</span>
+              </Typography>
+              <ButtonComponent
+                title="Book Now"
+                width="100%"
+                bgColor={theme.palette.primary.main}
+                onClick={handleBookNow}
+              />
+              {!!isViewDatePicker && (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DateCalendar
+                    value={date}
+                    onChange={(newValue: any) => {
+                      if (newValue) {
+                        setDate(newValue);
+                      }
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
+            </Box>
           </Box>
         </Box>
-        {/* Choose your plan */}
 
         <Box>
-          <Typography
-            variant="h3"
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              marginTop: "20px",
-            }}
-          >
-            Choose your plan
-          </Typography>
-          {/* Subscription plans */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-around",
-              marginTop: "20px",
-              width: "100%",
-              gap: "3px",
-            }}
-          >
+          <Box className="plan-header">
+            <Typography variant="h4" component="h2">
+              Choose your plan
+            </Typography>
+            <Typography component="p">
+              Flexible packages tailored to your adventure.
+            </Typography>
+          </Box>
+
+          <Box className="plans-grid">
             <Box className="subscriptionContainer">
               <SubscriptionBox>
                 <Typography
@@ -304,22 +291,19 @@ export const BookingPage = () => {
                   Free
                 </Typography>
                 <Typography
-                  sx={{ color: "white", width: "70%", textAlign: "left" }}
+                  sx={{ color: "white", width: "80%", textAlign: "left" }}
                 >
-                  Sed do eiusmod tempor incididunt ut labore et dolore magna
-                  aliqua.
+                  Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </Typography>
                 <Typography
-                  sx={{ color: "white", width: "70%", textAlign: "left" }}
+                  sx={{ color: "white", width: "80%", textAlign: "left" }}
                 >
-                  Sed do eiusmod tempor incididunt ut labore et dolore magna
-                  aliqua.
+                  Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </Typography>
                 <Typography
-                  sx={{ color: "white", width: "70%", textAlign: "left" }}
+                  sx={{ color: "white", width: "80%", textAlign: "left" }}
                 >
-                  Sed do eiusmod tempor incididunt ut labore et dolore magna
-                  aliqua.
+                  Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
                 </Typography>
                 <ButtonComponent
                   title={selectedId === null ? "Selected" : "Select"}
@@ -327,13 +311,14 @@ export const BookingPage = () => {
                     setSelectedId(null);
                     setSelectedPackage(null);
                   }}
-                  width="70%"
+                  width="80%"
                   bgColor="white"
                   style={{
-                    marginTop: "50px",
-                    color: "#c44109ff",
-                    marginBottom: "20px",
-                    fontSize: "1.2rem",
+                    marginTop: "32px",
+                    color: theme.palette.primary.main,
+                    marginBottom: "12px",
+                    fontSize: "1.1rem",
+                    fontFamily: "Inter, sans-serif",
                   }}
                 />
               </SubscriptionBox>
@@ -349,12 +334,20 @@ export const BookingPage = () => {
                         textAlign: "center",
                         color: "white",
                         paddingTop: "13px",
+                        fontFamily: "Inter, sans-serif",
+                        fontWeight: 700,
                       }}
                     >
                       {pack.name}
                     </Typography>
                     <Typography
-                      sx={{ color: "white", width: "70%", textAlign: "left" }}
+                      sx={{
+                        color: "white",
+                        width: "80%",
+                        textAlign: "left",
+                        fontFamily: "Inter, sans-serif",
+                        lineHeight: 1.6,
+                      }}
                     >
                       {pack.description}
                     </Typography>
@@ -363,15 +356,15 @@ export const BookingPage = () => {
                       title={isSelected ? "Selected" : "Buy Now"}
                       onClick={() => {
                         handleSelect(pack.id);
-                        // navigate("/payment-confirmation")
                       }}
-                      width="70%"
+                      width="80%"
                       bgColor="white"
                       style={{
-                        marginTop: "50px",
-                        color: "#c44109ff",
-                        marginBottom: "20px",
-                        fontSize: "1.2rem",
+                        marginTop: "32px",
+                        color: theme.palette.primary.main,
+                        marginBottom: "12px",
+                        fontSize: "1.1rem",
+                        fontFamily: "Inter, sans-serif",
                       }}
                     />
                   </SubscriptionBox>
@@ -380,12 +373,10 @@ export const BookingPage = () => {
             })}
           </Box>
 
-          {/* Review component */}
           <ReviewComponent />
         </Box>
       </Box>
 
-      {/* Dialog for fullscreen image */}
       <Dialog open={open} onClose={handleClose} maxWidth="lg">
         <img
           src={selectedImg}
