@@ -1,26 +1,25 @@
-
-import './App.css'
-import { useEffect } from 'react'
-import { supabase } from './supabaseClient'
-import AppRouter from './router/AppRouter'
+import "./App.css";
+import { useEffect } from "react";
+import { supabase } from "./supabaseClient";
+import AppRouter from "./router/AppRouter";
 function App() {
-useEffect(() => {
+  useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("Auth event:", event)
-        console.log("Session:", session)
+      (event: any, session: any) => {
+        console.log("Auth event:", event);
+        console.log("Session:", session);
       }
-    )
+    );
 
     return () => {
-      authListener.subscription.unsubscribe()
-    }
-  }, [])
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
   return (
     <>
       <AppRouter />
     </>
-  )
+  );
 }
 
-export default App
+export default App;
