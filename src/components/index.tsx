@@ -1,10 +1,11 @@
-export {Header} from "./Header"
-export {ButtonComponent} from "./Button"
-export {CardComponent} from "./Cards"
-export {MiniCard} from "./MiniCard"
-export {CustomCarousel} from "./Carousel"
-export {CustomTextField} from "./Input/Input"
-export {ImageGallery} from "./ImageGallery"
-export {Footer} from "./Footer"
-export {ReviewComponent} from "./Review"
-export {StepperComponent} from "./StepperComponent"
+export { Header } from "./Header";
+export { ButtonComponent } from "./Button";
+export { CardComponent } from "./Cards";
+export { MiniCard } from "./MiniCard";
+export { CustomCarousel } from "./Carousel";
+export { CustomTextField } from "./Input/Input";
+export { ImageGallery } from "./ImageGallery";
+export { Footer } from "./Footer";
+export { ReviewComponent } from "./Review";
+export { StepperComponent } from "./StepperComponent";
+export { default as ErrorBoundary } from "./ErrorBoundary";
