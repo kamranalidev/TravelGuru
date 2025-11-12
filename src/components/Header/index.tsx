@@ -1,81 +1,122 @@
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import theme from '../../theme';
-import Typography from '@mui/material/Typography';
-import { useNavigate } from 'react-router-dom';
-import Button from '@mui/material/Button';
+import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
+import Toolbar from "@mui/material/Toolbar";
+import theme from "../../theme";
+import Typography from "@mui/material/Typography";
+import { useNavigate } from "react-router-dom";
+import Button from "@mui/material/Button";
 
 const pages = [
-    { label: 'Home', route: '/' },
-    { label: 'Services', route: '/services' },
-    { label: 'Destination', route: '/destination' },
-    { label: 'Blog', route: '/blog' },
-    { label: 'About Us', route: '/about' }
+  { label: "Home", route: "/" },
+  { label: "Services", route: "/services" },
+  { label: "Destination", route: "/destination" },
+  { label: "Blog", route: "/blog" },
+  { label: "About Us", route: "/about" },
 ];
 
 export const Header = (props: { hidePages?: boolean }) => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const handleNavigate = (route: string) => {
-        navigate(route);
-    };
+  const handleNavigate = (route: string) => {
+    navigate(route);
+  };
 
-    const authenticated = localStorage.getItem("supabase_session") ? true : false;
-    return (
-        <Box sx={{ flexGrow: 1 }}>
-
-            <AppBar position="static" sx={{ backgroundColor: '#FBFBEC', color: 'black', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)' }}>
-
-                <Toolbar sx={{ display: 'flex', justifyContent: 'space-around' }}>
-                    <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, alignItems: 'center' }} onClick={() => navigate('/')}  >
-                        <div>
-                            <img src="/assets/travelLogo.jpeg" alt="logo" style={{ width: '100px', height: '100px' }} />
-                        </div>
-                        <Typography
-                            variant="h6"
-                            noWrap
-                            component="a"
-                            href="#app-bar-with-responsive-menu"
-                            sx={{
-                                mr: 2,
-                                display: { xs: 'none', md: 'flex' },
-                                fontFamily: 'monospace',
-                                fontWeight: 700,
-                                letterSpacing: '.3rem',
-                                color: 'black',
-                                textDecoration: 'none',
-                            }}
-                        >
-                            <p style={{ color: 'orange' }}> Travel</p> <p>
-                                Guru
-                            </p>
-                        </Typography>
-                    </Box>
-                    {!props.hidePages && <>
-                        <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-                            {pages.map((page) => (
-                                <Button
-                                    key={page.label}
-                                    onClick={() => handleNavigate(page.route)}
-                                    sx={{ my: 2, color: theme.palette.secondary.main, display: 'block' }}
-                                >
-                                    {page.label}
-                                </Button>
-                            ))}
-                        </Box>
-                      {!authenticated &&  <Typography
-                            variant="h6"
-                            noWrap
-                            component="div"
-                            sx={{ display: { xs: 'none', sm: 'block' }, cursor: 'pointer', color: theme.palette.secondary.main }}
-                            onClick={() => handleNavigate('/login')}
-                        >
-                            <a >Login</a>
-                        </Typography>}</>}
-
-                </Toolbar>
-            </AppBar>
-        </Box>
-    );
-}
+  const authenticated = localStorage.getItem("supabase_session") ? true : false;
+  return (
+    <Box component="header" sx={{ width: "100%" }}>
+      <AppBar
+        position="static"
+        sx={{
+          backgroundColor: "transparent",
+          boxShadow: "none",
+          color: "inherit",
+          py: { xs: 2, md: 3 },
+        }}
+      >
+        <Toolbar
+          disableGutters
+          sx={{
+            width: "100%",
+            maxWidth: "1200px",
+            margin: "0 auto",
+            px: { xs: 2, md: 4 },
+          }}
+        >
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: { xs: 2, md: 4 },
+              backgroundColor: "#ffffff",
+              borderRadius: "20px",
+              boxShadow: "0 15px 35px rgba(0,0,0,0.08)",
+              border: "1px solid rgba(255, 255, 255, 0.6)",
+              px: { xs: 3, md: 5 },
+              py: { xs: 1.5, md: 2 },
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+              }}
+              onClick={() => navigate("/")}
+            >
+              <img
+                src="/assets/Logo-02.png"
+                alt="TravelGuru Logo"
+                style={{ width: "110px", height: "auto" }}
+              />
+            </Box>
+            {!props.hidePages && (
+              <>
+                <Box
+                  sx={{
+                    display: { xs: "none", md: "flex" },
+                    alignItems: "center",
+                    gap: 3,
+                  }}
+                >
+                  {pages.map((page) => (
+                    <Button
+                      key={page.label}
+                      onClick={() => handleNavigate(page.route)}
+                      sx={{
+                        color: theme.palette.secondary.main,
+                        fontWeight: 500,
+                        textTransform: "none",
+                        fontSize: "1rem",
+                      }}
+                    >
+                      {page.label}
+                    </Button>
+                  ))}
+                </Box>
+                {!authenticated && (
+                  <Typography
+                    component="button"
+                    sx={{
+                      display: { xs: "none", sm: "block" },
+                      cursor: "pointer",
+                      color: theme.palette.secondary.main,
+                      background: "transparent",
+                      border: "none",
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                    }}
+                    onClick={() => handleNavigate("/login")}
+                  >
+                    Login
+                  </Typography>
+                )}
+              </>
+            )}
+          </Box>
+        </Toolbar>
+      </AppBar>
+    </Box>
+  );
+};

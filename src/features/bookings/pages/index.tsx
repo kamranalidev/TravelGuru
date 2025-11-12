@@ -60,18 +60,30 @@ function StandardImageList(props: any) {
   );
 }
 const SubscriptionBox = styled(Box)(({ theme }) => ({
-  marginTop: "20px",
-  gap: "20px",
-  height: "421px",
-  borderRadius: "30px",
+  borderRadius: "28px",
   background:
-    "linear-gradient(135deg, rgb(255, 112, 67) 0%, rgb(255, 152, 0) 100%);",
+    "linear-gradient(135deg, rgba(255, 112, 67, 1) 0%, rgba(255, 152, 0, 1) 100%)",
   display: "flex",
   flexDirection: "column",
-  alignItems: "center",
-  padding: "3px",
-  ":hover": {
-    background: theme.palette.secondary.main, // Slightly enlarge on hover
+  alignItems: "flex-start",
+  padding: "28px 24px",
+  gap: "16px",
+  color: "#ffffff",
+  boxShadow: "0 18px 36px rgba(255, 130, 70, 0.25)",
+  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+  cursor: "pointer",
+  position: "relative",
+  border: "1px solid rgba(255, 255, 255, 0.35)",
+  "&:hover": {
+    transform: "translateY(-6px)",
+    boxShadow: "0 22px 44px rgba(255, 130, 70, 0.3)",
+  },
+  "&.selected": {
+    boxShadow: "0 24px 50px rgba(255, 130, 70, 0.35)",
+    borderColor: "#ffffff",
+  },
+  [theme.breakpoints.down("md")]: {
+    width: "100%",
   },
 }));
 
@@ -80,9 +92,9 @@ export const BookingPage = () => {
   const [selectedImg, setSelectedImg] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [isViewDatePicker] = useState(true);
-  const [packages, setPackages] = useState<any>();
+  const [packages, setPackages] = useState<any[]>([]);
   const [date, setDate] = useState(dayjs()); // today's date
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const navigate = useNavigate();
   const [pageData, setPageData] = useState({
@@ -99,29 +111,49 @@ export const BookingPage = () => {
 
   useEffect(() => {
     if (!!state) {
-      console.log(state);
+      const serviceImages =
+        state?.service_image &&
+        Array.isArray(state?.service_image?.url)
+          ? state.service_image.url.filter(Boolean)
+          : [];
+      const fallbackImage = "/assets/desertSafari.jpg";
+      const imageUrls =
+        serviceImages && serviceImages.length > 0
+          ? serviceImages
+          : [fallbackImage];
+
       setPageData({
-        Image: state.service_image.url,
-        description: state.description,
-        id: state.id,
-        location: state.location,
-        service_name: state.service_name,
-        updated_at: state.updated_at,
-        price: state.default_price,
+        Image: imageUrls,
+        description:
+          state?.description || state?.service_description || "Experience Dubai like never before.",
+        id: state?.id ?? 0,
+        location: state?.location || "Dubai",
+        service_name: state?.service_name || "Dubai Experience",
+        updated_at: state?.updated_at || "",
+        default_price: state?.default_price ?? 0,
         ...state,
       });
+      setSelectedId(0);
+      setSelectedPackage(null);
     }
     const fetchPackages = async () => {
-      const { data, error } = await supabase
-        .from("packages") // table name
-        .select("*"); // select all columns
-      console.log(data);
-      if (error) {
-        console.error("Error fetching trips:", error);
-      } else {
-        setPackages(data);
+      if (!state?.id) {
+        return;
       }
-      // setLoading(false);
+
+      const { data, error } = await supabase
+        .from("packages")
+        .select("*")
+        .eq("service_id", state.id)
+        .order("price", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching packages:", error);
+      } else if (Array.isArray(data)) {
+        setPackages(data);
+      } else {
+        setPackages([]);
+      }
     };
 
     fetchPackages();
@@ -138,7 +170,7 @@ export const BookingPage = () => {
     setSelectedImg("");
   };
 
-  const handleSelect = (id: string) => {
+  const handleSelect = (id: number) => {
     setSelectedId(id);
     // Find the selected package
     const pack = packages?.find((p: any) => p.id === id);
@@ -147,18 +179,45 @@ export const BookingPage = () => {
 
   // Calculate the final price based on selected package
   const calculatePrice = () => {
-    if (!selectedPackage || selectedPackage.name?.toLowerCase() === "free") {
+    if (selectedPackage?.price) {
+      return selectedPackage.price;
+    }
+
+    if (typeof pageData.default_price === "number") {
       return pageData.default_price;
     }
-    // Use multiplier from package if it exists, otherwise default to 1
-    const multiplier = selectedPackage.multiplier || 1;
-    return pageData.default_price * multiplier;
+    return 0;
   };
 
   const finalPrice = calculatePrice();
 
+  const formatCurrency = (value: any) => {
+    if (value === null || value === undefined || isNaN(Number(value))) {
+      return "Contact for pricing";
+    }
+    return `AED ${Number(value).toLocaleString()}`;
+  };
+
+  const basePackage = {
+    id: 0,
+    name: "Standard Experience",
+    description:
+      "Includes our signature highlights, guided support, and convenient transfers.",
+    price: pageData.default_price,
+    isBase: true,
+  };
+
+  const packagesToDisplay =
+    packages && packages.length > 0
+      ? [basePackage, ...packages.map((pack) => ({ ...pack, isBase: false }))]
+      : [basePackage];
+
   // Handle booking navigation with all data
   const handleBookNow = () => {
+    if (!pageData.id) {
+      return;
+    }
+
     const bookingData = {
       trip: {
         id: pageData.id,
@@ -168,10 +227,10 @@ export const BookingPage = () => {
         default_price: pageData.default_price,
       },
       bookingDate: date.format("YYYY-MM-DD"), // Format date as string
-      selectedPackage: selectedPackage || { name: "Free", multiplier: 1 },
+      selectedPackage: selectedPackage || null,
       finalPrice: finalPrice,
     };
-    navigate("/payment-confirmation", { state: bookingData });
+    navigate("/checkout", { state: bookingData });
   };
   const MAX_CHARS = 500; // adjust this based on how many lines you want
 
@@ -179,78 +238,61 @@ export const BookingPage = () => {
   return (
     <div>
       <Header />
-      <Box sx={{ width: "80%", margin: "0 auto 0" }}>
-        <Typography variant="h3" sx={{ marginLeft: "auto", marginTop: "40px" }}>
-          Premium safari in dubai
-        </Typography>
+      <Box className="servicePageContainer">
+        <Box className="serviceIntro">
+          <Box>
+            <Typography variant="h3" className="serviceTitle">
+              {pageData?.service_name}
+            </Typography>
+            <Typography className="serviceLocationTag">
+              {pageData?.location ? `📍 ${pageData.location}` : "📍 Dubai, UAE"}
+            </Typography>
+          </Box>
+        </Box>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            margin: "0 auto 0",
-            borderRadius: "20px",
-          }}
-        >
+        <div className="serviceGalleryWrapper">
           <StandardImageList
             Images={pageData.Image}
             handleClick={handleClick}
           />
         </div>
-        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Box sx={{ width: "60%" }}>
-            <Typography variant="h4" sx={{ margin: " 0" }}>
-              {pageData?.service_name}
+
+        <Box className="serviceDetails">
+          <Box className="serviceDescriptionBox">
+            <Typography variant="h4" className="sectionHeading">
+              About this experience
             </Typography>
             <Typography
+              className="serviceDescriptionText"
               sx={{
-                fontSize: "1.2rem",
-                display: "-webkit-box",
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                WebkitLineClamp: expanded ? "none" : 4, // show only 4 lines if not expanded
+                WebkitLineClamp: expanded ? "unset" : 5,
               }}
             >
-              {pageData?.description}{" "}
+              {pageData?.description}
             </Typography>
-            {/* Show button only if text is longer */}
             {isLong && (
               <Button
                 onClick={() => setExpanded((prev) => !prev)}
                 sx={{
                   mt: 1,
                   textTransform: "none",
-                  color: "black",
-                  textDecoration: "underline",
+                  color: "#FF621F",
+                  fontWeight: 600,
                 }}
               >
                 {expanded ? "Show less" : "Show more"}
               </Button>
             )}
           </Box>
+
           <Box className="priceBox">
-            <Typography
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                fontSize: "1.9rem",
-              }}
-            >
-              <span
-                style={{
-                  fontWeight: "900",
-                  fontSize: "1.9rem",
-                  marginLeft: "4px",
-                }}
-              >
-                {" "}
-                US $ {finalPrice.toFixed(2)}
-              </span>
+            <Typography className="priceLabel">Starting from</Typography>
+            <Typography className="priceValue">
+              {formatCurrency(finalPrice)}
             </Typography>
             <ButtonComponent
               title="Book Now"
-              width="70%"
+              width="100%"
               bgColor="#FF621F"
               onClick={handleBookNow}
             />
@@ -268,119 +310,67 @@ export const BookingPage = () => {
             )}
           </Box>
         </Box>
-        {/* Choose your plan */}
 
-        <Box>
-          <Typography
-            variant="h3"
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              marginTop: "20px",
-            }}
-          >
+        <Box className="planSection">
+          <Typography variant="h4" className="sectionHeading center">
             Choose your plan
           </Typography>
-          {/* Subscription plans */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-around",
-              marginTop: "20px",
-              width: "100%",
-              gap: "3px",
-            }}
-          >
-            <Box className="subscriptionContainer">
-              <SubscriptionBox>
-                <Typography
-                  variant="h3"
-                  sx={{
-                    textAlign: "center",
-                    color: "white",
-                    paddingTop: "13px",
-                  }}
-                >
-                  Free
-                </Typography>
-                <Typography
-                  sx={{ color: "white", width: "70%", textAlign: "left" }}
-                >
-                  Sed do eiusmod tempor incididunt ut labore et dolore magna
-                  aliqua.
-                </Typography>
-                <Typography
-                  sx={{ color: "white", width: "70%", textAlign: "left" }}
-                >
-                  Sed do eiusmod tempor incididunt ut labore et dolore magna
-                  aliqua.
-                </Typography>
-                <Typography
-                  sx={{ color: "white", width: "70%", textAlign: "left" }}
-                >
-                  Sed do eiusmod tempor incididunt ut labore et dolore magna
-                  aliqua.
-                </Typography>
-                <ButtonComponent
-                  title={selectedId === null ? "Selected" : "Select"}
-                  onClick={() => {
-                    setSelectedId(null);
-                    setSelectedPackage(null);
-                  }}
-                  width="70%"
-                  bgColor="white"
-                  style={{
-                    marginTop: "50px",
-                    color: "#c44109ff",
-                    marginBottom: "20px",
-                    fontSize: "1.2rem",
-                  }}
-                />
-              </SubscriptionBox>
-            </Box>
-            {packages?.map((pack: any) => {
-              const isSelected = selectedId === pack.id;
+          <Typography className="planSubtitle">
+            Select the package that matches how you like to explore Dubai.
+          </Typography>
+          <Box className="planGrid">
+            {packagesToDisplay.map((pack: any) => {
+              const packId = pack.isBase ? 0 : pack.id;
+              const isSelected = selectedId === packId;
               return (
-                <Box className="subscriptionContainer" key={pack.id}>
-                  <SubscriptionBox>
-                    <Typography
-                      variant="h3"
-                      sx={{
-                        textAlign: "center",
-                        color: "white",
-                        paddingTop: "13px",
-                      }}
-                    >
-                      {pack.name}
+                <SubscriptionBox
+                  key={packId}
+                  className={isSelected ? "selected" : ""}
+                  onClick={() => {
+                    setSelectedId(packId);
+                    setSelectedPackage(pack.isBase ? null : pack);
+                  }}
+                >
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                    {pack.isBase ? "Standard Experience" : pack.name}
+                  </Typography>
+                  {pack.duration && (
+                    <Typography sx={{ fontWeight: 500, opacity: 0.9 }}>
+                      {pack.duration}
                     </Typography>
-                    <Typography
-                      sx={{ color: "white", width: "70%", textAlign: "left" }}
-                    >
-                      {pack.description}
-                    </Typography>
-
-                    <ButtonComponent
-                      title={isSelected ? "Selected" : "Buy Now"}
-                      onClick={() => {
-                        handleSelect(pack.id);
-                        // navigate("/payment-confirmation")
-                      }}
-                      width="70%"
-                      bgColor="white"
-                      style={{
-                        marginTop: "50px",
-                        color: "#c44109ff",
-                        marginBottom: "20px",
-                        fontSize: "1.2rem",
-                      }}
-                    />
-                  </SubscriptionBox>
-                </Box>
+                  )}
+                  <Typography sx={{ opacity: 0.9, lineHeight: 1.6 }}>
+                    {pack.description ||
+                      "Immerse yourself in handpicked highlights with a seamless travel schedule."}
+                  </Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+                    {formatCurrency(pack.price)}
+                  </Typography>
+                  <ButtonComponent
+                    title={
+                      isSelected
+                        ? "Selected"
+                        : pack.isBase
+                        ? "Included"
+                        : "Choose Plan"
+                    }
+                    width="100%"
+                    bgColor="#FFFFFF"
+                    style={{
+                      color: "#FF621F",
+                      fontWeight: 600,
+                      borderRadius: "14px",
+                    }}
+                    onClick={() => {
+                      setSelectedId(packId);
+                      setSelectedPackage(pack.isBase ? null : pack);
+                    }}
+                  />
+                </SubscriptionBox>
               );
             })}
           </Box>
 
-          {/* Review component */}
           <ReviewComponent />
         </Box>
       </Box>

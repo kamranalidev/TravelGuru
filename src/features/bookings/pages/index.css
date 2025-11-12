@@ -1,23 +1,140 @@
+.servicePageContainer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+}
+
+.serviceIntro {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.serviceTitle {
+    font-weight: 700;
+    font-size: 2.6rem;
+    margin-bottom: 8px;
+    color: #1a1a1a;
+}
+
+.serviceLocationTag {
+    font-weight: 600;
+    color: #FF621F;
+    font-size: 1.05rem;
+}
+
+.serviceGalleryWrapper {
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08);
+    margin-bottom: 40px;
+}
+
+.serviceDetails {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    align-items: flex-start;
+}
+
+.serviceDescriptionBox {
+    flex: 1;
+    min-width: 280px;
+}
+
+.sectionHeading {
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.sectionHeading.center {
+    text-align: center;
+}
+
+.serviceDescriptionText {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #555;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 12px;
+}
+
 .priceBox {
-    border: 1px solid #e6e6e6;
-    width: 30%;
-    border-radius: 10px;
-    /* height: 17vh; */
+    background: #ffffff;
+    border: 1px solid #ececec;
+    border-radius: 24px;
+    max-width: 360px;
+    width: 100%;
+    padding: 28px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding:20px
+    align-items: stretch;
+    gap: 18px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
 }
 
-.subscriptionContainer {
-    width: 25.5%;
-    transition: transform 0.3s ease;
-    /* smooth movement */
-
+.priceLabel {
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    color: #888;
 }
 
-.subscriptionContainer:hover {
-    transform: translateY(-5px);
-    /* moves card up by 5px */
+.priceValue {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.planSection {
+    margin-top: 70px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.planSubtitle {
+    text-align: center;
+    color: #666;
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.planGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+}
+
+@media (max-width: 1024px) {
+    .serviceDetails {
+        flex-direction: column;
+    }
+
+    .priceBox {
+        max-width: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .serviceTitle {
+        font-size: 2.2rem;
+    }
+
+    .serviceGalleryWrapper {
+        border-radius: 20px;
+    }
+
+    .serviceDescriptionText {
+        font-size: 1rem;
+    }
+
+    .planGrid {
+        grid-template-columns: 1fr;
+    }
 }

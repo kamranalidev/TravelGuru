@@ -1,212 +1,206 @@
-import { useState, useEffect } from "react";
-import {
-  Header,
-  ButtonComponent,
-  Footer,
-  ErrorBoundary,
-} from "../../../components";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Header, ButtonComponent, Footer } from "../../../components";
 import { Box, Typography } from "@mui/material";
-import { CardComponent, MiniCard } from "../../../components";
 import "./index.css";
-import { CustomCarousel } from "../../../components/Carousel";
 import theme from "../../../theme";
 import { supabase } from "../../../supabaseClient";
 
 export const Homepage = () => {
-  const [trips, setTrips] = useState<any>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchTrips = async () => {
+    const fetchServices = async () => {
       try {
         const { data, error } = await supabase
           .from("services") // table name
-          .select("*"); // select all columns
+          .select(
+            "id, service_name, service_description, location, service_image, default_price"
+          )
+          .order("created_at", { ascending: true });
 
         if (error) {
-          console.error("Error fetching trips:", error);
-          setTrips([]);
+          console.error("Error fetching services:", error);
+          setError("Unable to load services at the moment.");
+          setServices([]);
         } else {
           // Ensure data is an array and contains valid entries
-          const validTrips = Array.isArray(data)
-            ? data.filter((trip) => trip && trip.id)
+          const validServices = Array.isArray(data)
+            ? data.filter((service) => service && service.id)
             : [];
-          setTrips(validTrips);
+          setServices(validServices);
+          setError("");
         }
       } catch (error) {
-        console.error("Unexpected error fetching trips:", error);
-        setTrips([]);
+        console.error("Unexpected error fetching services:", error);
+        setError("Unexpected error fetching services. Please try again later.");
+        setServices([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTrips();
+    fetchServices();
   }, []);
+
+  const handleServiceClick = (service: any) => {
+    if (!service?.id) return;
+    const servicePayload = {
+      ...service,
+      description:
+        service?.service_description ??
+        service?.description ??
+        "Premium experience curated by Travel Guru.",
+    };
+    navigate(`/bookings/${service.id}`, { state: servicePayload });
+  };
+
+  const getServiceImage = (service: any) => {
+    try {
+      if (
+        service?.service_image &&
+        Array.isArray(service.service_image.url) &&
+        service.service_image.url.length > 0
+      ) {
+        return service.service_image.url[0];
+      }
+    } catch (imgError) {
+      console.warn("Error parsing service image", imgError);
+    }
+    return "/assets/desertSafari.jpg";
+  };
+
+  const formatPrice = (price: any) => {
+    if (price === null || price === undefined || isNaN(Number(price))) {
+      return "Contact for pricing";
+    }
+    return `From AED ${Number(price).toLocaleString()}`;
+  };
+
   return (
     <div>
       <Header />
-      {/* 1st portion */}
-      <Box
-        sx={{
-          display: "flex",
-          backgroundColor: "#FBFBEC",
-          justifyContent: "space-around",
-          alignItems: "center",
-          paddingRight: "10%",
-        }}
-      >
-        <div>
-          <p className="journey"> Save Journey</p>
-          <p className="titleGuru">
-            Make your <span style={{ color: "#FF621F" }}>travel</span> <br />
-            Memorable
-          </p>
-          <p className="para">
-            TravelGuru is one of the most popular <br />
-            Travel agency for those who want to <br />
-            explore the wold and try to make adventure{" "}
-          </p>
-          <ButtonComponent title="Plan trip" />
-        </div>
-        <div>
-          <img
-            className="beardGuyImage"
-            src="/assets/beardGuy.png"
-            alt="homepage"
-          />
+      {/* Hero Section */}
+      <Box className="heroSection">
+        <div className="heroContent">
+          <div className="heroText">
+            <h1 className="heroTitle">
+              Dubai Tours &<br />
+              Adventures
+            </h1>
+            <p className="heroSubtitle">
+              Experience the best of Dubai with our premium services
+            </p>
+            <ButtonComponent title="BOOK NOW" />
+          </div>
+          <div className="heroImageContainer">
+            <img
+              className="heroImage"
+              src="/assets/burjKhalifa.jpg"
+              alt="Dubai"
+            />
+            <div className="heroImageBadge">
+              <span className="badgeText">Dubai</span>
+            </div>
+            <div className="heroTravelers">
+              <div className="travelerAvatars">
+                <div className="avatar avatar1"></div>
+                <div className="avatar avatar2"></div>
+                <div className="avatar avatar3"></div>
+              </div>
+              <div className="travelerText">
+                <strong>100k</strong>
+                <br />
+                <span>Travelers</span>
+              </div>
+            </div>
+          </div>
         </div>
       </Box>
-      {/* Things you need to do */}
-      <Box sx={{ backgroundColor: theme.palette.background.default }}>
-        <p
-          style={{
-            textAlign: "center",
-            fontSize: "2rem",
-            marginTop: "2rem",
-            paddingTop: "1rem",
-          }}
-        >
-          Things you need{" "}
+      {/* Featured Services */}
+      <Box sx={{ backgroundColor: "#fff", padding: "60px 0" }}>
+        <p className="servicesHeader">
+          Our Premium{" "}
           <Typography
-            sx={{ color: theme.palette.secondary.main, fontSize: "2rem" }}
+            sx={{ color: theme.palette.secondary.main, fontSize: "2.5rem" }}
             component="span"
           >
-            to do
+            Dubai Services
           </Typography>
         </p>
-        <p className="ensure">
-          we ensure that you'll embark on a perfectly planned, safe vacation at
-          a price you can afford
-          <br />
+        <p className="servicesSubtitle">
+          Explore Dubai with our exclusive selection of premium tours and
+          services.
         </p>
-        <div className="cardContainer">
-          <MiniCard
-            title="Book a flight"
-            buttonTitle="details"
-            location="Dubai"
-          />
-          <MiniCard
-            title="Worth of Money"
-            buttonTitle="details"
-            location="Dubai"
-          />
-          <MiniCard
-            title="Exciting travel"
-            buttonTitle="details"
-            location="Dubai"
-            image="yellowLocation.svg"
-          />
+
+        <div className="servicesGrid">
+          {loading ? (
+            <div className="servicesPlaceholder">Loading services...</div>
+          ) : error ? (
+            <div className="servicesPlaceholder">{error}</div>
+          ) : services.length === 0 ? (
+            <div className="servicesPlaceholder">
+              No services available right now. Please check back later.
+            </div>
+          ) : (
+            services.map((service) => (
+              <div
+                className="serviceCard"
+                key={service.id}
+                onClick={() => handleServiceClick(service)}
+              >
+                <div className="serviceImageWrapper">
+                  <img
+                    src={getServiceImage(service)}
+                    alt={service.service_name || "Dubai service"}
+                    className="serviceImage"
+                  />
+                </div>
+                <div className="serviceInfo">
+                  <h3 className="serviceTitle">
+                    {service.service_name || "Untitled Service"}
+                  </h3>
+                  <p className="serviceLocation">
+                    {service.location ? `📍 ${service.location}` : "Dubai"}
+                  </p>
+                  <p className="serviceDescription">
+                    {service.service_description || "Premium Dubai experience."}
+                  </p>
+                  <div className="serviceMeta">
+                    <span className="servicePrice">
+                      {formatPrice(service.default_price)}
+                    </span>
+                    <ButtonComponent
+                      title="View Details"
+                      width="auto"
+                      style={{ padding: "10px 20px", fontSize: "0.95rem" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </Box>
-      {/* popular destination */}
-      <Box className="carouselMain">
-        <p className="carouselHeader">Popular Destination</p>
 
-        <ErrorBoundary>
-          <CustomCarousel>
-            {loading ? (
-              <p>Loading trips...</p>
-            ) : trips && Array.isArray(trips) && trips.length > 0 ? (
-              trips
-                .map((trip: any, index: number) => {
-                  // Ensure we have valid trip data
-                  if (!trip || !trip.id) return null;
-
-                  // Safe access to nested properties
-                  let imageUrl = null;
-                  try {
-                    if (
-                      trip.service_image &&
-                      trip.service_image.url &&
-                      Array.isArray(trip.service_image.url)
-                    ) {
-                      imageUrl = trip.service_image.url[0] || null;
-                    }
-                  } catch (error) {
-                    console.warn(
-                      "Error accessing image URL for trip:",
-                      trip.id,
-                      error
-                    );
-                  }
-
-                  return (
-                    <CardComponent
-                      key={trip.id || `trip-${index}`}
-                      bookingData={trip}
-                      id={trip.id}
-                      title={
-                        trip.service_name || trip.name || "Untitled Service"
-                      }
-                      buttonTitle="details"
-                      location={trip.location || "Unknown Location"}
-                      imageUrl={imageUrl}
-                    />
-                  );
-                })
-                .filter(Boolean)
-            ) : (
-              <p>No trips available</p>
-            )}
-            {/* <CardComponent title='Desert Safari' buttonTitle='details' location='Dubai' />
-          <CardComponent title='Airport transport' buttonTitle='details' location='Dubai' />
-          <CardComponent title='Abudhabi city tour' buttonTitle='details' location='Dubai' />
-          <CardComponent title='Yacht' buttonTitle='details' location='Dubai' imageUrl='/assets/desertSafari.jpg' />
-          <CardComponent title='Yacht' buttonTitle='details' location='Dubai' imageUrl='/assets/burjKhalifa.jpg' />
-          <CardComponent title='Yacht' buttonTitle='details' location='Dubai' />
-          <CardComponent title='Yacht' buttonTitle='details' location='Dubai' /> */}
-          </CustomCarousel>
-        </ErrorBoundary>
-      </Box>
       {/* Subscribe  and get exclusive offers */}
-      <Box
-        className="subscribe"
-        sx={{
-          backgroundImage: `url('/assets/Bg.svg')`,
-          height: "400px",
-          width: "60%",
-        }}
-      >
-        <Typography className="subscribeHeader" sx={{ fontSize: "2.5rem" }}>
-          Subscribe and get exclusive <br />
-          deal & offers
-        </Typography>
-        <div
-          style={{
-            backgroundImage: "url(/assets/circles.svg)",
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "left bottom",
-            backgroundSize: "contain", // or 'auto' depending on your design
-            height: "80%",
-          }}
-        >
+      <Box className="subscribe">
+        <div className="subscribeContent">
+          <Typography className="subscribeHeader">
+            Subscribe and get exclusive
+            <br />
+            deal & offers
+          </Typography>
           <div className="subscribeInput">
             <input
               placeholder="Enter your email"
-              style={{ border: "none", outline: "none" }}
+              className="subscribeField"
+              type="email"
             />
-            <ButtonComponent title="Subscribe" width="30%" />
+            <ButtonComponent title="Subscribe" width="auto" />
           </div>
         </div>
       </Box>
