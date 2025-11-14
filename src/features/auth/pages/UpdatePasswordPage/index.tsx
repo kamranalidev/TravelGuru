@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../../../../supabaseClient";
+import { Box, Typography, Card, Alert } from "@mui/material";
+import { PasswordField, ButtonComponent } from "../../../../components";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ButtonComponent } from "../../../../components";
-import { CustomTextField } from "../../../../components";
-import theme from "../../../../theme";
-import { Box, Typography, Alert } from "@mui/material";
-import "../LoginPage/index.css";
+import { supabase } from "../../../../supabaseClient";
+import "../../shared.css";
 
 export const UpdatePasswordPage = () => {
   const [password, setPassword] = useState("");
@@ -65,87 +63,87 @@ export const UpdatePasswordPage = () => {
   };
 
   return (
-    <div className="main">
-      <div className="loginContainer">
-        <div className="headlineLogin">
-          <img
-            style={{ height: "60px", width: "auto" }}
-            src="/assets/Logo-02.png"
-            alt="TravelGuru Logo"
-          />
-          <p style={{ color: theme.palette.secondary.main, fontSize: "3rem" }}>
-            Update Password
-          </p>
-        </div>
+    <Box className="auth-main">
+      <Box className="auth-background">
+        <img
+          src="/assets/desertSafari.jpg"
+          alt="Dubai Desert"
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+        />
+        <Box className="auth-overlay" />
+      </Box>
 
-        <Box sx={{ width: "100%", maxWidth: "400px", mb: 2 }}>
-          <Typography
-            variant="body1"
-            sx={{ textAlign: "center", mb: 2, color: "#666" }}
-          >
-            Enter your new password below.
+      <Card className="auth-card">
+        <Box className="auth-header">
+          <img
+            src="/assets/travelLogo.jpeg"
+            alt="TravelGuru Logo"
+            className="auth-logo"
+          />
+          <Typography variant="h4" className="auth-title">
+            Travel Guroo
+          </Typography>
+          <Typography variant="h5" className="auth-subtitle">
+            Update Password
           </Typography>
         </Box>
 
         {message && (
-          <Alert
-            severity="success"
-            sx={{ width: "100%", maxWidth: "400px", mb: 2 }}
-          >
+          <Alert severity="success" sx={{ mb: 2 }}>
             {message}
           </Alert>
         )}
 
         {error && (
-          <Alert
-            severity="error"
-            sx={{ width: "100%", maxWidth: "400px", mb: 2 }}
-          >
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
 
-        <form
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-            width: "100%",
-            alignItems: "center",
-          }}
-          onSubmit={handleUpdatePassword}
-        >
-          <CustomTextField
+        <form onSubmit={handleUpdatePassword} className="auth-form">
+          <PasswordField
             placeholder="New Password"
             name="password"
-            type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setPassword(e.target.value)
+            }
             required
+            fullWidth
           />
-
-          <CustomTextField
-            placeholder="Confirm New Password"
+          <PasswordField
+            placeholder="Confirm Password"
             name="confirmPassword"
-            type="password"
             value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setConfirmPassword(e.target.value)
+            }
             required
+            fullWidth
           />
 
-          <div style={{ minWidth: "350px" }}>
-            <ButtonComponent
-              title={loading ? "Updating..." : "Update Password"}
-              width="100%"
-              type="submit"
-            />
-          </div>
+          <ButtonComponent
+            title={loading ? "Updating..." : "Update Password"}
+            width="100%"
+            type="submit"
+            disabled={loading}
+          />
         </form>
-      </div>
 
-      <div className="sideImg">
-        <img src="/assets/beardGuy.png" alt="Travel" />
-      </div>
-    </div>
+        <Box className="auth-links">
+          <Typography
+            onClick={() => navigate("/login")}
+            className="auth-link"
+            style={{ margin: "0 auto" }}
+          >
+            Back to Login
+          </Typography>
+        </Box>
+      </Card>
+    </Box>
   );
 };

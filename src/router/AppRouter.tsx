@@ -1,17 +1,57 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
-import { Navigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth.tsx";
-function ProtectedRoute({ children }: any) {
-  const { session } = useAuth();
-  const isAuthenticated = !!session; // Or use context
-  return isAuthenticated ? children : <Navigate to="/login" />;
+import { Routes, Route, Navigate } from "react-router-dom";
+import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
+import { useAuth } from "../hooks/useAuth";
+
+type ProtectedRouteProps = {
+  children: React.ReactElement;
+};
+function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { session, loading } = useAuth();
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          minHeight: "50vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+  const isAuthenticated = !!session;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 export function PublicRoute({ children }: any) {
   const { loading } = useAuth();
-  if (loading) return <div>Loading...</div>;
 
-  // 3️⃣ Otherwise, render the public page
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 2,
+          backgroundColor: "#f5f5f5",
+        }}
+      >
+        <CircularProgress />
+        <Box sx={{ textAlign: "center" }}>
+          <h3 style={{ margin: 0, color: "#666" }}>Loading TravelGuru...</h3>
+          <p style={{ margin: "8px 0 0 0", color: "#888" }}>Please wait</p>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Otherwise, render the public page
   return children;
 }
 const LoginPage = lazy(() =>
@@ -52,6 +92,11 @@ const PaymentConfirmation = lazy(() =>
 const Checkout = lazy(() =>
   import("../features/bookings/pages/Checkout").then((module) => ({
     default: module.Checkout,
+  }))
+);
+const ProfilePage = lazy(() =>
+  import("../features/account/pages").then((module) => ({
+    default: module.ProfilePage,
   }))
 );
 export default function AppRouter() {
@@ -120,6 +165,14 @@ export default function AppRouter() {
             element={
               <ProtectedRoute>
                 <Checkout />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             }
           />

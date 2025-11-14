@@ -1,24 +1,22 @@
 import { useState } from "react";
-import { supabase } from "../../../../supabaseClient";
+import { Box, Typography, Card, Alert } from "@mui/material";
+import { CustomTextField, ButtonComponent } from "../../../../components";
 import { useNavigate } from "react-router-dom";
-import { ButtonComponent } from "../../../../components";
-import { CustomTextField } from "../../../../components";
-import theme from "../../../../theme";
-import { Box, Typography, Alert } from "@mui/material";
-import "../LoginPage/index.css";
+import { supabase } from "../../../../supabaseClient";
+import "../../shared.css";
 
 export const PasswordResetPage = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
-  const handlePasswordReset = async (e: React.FormEvent) => {
+  const handlePasswordReset = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
     setMessage("");
+    setError("");
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -30,7 +28,7 @@ export const PasswordResetPage = () => {
       } else {
         setMessage("Password reset email sent! Please check your inbox.");
       }
-    } catch (error) {
+    } catch (err) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -38,95 +36,81 @@ export const PasswordResetPage = () => {
   };
 
   return (
-    <div className="main">
-      <div className="loginContainer">
-        <div className="headlineLogin">
+    <Box className="auth-main">
+      <Box className="auth-background">
+        <img 
+          src="/assets/yachtdubai.jpg" 
+          alt="Dubai Marina" 
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover"
+          }}
+        />
+        <Box className="auth-overlay" />
+      </Box>
+      
+      <Card className="auth-card">
+        <Box className="auth-header">
           <img
-            style={{ height: "60px", width: "auto" }}
-            src="/assets/Logo-02.png"
+            src="/assets/travelLogo.jpeg"
             alt="TravelGuru Logo"
+            className="auth-logo"
           />
-          <p style={{ color: theme.palette.secondary.main, fontSize: "3rem" }}>
+          <Typography variant="h4" className="auth-title">
+            Travel Guroo
+          </Typography>
+          <Typography variant="h5" className="auth-subtitle">
             Reset Password
-          </p>
-        </div>
-
-        <Box sx={{ width: "100%", maxWidth: "400px", mb: 2 }}>
-          <Typography
-            variant="body1"
-            sx={{ textAlign: "center", mb: 2, color: "#666" }}
-          >
-            Enter your email address and we'll send you a link to reset your
-            password.
           </Typography>
         </Box>
 
         {message && (
-          <Alert
-            severity="success"
-            sx={{ width: "100%", maxWidth: "400px", mb: 2 }}
-          >
+          <Alert severity="success" sx={{ mb: 2 }}>
             {message}
           </Alert>
         )}
 
         {error && (
-          <Alert
-            severity="error"
-            sx={{ width: "100%", maxWidth: "400px", mb: 2 }}
-          >
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
 
-        <form
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-            width: "100%",
-            alignItems: "center",
-          }}
-          onSubmit={handlePasswordReset}
-        >
+        <form onSubmit={handlePasswordReset} className="auth-form">
           <CustomTextField
-            placeholder="Email"
+            placeholder="Enter your email"
             name="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            fullWidth
           />
-
-          <div style={{ minWidth: "350px" }}>
-            <ButtonComponent
-              title={loading ? "Sending..." : "Send Reset Email"}
-              width="100%"
-              type="submit"
-            />
-          </div>
-
-          <div style={{ textAlign: "center", marginTop: "20px" }}>
-            <Typography variant="body2">
-              Remember your password?{" "}
-              <span
-                style={{
-                  color: theme.palette.secondary.main,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
-                onClick={() => navigate("/login")}
-              >
-                Sign In
-              </span>
-            </Typography>
-          </div>
+          
+          <ButtonComponent
+            title={loading ? "Sending..." : "Send Reset Email"}
+            width="100%"
+            type="submit"
+            disabled={loading}
+          />
         </form>
-      </div>
 
-      <div className="sideImg">
-        <img src="/assets/beardGuy.png" alt="Travel" />
-      </div>
-    </div>
+        <Box className="auth-links">
+          <Typography
+            onClick={() => navigate("/login")}
+            className="auth-link"
+          >
+            Back to Login
+          </Typography>
+          <Typography
+            onClick={() => navigate("/signup")}
+            className="auth-link"
+          >
+            Create Account
+          </Typography>
+        </Box>
+      </Card>
+    </Box>
   );
 };

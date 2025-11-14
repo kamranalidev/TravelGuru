@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ButtonComponent, Header, ReviewComponent } from "../../../components";
-import { Box, Typography, Button, styled } from "@mui/material";
+import { ButtonComponent, Header, ReviewComponent, ProfileModal } from "../../../components";
+import { Alert, Box, Typography, Button, styled, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
 import { LocalizationProvider } from "@mui/x-date-pickers";
@@ -10,6 +10,7 @@ import Dialog from "@mui/material/Dialog";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../supabaseClient";
+import { useAuth } from "../../../hooks/useAuth";
 import "./index.css";
 
 import dayjs from "dayjs";
@@ -20,6 +21,12 @@ function StandardImageList(props: any) {
       rows: arr.length % 2 !== 0 && index === arr.length - 1 ? 3 : 2,
       cols: arr.length % 2 !== 0 && index === arr.length - 1 ? 2 : 1,
     })) || [];
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.target as HTMLImageElement;
+    target.src = "/assets/desertSafari.jpg";
+  };
+
   return (
     <ImageList
       sx={{
@@ -32,9 +39,6 @@ function StandardImageList(props: any) {
       rowHeight={200}
       gap={1}
     >
-      {/* {itemData.map((item) => (
-       
-      ))} */}
       {images.map((item: any, idx: any) => (
         <ImageListItem
           key={idx}
@@ -44,8 +48,9 @@ function StandardImageList(props: any) {
         >
           <img
             src={item.src}
-            alt={`Image ${idx + 1}`}
+            alt={`Service image ${idx + 1}`}
             loading="lazy"
+            onError={handleImageError}
             style={{
               cursor: "pointer",
               objectFit: "cover",
@@ -97,8 +102,16 @@ export const BookingPage = () => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const navigate = useNavigate();
+  const { session, profile, refreshProfile } = useAuth();
+  const [bookingFeedback, setBookingFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [isBooking, setIsBooking] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [pageData, setPageData] = useState({
-    Image: [],
+    Image: [] as string[],
     description: "",
     id: 0,
     location: "",
@@ -111,47 +124,85 @@ export const BookingPage = () => {
 
   useEffect(() => {
     if (!!state) {
-      const serviceImages =
-        state?.service_image &&
-        Array.isArray(state?.service_image?.url)
-          ? state.service_image.url.filter(Boolean)
-          : [];
+      // Parse service images from different possible formats
+      let serviceImages: string[] = [];
+
+      try {
+        if (state?.service_image) {
+          // Handle JSON string format from database
+          if (typeof state.service_image === "string") {
+            const parsedImages = JSON.parse(state.service_image);
+            if (Array.isArray(parsedImages)) {
+              serviceImages = parsedImages.filter(
+                (img: any) => typeof img === "string" && img.trim() !== ""
+              );
+            }
+          }
+          // Handle object with url array
+          else if (Array.isArray(state.service_image?.url)) {
+            serviceImages = state.service_image.url.filter(
+              (img: any) => typeof img === "string" && img.trim() !== ""
+            );
+          }
+          // Handle direct array
+          else if (Array.isArray(state.service_image)) {
+            serviceImages = state.service_image.filter(
+              (img: any) => typeof img === "string" && img.trim() !== ""
+            );
+          }
+        }
+      } catch (error) {
+        console.warn("Error parsing service images:", error);
+      }
+
+      // Fallback to default image if no valid images found
       const fallbackImage = "/assets/desertSafari.jpg";
       const imageUrls =
-        serviceImages && serviceImages.length > 0
-          ? serviceImages
-          : [fallbackImage];
+        serviceImages.length > 0 ? serviceImages : [fallbackImage];
 
       setPageData({
         Image: imageUrls,
         description:
-          state?.description || state?.service_description || "Experience Dubai like never before.",
+          state?.service_description ||
+          state?.description ||
+          "Experience Dubai like never before.",
         id: state?.id ?? 0,
         location: state?.location || "Dubai",
         service_name: state?.service_name || "Dubai Experience",
         updated_at: state?.updated_at || "",
         default_price: state?.default_price ?? 0,
-        ...state,
       });
       setSelectedId(0);
       setSelectedPackage(null);
     }
     const fetchPackages = async () => {
       if (!state?.id) {
+        console.warn("No service ID provided for fetching packages");
         return;
       }
 
-      const { data, error } = await supabase
-        .from("packages")
-        .select("*")
-        .eq("service_id", state.id)
-        .order("price", { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from("packages")
+          .select("*")
+          .eq("service_id", state.id)
+          .order("price", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching packages:", error);
-      } else if (Array.isArray(data)) {
-        setPackages(data);
-      } else {
+        if (error) {
+          console.error("Error fetching packages:", error);
+          setPackages([]);
+        } else if (Array.isArray(data)) {
+          // Filter out any invalid packages
+          const validPackages = data.filter((pkg) => pkg && pkg.id && pkg.name);
+          setPackages(validPackages);
+          console.log(
+            `Fetched ${validPackages.length} packages for service ${state.id}`
+          );
+        } else {
+          setPackages([]);
+        }
+      } catch (error) {
+        console.error("Unexpected error fetching packages:", error);
         setPackages([]);
       }
     };
@@ -168,13 +219,6 @@ export const BookingPage = () => {
   const handleClose = () => {
     setOpen(false);
     setSelectedImg("");
-  };
-
-  const handleSelect = (id: number) => {
-    setSelectedId(id);
-    // Find the selected package
-    const pack = packages?.find((p: any) => p.id === id);
-    setSelectedPackage(pack);
   };
 
   // Calculate the final price based on selected package
@@ -198,6 +242,33 @@ export const BookingPage = () => {
     return `AED ${Number(value).toLocaleString()}`;
   };
 
+  // Check if user profile has all required fields
+  const checkProfileCompletion = () => {
+    if (!profile) {
+      return {
+        isComplete: false,
+        missingFields: ["Profile information"],
+      };
+    }
+
+    const requiredFields = [
+      { key: 'full_name', label: 'Full Name' },
+      { key: 'phone_number', label: 'Phone Number' },
+      { key: 'date_of_birth', label: 'Date of Birth' },
+      { key: 'nationality', label: 'Nationality' },
+      { key: 'address', label: 'Address' },
+    ];
+
+    const missingFields = requiredFields
+      .filter(field => !profile[field.key as keyof typeof profile]?.toString().trim())
+      .map(field => field.label);
+
+    return {
+      isComplete: missingFields.length === 0,
+      missingFields,
+    };
+  };
+
   const basePackage = {
     id: 0,
     name: "Standard Experience",
@@ -207,14 +278,62 @@ export const BookingPage = () => {
     isBase: true,
   };
 
-  const packagesToDisplay =
-    packages && packages.length > 0
-      ? [basePackage, ...packages.map((pack) => ({ ...pack, isBase: false }))]
-      : [basePackage];
+  const hasAddOnPackages = Array.isArray(packages) && packages.length > 0;
+
+  const packagesToDisplay = hasAddOnPackages
+    ? [basePackage, ...packages.map((pack) => ({ ...pack, isBase: false }))]
+    : [];
 
   // Handle booking navigation with all data
-  const handleBookNow = () => {
+  const handleBookNow = async () => {
     if (!pageData.id) {
+      console.warn("No service ID available for booking");
+      return;
+    }
+
+    if (!session?.user) {
+      setBookingFeedback({
+        type: "error",
+        message: "Please log in to complete your booking.",
+      });
+      navigate("/login", {
+        state: {
+          redirectTo: `/bookings/${pageData.id}`,
+          servicePayload: state || null,
+        },
+      });
+      return;
+    }
+
+    // Check if profile is complete
+    const profileStatus = checkProfileCompletion();
+    if (!profileStatus.isComplete) {
+      setBookingFeedback({
+        type: "error",
+        message: `Please complete your profile before booking. Missing: ${profileStatus.missingFields.join(", ")}`,
+      });
+      setShowProfileModal(true);
+      return;
+    }
+
+    // Show confirmation dialog
+    setShowConfirmationDialog(true);
+  };
+
+  // Proceed with actual booking after confirmation
+  const proceedWithBooking = async () => {
+    setShowConfirmationDialog(false);
+    setBookingFeedback(null);
+    setIsBooking(true);
+
+    // Validate required data before attempting to create booking
+    if (!pageData.id || !session?.user?.id || !date) {
+      setBookingFeedback({
+        type: "error",
+        message:
+          "Missing required booking information. Please refresh and try again.",
+      });
+      setIsBooking(false);
       return;
     }
 
@@ -225,12 +344,87 @@ export const BookingPage = () => {
         location: pageData.location,
         description: pageData.description,
         default_price: pageData.default_price,
+        images: pageData.Image, // Include all images
       },
       bookingDate: date.format("YYYY-MM-DD"), // Format date as string
       selectedPackage: selectedPackage || null,
       finalPrice: finalPrice,
+      packageName: selectedPackage?.name || "Standard Experience",
     };
-    navigate("/checkout", { state: bookingData });
+
+    try {
+      // Ensure data types match the database schema
+      const insertData = {
+        service_id: Number(pageData.id), // Ensure it's a number for bigint
+        package_id: selectedPackage ? Number(selectedPackage.id) : null, // Ensure it's a number or null for bigint
+        user_id: String(session.user.id), // Ensure it's a string for UUID
+        booking_date: date.format("YYYY-MM-DD"), // String format for date
+      };
+
+      console.log("=== BOOKING DEBUG INFO ===");
+      console.log("User ID:", session.user.id);
+      console.log("User object:", session.user);
+      console.log("Service ID:", pageData.id, "Type:", typeof pageData.id);
+      console.log(
+        "Package ID:",
+        selectedPackage?.id,
+        "Type:",
+        typeof selectedPackage?.id
+      );
+      console.log("Booking Date:", date.format("YYYY-MM-DD"));
+      console.log("Final insert data:", insertData);
+      console.log("========================");
+
+      const { data, error } = await supabase
+        .from("bookings")
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("=== SUPABASE ERROR ===");
+        console.error("Message:", error.message);
+        console.error("Details:", error.details);
+        console.error("Hint:", error.hint);
+        console.error("Code:", error.code);
+        console.error("Full error object:", error);
+        console.error("===================");
+        throw error;
+      }
+
+      console.log("Booking created successfully:", data);
+      navigate("/checkout", {
+        state: {
+          ...bookingData,
+          bookingId: data.id,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to create booking:", error);
+
+      // More specific error message based on error type
+      let errorMessage =
+        "We couldn't create your booking. Please try again or contact support.";
+
+      const errorMsg = (error as any)?.message || error?.toString() || "";
+      if (errorMsg.includes("violates") || errorMsg.includes("constraint")) {
+        errorMessage =
+          "Please ensure you're logged in and have selected a valid date and package.";
+      } else if (
+        errorMsg.includes("406") ||
+        errorMsg.includes("not acceptable")
+      ) {
+        errorMessage =
+          "There was an issue with your booking details. Please refresh and try again.";
+      }
+
+      setBookingFeedback({
+        type: "error",
+        message: errorMessage,
+      });
+    } finally {
+      setIsBooking(false);
+    }
   };
   const MAX_CHARS = 500; // adjust this based on how many lines you want
 
@@ -258,31 +452,112 @@ export const BookingPage = () => {
         </div>
 
         <Box className="serviceDetails">
-          <Box className="serviceDescriptionBox">
-            <Typography variant="h4" className="sectionHeading">
-              About this experience
-            </Typography>
-            <Typography
-              className="serviceDescriptionText"
-              sx={{
-                WebkitLineClamp: expanded ? "unset" : 5,
-              }}
-            >
-              {pageData?.description}
-            </Typography>
-            {isLong && (
-              <Button
-                onClick={() => setExpanded((prev) => !prev)}
+          <Box className="serviceDetailsContent">
+            <Box className="serviceDescriptionBox">
+              <Typography variant="h4" className="sectionHeading">
+                About this experience
+              </Typography>
+              <Typography
+                className="serviceDescriptionText"
                 sx={{
-                  mt: 1,
-                  textTransform: "none",
-                  color: "#FF621F",
-                  fontWeight: 600,
+                  WebkitLineClamp: expanded ? "unset" : 5,
                 }}
               >
-                {expanded ? "Show less" : "Show more"}
-              </Button>
-            )}
+                {pageData?.description}
+              </Typography>
+              {isLong && (
+                <Button
+                  onClick={() => setExpanded((prev) => !prev)}
+                  sx={{
+                    mt: 1,
+                    textTransform: "none",
+                    color: "#FF621F",
+                    fontWeight: 600,
+                  }}
+                >
+                  {expanded ? "Show less" : "Show more"}
+                </Button>
+              )}
+            </Box>
+
+            <Box className="planSection">
+              <Typography variant="h4" className="sectionHeading planHeading">
+                {hasAddOnPackages ? "Choose your plan" : "Included experience"}
+              </Typography>
+              <Typography className="planSubtitle">
+                {hasAddOnPackages
+                  ? "Select the package that matches how you like to explore Dubai."
+                  : basePackage.description}
+              </Typography>
+              {hasAddOnPackages ? (
+                <Box className="planGrid">
+                  {packagesToDisplay.map((pack: any) => {
+                    const packId = pack.isBase ? 0 : pack.id;
+                    const isSelected = selectedId === packId;
+                    return (
+                      <SubscriptionBox
+                        key={packId}
+                        className={isSelected ? "selected" : ""}
+                        onClick={() => {
+                          setSelectedId(packId);
+                          setSelectedPackage(pack.isBase ? null : pack);
+                        }}
+                      >
+                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                          {pack.isBase ? "Standard Experience" : pack.name}
+                        </Typography>
+                        {pack.duration && (
+                          <Typography sx={{ fontWeight: 500, opacity: 0.9 }}>
+                            {pack.duration}
+                          </Typography>
+                        )}
+                        <Typography sx={{ opacity: 0.9, lineHeight: 1.6 }}>
+                          {pack.description ||
+                            "Immerse yourself in handpicked highlights with a seamless travel schedule."}
+                        </Typography>
+                        <Typography
+                          sx={{ fontWeight: 700, fontSize: "1.1rem" }}
+                        >
+                          {formatCurrency(pack.price)}
+                        </Typography>
+                        <ButtonComponent
+                          title={
+                            isSelected
+                              ? "Selected"
+                              : pack.isBase
+                              ? "Included"
+                              : "Choose Plan"
+                          }
+                          width="100%"
+                          bgColor="#FFFFFF"
+                          style={{
+                            color: "#FF621F",
+                            fontWeight: 600,
+                            borderRadius: "14px",
+                          }}
+                          onClick={() => {
+                            setSelectedId(packId);
+                            setSelectedPackage(pack.isBase ? null : pack);
+                          }}
+                        />
+                      </SubscriptionBox>
+                    );
+                  })}
+                </Box>
+              ) : (
+                <Box className="basePlanSummary">
+                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+                    {basePackage.name}
+                  </Typography>
+                  <Typography sx={{ opacity: 0.9, lineHeight: 1.6, mb: 2 }}>
+                    {basePackage.description}
+                  </Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+                    {formatCurrency(basePackage.price)}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
           </Box>
 
           <Box className="priceBox">
@@ -290,12 +565,13 @@ export const BookingPage = () => {
             <Typography className="priceValue">
               {formatCurrency(finalPrice)}
             </Typography>
-            <ButtonComponent
-              title="Book Now"
-              width="100%"
-              bgColor="#FF621F"
-              onClick={handleBookNow}
-            />
+
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 600, marginTop: "8px", marginBottom: "12px" }}
+            >
+              Select your date
+            </Typography>
             {!!isViewDatePicker && (
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateCalendar
@@ -305,83 +581,175 @@ export const BookingPage = () => {
                       setDate(newValue);
                     }
                   }}
+                  sx={{
+                    width: "100%",
+                    maxHeight: "320px",
+                    "& .MuiPickersCalendarHeader-root": {
+                      paddingLeft: "12px",
+                      paddingRight: "12px",
+                      marginTop: "8px",
+                    },
+                    "& .MuiDayCalendar-root": {
+                      fontSize: "0.85rem",
+                    },
+                    "& .MuiPickersDay-root": {
+                      fontSize: "0.85rem",
+                      margin: "2px",
+                    },
+                    "& .MuiPickersCalendarHeader-switchViewButton": {
+                      fontSize: "0.9rem",
+                    },
+                  }}
                 />
               </LocalizationProvider>
             )}
+
+            <ButtonComponent
+              title={isBooking ? "Processing..." : "Book Now"}
+              width="100%"
+              bgColor="#FF621F"
+              onClick={handleBookNow}
+              isLoading={isBooking}
+              loadingText="Processing..."
+              disabled={isBooking}
+            />
+            {bookingFeedback && (
+              <Alert
+                severity={bookingFeedback.type}
+                onClose={() => setBookingFeedback(null)}
+                sx={{ mt: 1 }}
+              >
+                {bookingFeedback.message}
+              </Alert>
+            )}
           </Box>
         </Box>
-
-        <Box className="planSection">
-          <Typography variant="h4" className="sectionHeading center">
-            Choose your plan
-          </Typography>
-          <Typography className="planSubtitle">
-            Select the package that matches how you like to explore Dubai.
-          </Typography>
-          <Box className="planGrid">
-            {packagesToDisplay.map((pack: any) => {
-              const packId = pack.isBase ? 0 : pack.id;
-              const isSelected = selectedId === packId;
-              return (
-                <SubscriptionBox
-                  key={packId}
-                  className={isSelected ? "selected" : ""}
-                  onClick={() => {
-                    setSelectedId(packId);
-                    setSelectedPackage(pack.isBase ? null : pack);
-                  }}
-                >
-                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    {pack.isBase ? "Standard Experience" : pack.name}
-                  </Typography>
-                  {pack.duration && (
-                    <Typography sx={{ fontWeight: 500, opacity: 0.9 }}>
-                      {pack.duration}
-                    </Typography>
-                  )}
-                  <Typography sx={{ opacity: 0.9, lineHeight: 1.6 }}>
-                    {pack.description ||
-                      "Immerse yourself in handpicked highlights with a seamless travel schedule."}
-                  </Typography>
-                  <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                    {formatCurrency(pack.price)}
-                  </Typography>
-                  <ButtonComponent
-                    title={
-                      isSelected
-                        ? "Selected"
-                        : pack.isBase
-                        ? "Included"
-                        : "Choose Plan"
-                    }
-                    width="100%"
-                    bgColor="#FFFFFF"
-                    style={{
-                      color: "#FF621F",
-                      fontWeight: 600,
-                      borderRadius: "14px",
-                    }}
-                    onClick={() => {
-                      setSelectedId(packId);
-                      setSelectedPackage(pack.isBase ? null : pack);
-                    }}
-                  />
-                </SubscriptionBox>
-              );
-            })}
-          </Box>
-
-          <ReviewComponent />
-        </Box>
+        <ReviewComponent />
       </Box>
 
       {/* Dialog for fullscreen image */}
-      <Dialog open={open} onClose={handleClose} maxWidth="lg">
-        <img
-          src={selectedImg}
-          alt="Selected"
-          style={{ width: "100%", height: "auto" }}
-        />
+      <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
+        <Box sx={{ position: "relative", backgroundColor: "black" }}>
+          <img
+            src={selectedImg}
+            alt="Full size service image"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = "/assets/desertSafari.jpg";
+            }}
+            style={{
+              width: "100%",
+              height: "auto",
+              maxHeight: "90vh",
+              objectFit: "contain",
+            }}
+          />
+          <Button
+            onClick={handleClose}
+            sx={{
+              position: "absolute",
+              top: 10,
+              right: 10,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              color: "white",
+              minWidth: "auto",
+              padding: "8px",
+              "&:hover": {
+                backgroundColor: "rgba(0,0,0,0.7)",
+              },
+            }}
+          >
+            ✕
+          </Button>
+        </Box>
+      </Dialog>
+
+      {/* Profile Modal */}
+      <ProfileModal 
+        open={showProfileModal}
+        onClose={async () => {
+          setShowProfileModal(false);
+          // Refresh profile data and clear any error messages
+          await refreshProfile();
+          setBookingFeedback(null);
+        }}
+      />
+
+      {/* Booking Confirmation Dialog */}
+      <Dialog 
+        open={showConfirmationDialog} 
+        onClose={() => setShowConfirmationDialog(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+          color: "white",
+          textAlign: "center"
+        }}>
+          <Typography variant="h5" fontWeight="600">
+            Confirm Your Booking
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, textAlign: "center" }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            {pageData.service_name}
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            📍 {pageData.location}
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            📅 {date.format("MMMM DD, YYYY")}
+          </Typography>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            🎫 {selectedPackage?.name || "Standard Experience"}
+          </Typography>
+          <Typography variant="h6" sx={{ mt: 2, fontWeight: 700, color: "#FF621F" }}>
+            Total: {formatCurrency(finalPrice)}
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 2, color: "text.secondary" }}>
+            Are you sure you want to proceed with this booking?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, gap: 2, justifyContent: "center" }}>
+          <Button
+            onClick={() => setShowConfirmationDialog(false)}
+            variant="outlined"
+            sx={{
+              borderColor: "#ddd",
+              color: "#666",
+              "&:hover": {
+                borderColor: "#ccc",
+                backgroundColor: "#f5f5f5"
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={proceedWithBooking}
+            variant="contained"
+            disabled={isBooking}
+            sx={{
+              background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #E5541B, #E67B44)",
+              },
+              "&:disabled": {
+                background: "#ccc",
+              }
+            }}
+          >
+            {isBooking ? "Processing..." : "Yes, Book Now"}
+          </Button>
+        </DialogActions>
       </Dialog>
     </div>
   );

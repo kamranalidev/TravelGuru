@@ -2,15 +2,14 @@ import { useState } from "react";
 import { supabase } from "../../../../supabaseClient";
 import { CustomTextField, ButtonComponent } from "../../../../components";
 import theme from "../../../../theme";
-import { useNavigate, Link } from "react-router-dom";
-import "./index.css";
+import { Link } from "react-router-dom";
+import "../LoginPage/index.css";
 
 export const PasswordResetPage = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate();
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +19,7 @@ export const PasswordResetPage = () => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password-confirm`,
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) {
@@ -100,13 +99,11 @@ export const PasswordResetPage = () => {
               {message}
             </div>
           )}
-
           <div style={{ minWidth: "350px" }}>
             <ButtonComponent
               title={isLoading ? "Sending..." : "Send Reset Email"}
               width="100%"
               type="submit"
-              disabled={isLoading || !email}
             />
           </div>
 
@@ -123,6 +120,10 @@ export const PasswordResetPage = () => {
             </Link>
           </div>
         </form>
+      </div>
+
+      <div className="sideImg">
+        <img src="/assets/beardGuy.png" alt="Travel" />
       </div>
     </div>
   );

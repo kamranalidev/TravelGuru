@@ -1,16 +1,24 @@
-import "./index.css";
-import theme from "../../../../theme";
 import { useState } from "react";
-import { CustomTextField, ButtonComponent } from "../../../../components";
-import { Typography } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Box, Typography, Card } from "@mui/material";
+import {
+  CustomTextField,
+  ButtonComponent,
+  PasswordField,
+} from "../../../../components";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../../../supabaseClient";
+import "../../shared.css";
+
 export const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [popupMsg, setPopupMsg] = useState("");
+  const [popupType, setPopupType] = useState<"success" | "error">("error");
 
-  const handleNavigate = (route: string) => {
-    navigate(route);
+  const showPopup = (message: string, type: "success" | "error" = "error") => {
+    setPopupMsg(message);
+    setPopupType(type);
+    setTimeout(() => setPopupMsg(""), 3000);
   };
 
   async function signInWithEmail(e: React.FormEvent<HTMLFormElement>) {
@@ -21,94 +29,101 @@ export const LoginPage = () => {
       email: formdata.get("email") as string,
       password: formdata.get("password") as string,
     };
-    console.log(userData);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: userData.email,
-      password: userData.password,
-    });
 
-    if (error) {
-      console.error("Error Signing in:", error.message);
-      setPopupMsg("Invalid email or password"); // show popup
-      // Hide popup after 3 seconds
-    } else {
-      setPopupMsg("Login successful! Redirecting...");
-      setTimeout(() => setPopupMsg(""), 3000);
-      if (data.session) {
-        localStorage.setItem("supabase_session", JSON.stringify(data.session));
-        handleNavigate("/");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: userData.email,
+        password: userData.password,
+      });
+
+      if (error) {
+        console.error("Error Signing in:", error.message);
+        showPopup("Invalid email or password");
+      } else {
+        showPopup("Login successful! Redirecting...", "success");
+        if (data.session) {
+          localStorage.setItem(
+            "supabase_session",
+            JSON.stringify(data.session)
+          );
+          const redirectState = (location.state as any) || {};
+          const redirectTo = redirectState.redirectTo || "/";
+          const servicePayload = redirectState.servicePayload;
+          setTimeout(() => {
+            navigate(
+              redirectTo,
+              servicePayload ? { state: servicePayload } : undefined
+            );
+          }, 1000);
+        }
       }
+    } catch (error) {
+      showPopup("An unexpected error occurred. Please try again.");
     }
   }
-  return (
-    <div className="main">
-      {popupMsg && (
-        <div
-          style={{
-            position: "fixed",
-            top: 20,
-            right: 20,
-            backgroundColor: "#f44336",
-            color: "white",
-            padding: "10px 20px",
-            borderRadius: "8px",
-            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-          }}
-        >
-          {popupMsg}
-        </div>
-      )}
-      <div className="loginContainer">
-        <div className="headlineLogin">
-          <img
-            style={{ height: "60px", width: "auto" }}
-            src="/assets/Logo-02.png"
-            alt="TravelGuru Logo"
-          />
-          <p style={{ color: theme.palette.secondary.main, fontSize: "3rem" }}>
-            Travel Guroo
-          </p>
-        </div>
 
-        <form
+  return (
+    <Box className="auth-main">
+      <Box className="auth-background">
+        <img
+          src="/assets/burjKhalifa.jpg"
+          alt="Dubai Background"
           style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
             width: "100%",
-            alignItems: "center",
+            height: "100%",
+            objectFit: "cover",
           }}
-          onSubmit={signInWithEmail}
-        >
-          <CustomTextField placeholder="Email" name="email" />
-          <CustomTextField placeholder="Password" name="password" />
-          <div style={{ minWidth: "350px" }}>
-            <ButtonComponent title="login" width="100%" type="submit" />
-          </div>
+        />
+        <Box className="auth-overlay" />
+      </Box>
+
+      {popupMsg && <Box className={`auth-popup ${popupType}`}>{popupMsg}</Box>}
+
+      <Card className="auth-card">
+        <Box className="auth-header">
+          <img
+            src="/assets/travelLogo.jpeg"
+            alt="TravelGuru Logo"
+            className="auth-logo"
+          />
+          <Typography variant="h4" className="auth-title">
+            Travel Guroo
+          </Typography>
+          <Typography variant="h5" className="auth-subtitle">
+            Welcome Back
+          </Typography>
+        </Box>
+
+        <form onSubmit={signInWithEmail} className="auth-form">
+          <CustomTextField
+            placeholder="Email"
+            name="email"
+            type="email"
+            required
+            fullWidth
+          />
+          <PasswordField
+            placeholder="Password"
+            name="password"
+            required
+            fullWidth
+          />
+
+          <ButtonComponent title="Login" width="100%" type="submit" />
         </form>
-        <div className="forgotSection">
+
+        <Box className="auth-links">
           <Typography
-            onClick={() => handleNavigate("/password-reset")}
-            sx={{
-              color: theme.palette.secondary.main,
-              fontSize: "1.2rem",
-              cursor: "pointer",
-            }}
+            onClick={() => navigate("/password-reset")}
+            className="auth-link"
           >
-            Forgot Password
+            Forgot Password?
           </Typography>
-          <Typography
-            onClick={() => handleNavigate("/signup")}
-            sx={{
-              color: theme.palette.secondary.main,
-              fontSize: "1.2rem",
-              cursor: "pointer",
-            }}
-          >
-            Signup
+          <Typography onClick={() => navigate("/signup")} className="auth-link">
+            Create Account
           </Typography>
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Card>
+    </Box>
   );
 };

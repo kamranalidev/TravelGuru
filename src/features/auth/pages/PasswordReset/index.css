@@ -1,0 +1,26 @@
+/* Additional styles for Password Reset page */
+.password-reset-form {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.password-reset-message {
+  margin: 16px 0;
+  padding: 12px;
+  border-radius: 4px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.error-message {
+  background-color: #ffebee;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+}
+
+.success-message {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}

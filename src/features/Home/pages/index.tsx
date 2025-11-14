@@ -6,6 +6,116 @@ import "./index.css";
 import theme from "../../../theme";
 import { supabase } from "../../../supabaseClient";
 
+// Service Image Gallery Component
+const ServiceImageGallery = ({ service }: { service: any }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [images, setImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    const serviceImages = getServiceImages(service);
+    setImages(serviceImages);
+    setCurrentImageIndex(0);
+  }, [service]);
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering service click
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering service click
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.target as HTMLImageElement;
+    target.src = "/assets/desertSafari.jpg";
+  };
+
+  return (
+    <div className="serviceImageWrapper">
+      <div className="imageContainer">
+        <img
+          src={images[currentImageIndex]}
+          alt={service.service_name || "Dubai service"}
+          className="serviceImage"
+          onError={handleImageError}
+        />
+        {images.length > 1 && (
+          <>
+            <button
+              className="imageNavButton prevButton"
+              onClick={prevImage}
+              aria-label="Previous image"
+            >
+              &#8249;
+            </button>
+            <button
+              className="imageNavButton nextButton"
+              onClick={nextImage}
+              aria-label="Next image"
+            >
+              &#8250;
+            </button>
+            <div className="imageIndicators">
+              {images.map((_, index) => (
+                <div
+                  key={index}
+                  className={`indicator ${
+                    index === currentImageIndex ? "active" : ""
+                  }`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentImageIndex(index);
+                  }}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Helper function to extract images from service data
+const getServiceImages = (service: any): string[] => {
+  try {
+    let images: string[] = [];
+
+    // Check if service_image is a string (JSON) that needs parsing
+    if (service?.service_image && typeof service.service_image === "string") {
+      const parsedImages = JSON.parse(service.service_image);
+      if (Array.isArray(parsedImages)) {
+        images = parsedImages.filter(
+          (img: any) => typeof img === "string" && img.trim() !== ""
+        );
+      }
+    }
+    // Check if service_image is already an object with url array
+    else if (
+      service?.service_image &&
+      Array.isArray(service.service_image.url)
+    ) {
+      images = service.service_image.url.filter(
+        (img: any) => typeof img === "string" && img.trim() !== ""
+      );
+    }
+    // Check if service_image is already an array
+    else if (Array.isArray(service?.service_image)) {
+      images = service.service_image.filter(
+        (img: any) => typeof img === "string" && img.trim() !== ""
+      );
+    }
+
+    // Return array of valid images or fallback
+    return images.length > 0 ? images : ["/assets/desertSafari.jpg"];
+  } catch (imgError) {
+    console.warn("Error parsing service images:", imgError);
+    return ["/assets/desertSafari.jpg"];
+  }
+};
+
 export const Homepage = () => {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +131,7 @@ export const Homepage = () => {
             "id, service_name, service_description, location, service_image, default_price"
           )
           .order("created_at", { ascending: true });
+        console.log("Fetched services data:", data, error);
 
         if (error) {
           console.error("Error fetching services:", error);
@@ -56,21 +167,6 @@ export const Homepage = () => {
         "Premium experience curated by Travel Guru.",
     };
     navigate(`/bookings/${service.id}`, { state: servicePayload });
-  };
-
-  const getServiceImage = (service: any) => {
-    try {
-      if (
-        service?.service_image &&
-        Array.isArray(service.service_image.url) &&
-        service.service_image.url.length > 0
-      ) {
-        return service.service_image.url[0];
-      }
-    } catch (imgError) {
-      console.warn("Error parsing service image", imgError);
-    }
-    return "/assets/desertSafari.jpg";
   };
 
   const formatPrice = (price: any) => {
@@ -152,13 +248,7 @@ export const Homepage = () => {
                 key={service.id}
                 onClick={() => handleServiceClick(service)}
               >
-                <div className="serviceImageWrapper">
-                  <img
-                    src={getServiceImage(service)}
-                    alt={service.service_name || "Dubai service"}
-                    className="serviceImage"
-                  />
-                </div>
+                <ServiceImageGallery service={service} />
                 <div className="serviceInfo">
                   <h3 className="serviceTitle">
                     {service.service_name || "Untitled Service"}

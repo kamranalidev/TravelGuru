@@ -32,20 +32,30 @@
 }
 
 .serviceDetails {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr 380px;
     gap: 40px;
     align-items: flex-start;
+    margin-bottom: 40px;
+}
+
+.serviceDetailsContent {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
 }
 
 .serviceDescriptionBox {
-    flex: 1;
-    min-width: 280px;
+    min-width: 0; /* Allows text to wrap properly in grid */
 }
 
 .sectionHeading {
     font-weight: 700;
     margin-bottom: 16px;
+}
+
+.planHeading {
+    margin-bottom: 8px;
 }
 
 .sectionHeading.center {
@@ -67,14 +77,15 @@
     background: #ffffff;
     border: 1px solid #ececec;
     border-radius: 24px;
-    max-width: 360px;
     width: 100%;
-    padding: 28px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 18px;
+    gap: 16px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
+    position: sticky;
+    top: 20px;
 }
 
 .priceLabel {
@@ -91,33 +102,62 @@
 }
 
 .planSection {
-    margin-top: 70px;
+    margin-top: 0;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
+    align-items: flex-start;
 }
 
 .planSubtitle {
-    text-align: center;
+    text-align: left;
     color: #666;
     max-width: 520px;
-    margin: 0 auto;
+    margin: 0;
     line-height: 1.6;
+    font-size: 1rem;
 }
 
 .planGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 16px;
+}
+
+.basePlanSummary {
+    background: #ffffff;
+    border: 1px solid #ececec;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
+    max-width: 520px;
 }
 
 @media (max-width: 1024px) {
     .serviceDetails {
-        flex-direction: column;
+        grid-template-columns: 1fr;
+        gap: 32px;
     }
 
     .priceBox {
-        max-width: none;
+        position: static;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .planSection {
+        margin-top: 32px;
+        align-items: center;
+    }
+
+    .planSubtitle {
+        text-align: center;
+        margin: 0 auto;
+    }
+
+    .basePlanSummary {
+        width: 100%;
     }
 }
 
@@ -136,5 +176,20 @@
 
     .planGrid {
         grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .serviceDetails {
+        gap: 24px;
+    }
+
+    .priceBox {
+        padding: 20px;
+        gap: 14px;
+    }
+
+    .planSection {
+        margin-top: 24px;
+        gap: 16px;
     }
 }
