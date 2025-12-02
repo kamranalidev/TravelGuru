@@ -1,5 +1,4 @@
 import Card from '@mui/material/Card';
-import { ButtonComponent } from '../Button';
 export const MiniCard = (props: { title: string, buttonTitle: string, location?: string, image?: string }) => {
     return (
         <div>

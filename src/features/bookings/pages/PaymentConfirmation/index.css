@@ -1,10 +1,45 @@
 .centerSection{
     display: flex;
     justify-content: center;
-    align-items: top;
-    gap:20px;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
 }
+
 .textStyle{
     font-size: 0.9rem;
     color: #666;
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+    .centerSection {
+        flex-direction: column;
+        align-items: stretch;
     }
+}
+
+@media (max-width: 768px) {
+    .centerSection {
+        padding: 16px;
+        gap: 16px;
+    }
+    
+    .textStyle {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .centerSection {
+        padding: 12px;
+        gap: 12px;
+    }
+    
+    .textStyle {
+        font-size: 0.8rem;
+    }
+}

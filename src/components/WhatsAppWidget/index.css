@@ -1,0 +1,111 @@
+.whatsapp-widget-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.whatsapp-widget {
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%) !important;
+  color: white !important;
+  width: 64px !important;
+  height: 64px !important;
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative;
+}
+
+.whatsapp-widget:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 6px 30px rgba(37, 211, 102, 0.6) !important;
+  background: linear-gradient(135deg, #128c7e 0%, #25d366 100%) !important;
+}
+
+
+.whatsapp-icon {
+  font-size: 32px !important;
+  animation: none;
+}
+
+.whatsapp-pulse-ring {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(37, 211, 102, 0.4);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .whatsapp-widget-container {
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .whatsapp-widget {
+    width: 56px !important;
+    height: 56px !important;
+  }
+
+  .whatsapp-icon {
+    font-size: 28px !important;
+  }
+
+  .whatsapp-pulse-ring {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+@media (max-width: 480px) {
+  .whatsapp-widget-container {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .whatsapp-widget {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .whatsapp-icon {
+    font-size: 26px !important;
+  }
+
+  .whatsapp-pulse-ring {
+    width: 52px;
+    height: 52px;
+  }
+}
+
+/* Accessibility - reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .whatsapp-pulse-ring {
+    animation: none;
+  }
+
+  .whatsapp-widget {
+    transition: none !important;
+  }
+}
+

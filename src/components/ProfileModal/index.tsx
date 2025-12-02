@@ -44,7 +44,6 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
     profile_picture: "",
     bio: "",
     nationality: "",
-    date_of_birth: "",
     address: "",
     emergency_contact_name: "",
     emergency_contact_phone: "",
@@ -85,7 +84,6 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
           "",
         bio: data?.bio || "",
         nationality: data?.nationality || "",
-        date_of_birth: data?.date_of_birth || "",
         address: data?.address || "",
         emergency_contact_name: data?.emergency_contact_name || "",
         emergency_contact_phone: data?.emergency_contact_phone || "",
@@ -259,16 +257,6 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
       errors.phone_number = "Please enter a valid phone number";
     }
 
-    if (!formData.date_of_birth) {
-      errors.date_of_birth = "Date of birth is required";
-    } else {
-      const birthDate = new Date(formData.date_of_birth);
-      const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      if (age < 16 || age > 120) {
-        errors.date_of_birth = "Please enter a valid date of birth";
-      }
-    }
 
     if (!formData.nationality?.trim()) {
       errors.nationality = "Nationality is required";
@@ -321,7 +309,6 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
         profile_picture: formData.profile_picture || null,
         bio: formData.bio || null,
         nationality: formData.nationality || null,
-        date_of_birth: formData.date_of_birth || null,
         address: formData.address || null,
         emergency_contact_name: formData.emergency_contact_name || null,
         emergency_contact_phone: formData.emergency_contact_phone || null,
@@ -361,7 +348,6 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
     const requiredFields = [
       "full_name",
       "phone_number",
-      "date_of_birth",
       "nationality",
       "address",
     ];
@@ -402,21 +388,23 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: "16px",
-          background: "rgba(255, 255, 255, 0.95)",
-          backdropFilter: "blur(20px)",
-          border: "1px solid rgba(255, 255, 255, 0.3)",
-          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
-        },
-      }}
-    >
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: { xs: "16px", md: "24px" },
+            background: "rgba(255, 255, 255, 0.95)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
+            margin: { xs: "16px", md: "32px" },
+            maxHeight: { xs: "90vh", md: "85vh" },
+          },
+        }}
+      >
       <DialogTitle
         sx={{
           display: "flex",
@@ -425,7 +413,7 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
           background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
           color: "white",
           m: 0,
-          p: 3,
+          p: { xs: 2, md: 3 },
         }}
       >
         <Box>
@@ -456,7 +444,7 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 3 }}>
+      <DialogContent sx={{ p: { xs: 2, md: 3 }, overflowY: "auto" }}>
         {loading ? (
           <Box display="flex" justifyContent="center" py={4}>
             <CircularProgress />
@@ -618,41 +606,20 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
                   helperText="Email cannot be changed"
                 />
               </Box>
-              <Box
-                display="flex"
-                gap={2}
-                flexDirection={{ xs: "column", sm: "row" }}
-              >
-                <TextField
-                  fullWidth
-                  label="Phone Number"
-                  value={formData.phone_number}
-                  onChange={handleInputChange("phone_number")}
-                  variant="outlined"
-                  placeholder="+971 50 123 4567"
-                  required
-                  error={!!validationErrors.phone_number}
-                  helperText={
-                    validationErrors.phone_number ||
-                    "Include country code (e.g., +971)"
-                  }
-                />
-                <TextField
-                  fullWidth
-                  label="Date of Birth"
-                  type="date"
-                  value={formData.date_of_birth}
-                  onChange={handleInputChange("date_of_birth")}
-                  variant="outlined"
-                  InputLabelProps={{ shrink: true }}
-                  required
-                  error={!!validationErrors.date_of_birth}
-                  helperText={
-                    validationErrors.date_of_birth ||
-                    "Required for travel bookings"
-                  }
-                />
-              </Box>
+              <TextField
+                fullWidth
+                label="Phone Number"
+                value={formData.phone_number}
+                onChange={handleInputChange("phone_number")}
+                variant="outlined"
+                placeholder="+971 50 123 4567"
+                required
+                error={!!validationErrors.phone_number}
+                helperText={
+                  validationErrors.phone_number ||
+                  "Include country code (e.g., +971)"
+                }
+              />
               <Box
                 display="flex"
                 gap={2}
@@ -778,7 +745,7 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
         )}
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, gap: 2 }}>
+      <DialogActions sx={{ p: { xs: 2, md: 3 }, gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
         <Button
           onClick={handleClose}
           variant="outlined"

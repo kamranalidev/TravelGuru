@@ -1,4 +1,3 @@
-import React from 'react'
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
 import "./index.css";
@@ -22,21 +21,12 @@ export const CustomCarousel = ({children}:any) => {
             items: 1
         }
     };
-    const CustomRightArrow = ({ onClick, ...rest }: any) => {
-        const {
-            onMove,
-            carouselState: { currentSlide, deviceType }
-        } = rest;
-        // onMove means if dragging or swiping in progress.
+    const CustomRightArrow = ({ onClick }: any) => {
         return (<button onClick={() => onClick()} className="custom-right-arrow">
             <img src="/assets/icons/rightArrow.svg" alt="Right Arrow" />
         </button>)
     };
-    const CustomLeftArrow = ({ onClick, ...rest }: any) => {
-        const {
-            onMove,
-            carouselState: { currentSlide, deviceType }
-        } = rest;
+    const CustomLeftArrow = ({ onClick }: any) => {
         return (<button onClick={() => onClick()} className="custom-left-arrow">
             <img src="/assets/icons/leftArrow.svg" alt="Left Arrow" />
         </button>)

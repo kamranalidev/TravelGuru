@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Typography, Card, Alert } from "@mui/material";
+import { Box, Typography, Card, Alert, LinearProgress } from "@mui/material";
 import {
   CustomTextField,
   ButtonComponent,
@@ -7,6 +7,7 @@ import {
 } from "../../../../components";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../../supabaseClient";
+import { validatePassword, getPasswordStrengthColor } from "../../../../utils/passwordValidation";
 import "../../shared.css";
 
 export const SignupPage = () => {
@@ -14,6 +15,23 @@ export const SignupPage = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordValidation, setPasswordValidation] = useState<{
+    isValid: boolean;
+    errors: string[];
+    strength: 'weak' | 'medium' | 'strong';
+  } | null>(null);
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    if (newPassword) {
+      const validation = validatePassword(newPassword);
+      setPasswordValidation(validation);
+    } else {
+      setPasswordValidation(null);
+    }
+  };
 
   async function signUpWithEmail(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,6 +45,14 @@ export const SignupPage = () => {
       email: formdata.get("email") as string,
       password: formdata.get("password") as string,
     };
+
+    // Validate password strength
+    const passwordValidation = validatePassword(userData.password);
+    if (!passwordValidation.isValid) {
+      setError(passwordValidation.errors.join('. '));
+      setLoading(false);
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.signUp({
@@ -72,7 +98,7 @@ export const SignupPage = () => {
       <Card className="auth-card">
         <Box className="auth-header">
           <img
-            src="/assets/travelLogo.jpeg"
+            src="/assets/Logo-02.png"
             alt="TravelGuru Logo"
             className="auth-logo"
           />
@@ -110,12 +136,60 @@ export const SignupPage = () => {
             required
             fullWidth
           />
-          <PasswordField
-            placeholder="Password"
-            name="password"
-            required
-            fullWidth
-          />
+          <Box sx={{ width: "100%" }}>
+            <PasswordField
+              placeholder="Password"
+              name="password"
+              value={password}
+              onChange={handlePasswordChange}
+              required
+              fullWidth
+              helperText={
+                passwordValidation
+                  ? passwordValidation.errors.length > 0
+                    ? passwordValidation.errors[0]
+                    : `Password strength: ${passwordValidation.strength}`
+                  : "Must be at least 8 characters with uppercase, lowercase, number, and special character"
+              }
+              error={passwordValidation ? !passwordValidation.isValid : false}
+            />
+            {password && passwordValidation && (
+              <Box sx={{ mt: 1 }}>
+                <LinearProgress
+                  variant="determinate"
+                  value={
+                    passwordValidation.strength === 'weak'
+                      ? 33
+                      : passwordValidation.strength === 'medium'
+                      ? 66
+                      : 100
+                  }
+                  sx={{
+                    height: 4,
+                    borderRadius: 2,
+                    backgroundColor: '#e0e0e0',
+                    '& .MuiLinearProgress-bar': {
+                      backgroundColor: getPasswordStrengthColor(passwordValidation.strength),
+                      borderRadius: 2,
+                    },
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: getPasswordStrengthColor(passwordValidation.strength),
+                    fontSize: '0.75rem',
+                    mt: 0.5,
+                    display: 'block',
+                  }}
+                >
+                  {passwordValidation.strength.charAt(0).toUpperCase() +
+                    passwordValidation.strength.slice(1)}{' '}
+                  password
+                </Typography>
+              </Box>
+            )}
+          </Box>
 
           <ButtonComponent
             title={loading ? "Creating Account..." : "Sign Up"}

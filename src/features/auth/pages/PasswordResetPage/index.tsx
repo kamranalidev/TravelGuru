@@ -38,22 +38,22 @@ export const PasswordResetPage = () => {
   return (
     <Box className="auth-main">
       <Box className="auth-background">
-        <img 
-          src="/assets/yachtdubai.jpg" 
-          alt="Dubai Marina" 
+        <img
+          src="/assets/yachtdubai.jpg"
+          alt="Dubai Marina"
           style={{
             width: "100%",
             height: "100%",
-            objectFit: "cover"
+            objectFit: "cover",
           }}
         />
         <Box className="auth-overlay" />
       </Box>
-      
+
       <Card className="auth-card">
         <Box className="auth-header">
           <img
-            src="/assets/travelLogo.jpeg"
+            src="/assets/Logo-02.png"
             alt="TravelGuru Logo"
             className="auth-logo"
           />
@@ -87,7 +87,7 @@ export const PasswordResetPage = () => {
             required
             fullWidth
           />
-          
+
           <ButtonComponent
             title={loading ? "Sending..." : "Send Reset Email"}
             width="100%"
@@ -97,16 +97,10 @@ export const PasswordResetPage = () => {
         </form>
 
         <Box className="auth-links">
-          <Typography
-            onClick={() => navigate("/login")}
-            className="auth-link"
-          >
+          <Typography onClick={() => navigate("/login")} className="auth-link">
             Back to Login
           </Typography>
-          <Typography
-            onClick={() => navigate("/signup")}
-            className="auth-link"
-          >
+          <Typography onClick={() => navigate("/signup")} className="auth-link">
             Create Account
           </Typography>
         </Box>

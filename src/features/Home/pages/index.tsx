@@ -120,7 +120,36 @@ export const Homepage = () => {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentHeroImageIndex, setCurrentHeroImageIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(true);
   const navigate = useNavigate();
+
+  // Dubai images from assets folder
+  const dubaiImages = [
+    "/assets/burjKhalifa.jpg",
+    "/assets/IMG_0458.JPG",
+    "/assets/IMG_0459.JPG",
+    "/assets/IMG_0460.JPG",
+    "/assets/IMG_0461.JPG",
+    "/assets/IMG_0462.JPG",
+    "/assets/IMG_0463.JPG",
+    "/assets/IMG_0464.JPG",
+    "/assets/IMG_0465.JPG",
+    "/assets/IMG_0466.JPG",
+    "/assets/IMG_0467.JPG",
+    "/assets/IMG_1972.JPG",
+    "/assets/IMG_1975.JPG",
+    "/assets/IMG_1981.JPG",
+    "/assets/IMG_3423.JPG",
+    "/assets/IMG_3425.JPG",
+    "/assets/IMG_3438.JPG",
+    "/assets/IMG_3439.JPG",
+    "/assets/IMG_3440.JPG",
+    "/assets/IMG_3441.JPG",
+    "/assets/IMG_3442.JPG",
+    "/assets/IMG_3443.JPG",
+    "/assets/IMG_3444.JPG",
+  ];
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -157,6 +186,28 @@ export const Homepage = () => {
     fetchServices();
   }, []);
 
+  // Auto-change hero image every 5 seconds with smooth transition
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setImageLoaded(false); // Start fade out
+      setTimeout(() => {
+        setCurrentHeroImageIndex(
+          (prevIndex) => (prevIndex + 1) % dubaiImages.length
+        );
+      }, 200); // Small delay for smooth transition
+    }, 5000); // Change image every 5 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, [dubaiImages.length]);
+
+  // Preload images for smooth transitions
+  useEffect(() => {
+    dubaiImages.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, [dubaiImages]);
+
   const handleServiceClick = (service: any) => {
     if (!service?.id) return;
     const servicePayload = {
@@ -176,6 +227,13 @@ export const Homepage = () => {
     return `From AED ${Number(price).toLocaleString()}`;
   };
 
+  const scrollToServices = () => {
+    const servicesSection = document.getElementById("premium-services");
+    if (servicesSection) {
+      servicesSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <div>
       <Header />
@@ -190,16 +248,47 @@ export const Homepage = () => {
             <p className="heroSubtitle">
               Experience the best of Dubai with our premium services
             </p>
-            <ButtonComponent title="BOOK NOW" />
+            <ButtonComponent title="BOOK NOW" onClick={scrollToServices} />
           </div>
           <div className="heroImageContainer">
             <img
               className="heroImage"
-              src="/assets/burjKhalifa.jpg"
+              src={dubaiImages[currentHeroImageIndex]}
               alt="Dubai"
+              onLoad={() => setImageLoaded(true)}
+              onError={(e) => {
+                // Fallback to first image if current image fails to load
+                const target = e.target as HTMLImageElement;
+                target.src = dubaiImages[0];
+                setImageLoaded(true);
+              }}
+              style={{
+                transition:
+                  "opacity 0.8s ease-in-out, transform 0.8s ease-in-out",
+                opacity: imageLoaded ? 1 : 0.8,
+                transform: `scale(${imageLoaded ? 1 : 1.05})`,
+              }}
             />
             <div className="heroImageBadge">
               <span className="badgeText">Dubai</span>
+            </div>
+
+            {/* Image carousel indicators */}
+            <div className="heroImageIndicators">
+              {dubaiImages.map((_, index) => (
+                <div
+                  key={index}
+                  className={`indicator ${
+                    index === currentHeroImageIndex ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    setImageLoaded(false);
+                    setTimeout(() => {
+                      setCurrentHeroImageIndex(index);
+                    }, 200);
+                  }}
+                />
+              ))}
             </div>
             <div className="heroTravelers">
               <div className="travelerAvatars">
@@ -217,7 +306,10 @@ export const Homepage = () => {
         </div>
       </Box>
       {/* Featured Services */}
-      <Box sx={{ backgroundColor: "#fff", padding: "60px 0" }}>
+      <Box
+        id="premium-services"
+        sx={{ backgroundColor: "#fff", padding: "60px 0" }}
+      >
         <p className="servicesHeader">
           Our Premium{" "}
           <Typography

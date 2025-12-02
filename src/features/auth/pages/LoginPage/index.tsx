@@ -82,7 +82,7 @@ export const LoginPage = () => {
       <Card className="auth-card">
         <Box className="auth-header">
           <img
-            src="/assets/travelLogo.jpeg"
+            src="/assets/Logo-02.png"
             alt="TravelGuru Logo"
             className="auth-logo"
           />

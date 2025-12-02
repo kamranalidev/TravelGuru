@@ -99,6 +99,16 @@ const ProfilePage = lazy(() =>
     default: module.ProfilePage,
   }))
 );
+const FAQPage = lazy(() =>
+  import("../features/FAQ").then((module) => ({
+    default: module.FAQPage,
+  }))
+);
+const MyBookingsPage = lazy(() =>
+  import("../features/bookings/pages/MyBookings").then((module) => ({
+    default: module.MyBookings,
+  }))
+);
 export default function AppRouter() {
   return (
     <>
@@ -173,6 +183,22 @@ export default function AppRouter() {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/faq"
+            element={
+              <PublicRoute>
+                <FAQPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/bookings"
+            element={
+              <ProtectedRoute>
+                <MyBookingsPage />
               </ProtectedRoute>
             }
           />

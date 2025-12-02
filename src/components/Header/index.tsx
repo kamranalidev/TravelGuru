@@ -10,7 +10,14 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import Drawer from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
 import Logout from "@mui/icons-material/Logout";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
 import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
 import ManageAccountsRoundedIcon from "@mui/icons-material/ManageAccountsRounded";
 import theme from "../../theme";
@@ -19,10 +26,15 @@ import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../supabaseClient";
 import { ProfileModal } from "../ProfileModal";
 
-const pages = [
-  { label: "Home", route: "/" },
-  { label: "Services", route: "/services" },
+interface PageItem {
+  label: string;
+  route: string;
+  isScroll?: boolean;
+}
 
+const pages: PageItem[] = [
+  { label: "Home", route: "/" },
+  { label: "Services", route: "/#premium-services", isScroll: true },
   { label: "FAQ", route: "/faq" },
 ];
 
@@ -31,10 +43,41 @@ export const Header = (props: { hidePages?: boolean }) => {
   const { session, profile } = useAuth();
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMenuOpen = Boolean(menuAnchor);
 
-  const handleNavigate = (route: string) => {
-    navigate(route);
+  const handleNavigate = (route: string, isScroll?: boolean) => {
+    if (isScroll && route.includes("#")) {
+      const [path, sectionId] = route.split("#");
+
+      // If we're not on the home page, navigate first
+      if (window.location.pathname !== path) {
+        navigate(path);
+        // Wait for navigation to complete, then scroll
+        setTimeout(() => {
+          const element = document.getElementById(sectionId);
+          if (element) {
+            element.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+              inline: "nearest",
+            });
+          }
+        }, 100);
+      } else {
+        // Already on the right page, just scroll
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+            inline: "nearest",
+          });
+        }
+      }
+    } else {
+      navigate(route);
+    }
   };
 
   const handleOpenMenu = (event: MouseEvent<HTMLElement>) => {
@@ -159,17 +202,23 @@ export const Header = (props: { hidePages?: boolean }) => {
                 display: "flex",
                 alignItems: "center",
                 cursor: "pointer",
+                flexShrink: 0,
               }}
               onClick={() => navigate("/")}
             >
               <img
                 src="/assets/Logo-02.png"
                 alt="TravelGuru Logo"
-                style={{ width: "120px", height: "auto" }} // Slightly larger logo
+                style={{ 
+                  width: "120px", 
+                  height: "auto",
+                  maxWidth: "100%",
+                }}
               />
             </Box>
             {!props.hidePages && (
               <>
+                {/* Desktop Navigation */}
                 <Box
                   sx={{
                     display: { xs: "none", md: "flex" },
@@ -180,10 +229,10 @@ export const Header = (props: { hidePages?: boolean }) => {
                   {pages.map((page) => (
                     <Button
                       key={page.label}
-                      onClick={() => handleNavigate(page.route)}
+                      onClick={() => handleNavigate(page.route, page.isScroll)}
                       sx={{
                         color: theme.palette.secondary.main,
-                        fontWeight: 600, // Increased font weight for better visibility
+                        fontWeight: 600,
                         textTransform: "none",
                         fontSize: "1rem",
                         px: 2,
@@ -200,6 +249,120 @@ export const Header = (props: { hidePages?: boolean }) => {
                     </Button>
                   ))}
                 </Box>
+
+                {/* Mobile Menu Button */}
+                <IconButton
+                  onClick={() => setMobileMenuOpen(true)}
+                  sx={{
+                    display: { xs: "flex", md: "none" },
+                    color: theme.palette.secondary.main,
+                  }}
+                >
+                  <MenuIcon />
+                </IconButton>
+
+                {/* Mobile Drawer */}
+                <Drawer
+                  anchor="right"
+                  open={mobileMenuOpen}
+                  onClose={() => setMobileMenuOpen(false)}
+                  PaperProps={{
+                    sx: {
+                      width: { xs: "280px", sm: "320px" },
+                      background: "rgba(255, 255, 255, 0.95)",
+                      backdropFilter: "blur(20px)",
+                    },
+                  }}
+                >
+                  <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.secondary.main }}>
+                      Menu
+                    </Typography>
+                    <IconButton onClick={() => setMobileMenuOpen(false)}>
+                      <CloseIcon />
+                    </IconButton>
+                  </Box>
+                  <Divider />
+                  <List>
+                    {pages.map((page) => (
+                      <ListItemButton
+                        key={page.label}
+                        onClick={() => {
+                          handleNavigate(page.route, page.isScroll);
+                          setMobileMenuOpen(false);
+                        }}
+                        sx={{
+                          "&:hover": {
+                            backgroundColor: "rgba(255, 98, 31, 0.1)",
+                          },
+                        }}
+                      >
+                        <ListItemText
+                          primary={page.label}
+                          primaryTypographyProps={{
+                            fontWeight: 600,
+                            color: theme.palette.secondary.main,
+                          }}
+                        />
+                      </ListItemButton>
+                    ))}
+                  </List>
+                  {isAuthenticated && (
+                    <>
+                      <Divider sx={{ my: 1 }} />
+                      <List>
+                        <ListItemButton
+                          onClick={() => {
+                            handleProfileNavigate();
+                            setMobileMenuOpen(false);
+                          }}
+                          sx={{
+                            "&:hover": {
+                              backgroundColor: "rgba(255, 98, 31, 0.1)",
+                            },
+                          }}
+                        >
+                          <ListItemIcon>
+                            <ManageAccountsRoundedIcon />
+                          </ListItemIcon>
+                          <ListItemText primary="Profile" />
+                        </ListItemButton>
+                        <ListItemButton
+                          onClick={() => {
+                            handleBookingsNavigate();
+                            setMobileMenuOpen(false);
+                          }}
+                          sx={{
+                            "&:hover": {
+                              backgroundColor: "rgba(255, 98, 31, 0.1)",
+                            },
+                          }}
+                        >
+                          <ListItemIcon>
+                            <EventNoteRoundedIcon />
+                          </ListItemIcon>
+                          <ListItemText primary="Bookings" />
+                        </ListItemButton>
+                        <ListItemButton
+                          onClick={() => {
+                            handleLogout();
+                            setMobileMenuOpen(false);
+                          }}
+                          sx={{
+                            "&:hover": {
+                              backgroundColor: "rgba(255, 98, 31, 0.1)",
+                            },
+                          }}
+                        >
+                          <ListItemIcon>
+                            <Logout />
+                          </ListItemIcon>
+                          <ListItemText primary="Logout" />
+                        </ListItemButton>
+                      </List>
+                    </>
+                  )}
+                </Drawer>
                 <Box
                   sx={{
                     display: "flex",

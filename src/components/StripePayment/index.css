@@ -1,0 +1,26 @@
+.stripe-payment-container {
+  width: 100%;
+  padding: 0;
+}
+
+.payment-element-wrapper {
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  margin: 16px 0;
+}
+
+/* Stripe Elements styling */
+.payment-element-wrapper .StripeElement {
+  padding: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .payment-element-wrapper {
+    padding: 16px;
+  }
+}
+
+

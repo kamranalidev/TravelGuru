@@ -12,11 +12,13 @@
     max-width: 1400px;
     margin: 0 auto;
     gap: 60px;
+    flex-wrap: wrap;
 }
 
 .heroText {
     flex: 1;
     max-width: 500px;
+    min-width: 280px;
 }
 
 .heroTitle {
@@ -39,6 +41,9 @@
     position: relative;
     flex: 1;
     max-width: 600px;
+    min-width: 280px;
+    overflow: hidden;
+    border-radius: 30px;
 }
 
 .heroImage {
@@ -47,6 +52,113 @@
     object-fit: cover;
     border-radius: 30px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+}
+
+/* Responsive Hero Section */
+@media (max-width: 1024px) {
+    .heroContent {
+        flex-direction: column;
+        gap: 40px;
+    }
+    
+    .heroText {
+        max-width: 100%;
+        text-align: center;
+    }
+    
+    .heroTitle {
+        font-size: 3.5rem;
+    }
+    
+    .heroImageContainer {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .heroSection {
+        padding: 60px 4% 40px;
+        min-height: auto;
+    }
+    
+    .heroTitle {
+        font-size: 2.5rem;
+    }
+    
+    .heroSubtitle {
+        font-size: 1.1rem;
+    }
+    
+    .heroImage {
+        height: 300px;
+    }
+    
+    .heroImageBadge {
+        top: 15px;
+        right: 15px;
+        padding: 8px 16px;
+    }
+    
+    .heroTravelers {
+        bottom: 15px;
+        right: 15px;
+        padding: 10px 15px;
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .heroSection {
+        padding: 40px 3% 30px;
+    }
+    
+    .heroTitle {
+        font-size: 2rem;
+    }
+    
+    .heroSubtitle {
+        font-size: 1rem;
+        margin: 0 0 30px 0;
+    }
+    
+    .heroImage {
+        height: 250px;
+    }
+}
+
+.heroImageIndicators {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 3;
+}
+
+.indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.indicator:hover {
+    background: rgba(255, 255, 255, 0.8);
+    transform: scale(1.2);
+}
+
+.indicator.active {
+    background: #FF621F;
+    box-shadow: 0 0 15px rgba(255, 98, 31, 0.6);
+    transform: scale(1.3);
 }
 
 .heroImageBadge {
@@ -137,6 +249,53 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 5%;
+}
+
+/* Responsive Services Grid */
+@media (max-width: 1024px) {
+    .servicesGrid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        padding: 0 3%;
+    }
+    
+    .servicesHeader {
+        font-size: 2.2rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .servicesGrid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        padding: 0 2%;
+    }
+    
+    .servicesHeader {
+        font-size: 2rem;
+        padding: 0 16px;
+    }
+    
+    .servicesSubtitle {
+        font-size: 1.1rem;
+        padding: 0 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .servicesGrid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 0 12px;
+    }
+    
+    .servicesHeader {
+        font-size: 1.75rem;
+    }
+    
+    .serviceCard {
+        width: 100%;
+    }
 }
 
 .serviceCard {
@@ -376,6 +535,7 @@
     padding: 10px;
     gap: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap;
 }
 
 .subscribeField {
@@ -385,6 +545,47 @@
     font-size: 1rem;
     padding: 10px 20px;
     border-radius: 30px;
+    min-width: 200px;
+}
+
+/* Responsive Subscribe Section */
+@media (max-width: 768px) {
+    .subscribe {
+        width: calc(100% - 40px);
+        margin: 60px auto;
+        padding: 40px 20px;
+        border-radius: 30px;
+    }
+    
+    .subscribeHeader {
+        font-size: 2rem;
+        margin-bottom: 24px;
+    }
+    
+    .subscribeInput {
+        flex-direction: column;
+        border-radius: 30px;
+    }
+    
+    .subscribeField {
+        width: 100%;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .subscribe {
+        width: calc(100% - 24px);
+        margin: 40px auto;
+        padding: 30px 16px;
+        border-radius: 24px;
+    }
+    
+    .subscribeHeader {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+    }
+}
     color: #333;
 }
 

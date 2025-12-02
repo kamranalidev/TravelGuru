@@ -1,13 +1,29 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ButtonComponent, Header, ReviewComponent, ProfileModal } from "../../../components";
-import { Alert, Box, Typography, Button, styled, DialogActions, DialogContent, DialogTitle } from "@mui/material";
+import {
+  ButtonComponent,
+  Header,
+  ReviewComponent,
+  ProfileModal,
+  Footer,
+} from "../../../components";
+import {
+  Alert,
+  Box,
+  Typography,
+  Button,
+  styled,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import Dialog from "@mui/material/Dialog";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../supabaseClient";
 import { useAuth } from "../../../hooks/useAuth";
@@ -101,15 +117,18 @@ export const BookingPage = () => {
   const [date, setDate] = useState(dayjs()); // today's date
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
+  const [departureArrivalTime, setDepartureArrivalTime] = useState<dayjs.Dayjs | null>(null);
   const navigate = useNavigate();
   const { session, profile, refreshProfile } = useAuth();
   const [bookingFeedback, setBookingFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [isBooking, setIsBooking] = useState(false);
+  const [isBooking] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+  const [userBookingId, setUserBookingId] = useState<number | null>(null);
+  const [canReview, setCanReview] = useState(false);
   const [pageData, setPageData] = useState({
     Image: [] as string[],
     description: "",
@@ -211,6 +230,59 @@ export const BookingPage = () => {
     // edge case if user directly lands on this page without navigation via refresh
   }, []);
 
+  // Check if user has a booking for this service that they can review
+  useEffect(() => {
+    const checkUserBooking = async () => {
+      if (!session?.user?.id || !pageData.id) {
+        setUserBookingId(null);
+        setCanReview(false);
+        return;
+      }
+
+      try {
+        // Check for bookings for this service by this user
+        // Allow reviews for any booking (not just completed ones)
+        const { data: bookings, error } = await supabase
+          .from("bookings")
+          .select("id, booking_date")
+          .eq("service_id", pageData.id)
+          .eq("user_id", session.user.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (error) {
+          console.error("Error checking user bookings:", error);
+          return;
+        }
+
+        if (bookings && bookings.length > 0) {
+          // Check if user already reviewed this booking
+          const { data: existingReview } = await supabase
+            .from("reviews")
+            .select("id")
+            .eq("booking_id", bookings[0].id)
+            .eq("user_id", session.user.id)
+            .single();
+
+          if (!existingReview) {
+            setUserBookingId(bookings[0].id);
+            setCanReview(true);
+          } else {
+            setUserBookingId(null);
+            setCanReview(false);
+          }
+        } else {
+          setUserBookingId(null);
+          setCanReview(false);
+        }
+      } catch (err) {
+        console.error("Error checking user booking:", err);
+      }
+    };
+
+    checkUserBooking();
+  }, [session?.user?.id, pageData.id]);
+
   const handleClick = (imgSrc: string) => {
     setSelectedImg(imgSrc);
     setOpen(true);
@@ -242,6 +314,11 @@ export const BookingPage = () => {
     return `AED ${Number(value).toLocaleString()}`;
   };
 
+  // Check if service is airport pickup
+  const isAirportPickup = pageData?.service_name?.toLowerCase().includes("airport pickup") || 
+                          pageData?.service_name?.toLowerCase().includes("airport") && 
+                          pageData?.service_name?.toLowerCase().includes("pickup");
+
   // Check if user profile has all required fields
   const checkProfileCompletion = () => {
     if (!profile) {
@@ -252,16 +329,18 @@ export const BookingPage = () => {
     }
 
     const requiredFields = [
-      { key: 'full_name', label: 'Full Name' },
-      { key: 'phone_number', label: 'Phone Number' },
-      { key: 'date_of_birth', label: 'Date of Birth' },
-      { key: 'nationality', label: 'Nationality' },
-      { key: 'address', label: 'Address' },
+      { key: "full_name", label: "Full Name" },
+      { key: "phone_number", label: "Phone Number" },
+      { key: "nationality", label: "Nationality" },
+      { key: "address", label: "Address" },
     ];
 
     const missingFields = requiredFields
-      .filter(field => !profile[field.key as keyof typeof profile]?.toString().trim())
-      .map(field => field.label);
+      .filter(
+        (field) =>
+          !profile[field.key as keyof typeof profile]?.toString().trim()
+      )
+      .map((field) => field.label);
 
     return {
       isComplete: missingFields.length === 0,
@@ -310,7 +389,9 @@ export const BookingPage = () => {
     if (!profileStatus.isComplete) {
       setBookingFeedback({
         type: "error",
-        message: `Please complete your profile before booking. Missing: ${profileStatus.missingFields.join(", ")}`,
+        message: `Please complete your profile before booking. Missing: ${profileStatus.missingFields.join(
+          ", "
+        )}`,
       });
       setShowProfileModal(true);
       return;
@@ -320,21 +401,52 @@ export const BookingPage = () => {
     setShowConfirmationDialog(true);
   };
 
-  // Proceed with actual booking after confirmation
+  // Proceed to checkout for payment
   const proceedWithBooking = async () => {
     setShowConfirmationDialog(false);
     setBookingFeedback(null);
-    setIsBooking(true);
 
-    // Validate required data before attempting to create booking
+    // Validate required data before proceeding to checkout
     if (!pageData.id || !session?.user?.id || !date) {
       setBookingFeedback({
         type: "error",
         message:
           "Missing required booking information. Please refresh and try again.",
       });
-      setIsBooking(false);
       return;
+    }
+
+    // Validate time for airport pickup services
+    if (isAirportPickup && !departureArrivalTime) {
+      setBookingFeedback({
+        type: "error",
+        message: "Please select your departure/arrival time.",
+      });
+      return;
+    }
+
+    // Check for duplicate booking on the same day
+    try {
+      const bookingDateString = date.format("YYYY-MM-DD");
+      const { data: existingBookings, error: checkError } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .eq("booking_date", bookingDateString);
+
+      if (checkError) {
+        console.error("Error checking for duplicate bookings:", checkError);
+        // Continue with booking if check fails (don't block user)
+      } else if (existingBookings && existingBookings.length > 0) {
+        setBookingFeedback({
+          type: "error",
+          message: "You already have a booking on this date. Please select a different date.",
+        });
+        return;
+      }
+    } catch (err) {
+      console.error("Error checking for duplicate bookings:", err);
+      // Continue with booking if check fails
     }
 
     const bookingData = {
@@ -347,84 +459,14 @@ export const BookingPage = () => {
         images: pageData.Image, // Include all images
       },
       bookingDate: date.format("YYYY-MM-DD"), // Format date as string
+      departureArrivalTime: departureArrivalTime ? departureArrivalTime.format("HH:mm") : null,
       selectedPackage: selectedPackage || null,
       finalPrice: finalPrice,
       packageName: selectedPackage?.name || "Standard Experience",
     };
 
-    try {
-      // Ensure data types match the database schema
-      const insertData = {
-        service_id: Number(pageData.id), // Ensure it's a number for bigint
-        package_id: selectedPackage ? Number(selectedPackage.id) : null, // Ensure it's a number or null for bigint
-        user_id: String(session.user.id), // Ensure it's a string for UUID
-        booking_date: date.format("YYYY-MM-DD"), // String format for date
-      };
-
-      console.log("=== BOOKING DEBUG INFO ===");
-      console.log("User ID:", session.user.id);
-      console.log("User object:", session.user);
-      console.log("Service ID:", pageData.id, "Type:", typeof pageData.id);
-      console.log(
-        "Package ID:",
-        selectedPackage?.id,
-        "Type:",
-        typeof selectedPackage?.id
-      );
-      console.log("Booking Date:", date.format("YYYY-MM-DD"));
-      console.log("Final insert data:", insertData);
-      console.log("========================");
-
-      const { data, error } = await supabase
-        .from("bookings")
-        .insert(insertData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("=== SUPABASE ERROR ===");
-        console.error("Message:", error.message);
-        console.error("Details:", error.details);
-        console.error("Hint:", error.hint);
-        console.error("Code:", error.code);
-        console.error("Full error object:", error);
-        console.error("===================");
-        throw error;
-      }
-
-      console.log("Booking created successfully:", data);
-      navigate("/checkout", {
-        state: {
-          ...bookingData,
-          bookingId: data.id,
-        },
-      });
-    } catch (error) {
-      console.error("Failed to create booking:", error);
-
-      // More specific error message based on error type
-      let errorMessage =
-        "We couldn't create your booking. Please try again or contact support.";
-
-      const errorMsg = (error as any)?.message || error?.toString() || "";
-      if (errorMsg.includes("violates") || errorMsg.includes("constraint")) {
-        errorMessage =
-          "Please ensure you're logged in and have selected a valid date and package.";
-      } else if (
-        errorMsg.includes("406") ||
-        errorMsg.includes("not acceptable")
-      ) {
-        errorMessage =
-          "There was an issue with your booking details. Please refresh and try again.";
-      }
-
-      setBookingFeedback({
-        type: "error",
-        message: errorMessage,
-      });
-    } finally {
-      setIsBooking(false);
-    }
+    // Navigate to checkout for payment
+    navigate("/checkout", { state: bookingData });
   };
   const MAX_CHARS = 500; // adjust this based on how many lines you want
 
@@ -604,6 +646,41 @@ export const BookingPage = () => {
               </LocalizationProvider>
             )}
 
+            {/* Time picker for airport pickup services */}
+            {isAirportPickup && (
+              <Box sx={{ mt: 2 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, marginBottom: "12px" }}
+                >
+                  Select departure/arrival time
+                </Typography>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <TimePicker
+                    label="Departure/Arrival Time"
+                    value={departureArrivalTime}
+                    onChange={(newValue: any) => {
+                      setDepartureArrivalTime(newValue);
+                    }}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        required: true,
+                        sx: {
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "8px",
+                          },
+                        },
+                      },
+                    }}
+                    sx={{
+                      width: "100%",
+                    }}
+                  />
+                </LocalizationProvider>
+              </Box>
+            )}
+
             <ButtonComponent
               title={isBooking ? "Processing..." : "Book Now"}
               width="100%"
@@ -624,7 +701,13 @@ export const BookingPage = () => {
             )}
           </Box>
         </Box>
-        <ReviewComponent />
+        <ReviewComponent 
+          serviceId={pageData.id} 
+          bookingId={userBookingId || undefined}
+          limit={5}
+          showReviewForm={true} // Always show form button if user can review
+          allowReviewSubmission={canReview && !!session?.user} // Only allow if user is logged in and has booking
+        />
       </Box>
 
       {/* Dialog for fullscreen image */}
@@ -665,7 +748,7 @@ export const BookingPage = () => {
       </Dialog>
 
       {/* Profile Modal */}
-      <ProfileModal 
+      <ProfileModal
         open={showProfileModal}
         onClose={async () => {
           setShowProfileModal(false);
@@ -676,8 +759,8 @@ export const BookingPage = () => {
       />
 
       {/* Booking Confirmation Dialog */}
-      <Dialog 
-        open={showConfirmationDialog} 
+      <Dialog
+        open={showConfirmationDialog}
         onClose={() => setShowConfirmationDialog(false)}
         PaperProps={{
           sx: {
@@ -686,14 +769,16 @@ export const BookingPage = () => {
             backdropFilter: "blur(20px)",
             border: "1px solid rgba(255, 255, 255, 0.3)",
             boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
-          }
+          },
         }}
       >
-        <DialogTitle sx={{ 
-          background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
-          color: "white",
-          textAlign: "center"
-        }}>
+        <DialogTitle
+          sx={{
+            background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+            color: "white",
+            textAlign: "center",
+          }}
+        >
           <Typography variant="h5" fontWeight="600">
             Confirm Your Booking
           </Typography>
@@ -711,7 +796,10 @@ export const BookingPage = () => {
           <Typography variant="body1" sx={{ mb: 1 }}>
             🎫 {selectedPackage?.name || "Standard Experience"}
           </Typography>
-          <Typography variant="h6" sx={{ mt: 2, fontWeight: 700, color: "#FF621F" }}>
+          <Typography
+            variant="h6"
+            sx={{ mt: 2, fontWeight: 700, color: "#FF621F" }}
+          >
             Total: {formatCurrency(finalPrice)}
           </Typography>
           <Typography variant="body2" sx={{ mt: 2, color: "text.secondary" }}>
@@ -727,8 +815,8 @@ export const BookingPage = () => {
               color: "#666",
               "&:hover": {
                 borderColor: "#ccc",
-                backgroundColor: "#f5f5f5"
-              }
+                backgroundColor: "#f5f5f5",
+              },
             }}
           >
             Cancel
@@ -744,13 +832,14 @@ export const BookingPage = () => {
               },
               "&:disabled": {
                 background: "#ccc",
-              }
+              },
             }}
           >
             {isBooking ? "Processing..." : "Yes, Book Now"}
           </Button>
         </DialogActions>
       </Dialog>
+      <Footer />
     </div>
   );
 };
