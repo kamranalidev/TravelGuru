@@ -7,14 +7,7 @@ export const Footer = () => {
   const navigate = useNavigate();
 
   return (
-    <Box 
-      className="footer"
-      sx={{
-        width: "100%",
-        boxSizing: "border-box",
-        position: "relative",
-      }}
-    >
+    <Box className="footer">
       <Box className="footerContent">
         <Box className="footer-main">
           <Box className="footer-brand">
@@ -22,7 +15,6 @@ export const Footer = () => {
               sx={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center",
                 marginBottom: 2,
                 cursor: "pointer",
               }}

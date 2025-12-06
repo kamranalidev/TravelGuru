@@ -162,21 +162,12 @@
 }
 
 @media (max-width: 768px) {
-    .servicePageContainer {
-        padding: 30px 16px 60px;
-    }
-
     .serviceTitle {
         font-size: 2.2rem;
     }
 
-    .serviceLocationTag {
-        font-size: 0.95rem;
-    }
-
     .serviceGalleryWrapper {
         border-radius: 20px;
-        margin-bottom: 30px;
     }
 
     .serviceDescriptionText {
@@ -195,55 +186,10 @@
     .priceBox {
         padding: 20px;
         gap: 14px;
-        position: static;
     }
 
     .planSection {
         margin-top: 24px;
         gap: 16px;
-    }
-
-    .sectionHeading {
-        font-size: 1.5rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .servicePageContainer {
-        padding: 20px 12px 40px;
-    }
-
-    .serviceTitle {
-        font-size: 1.75rem;
-    }
-
-    .serviceLocationTag {
-        font-size: 0.9rem;
-    }
-
-    .serviceGalleryWrapper {
-        border-radius: 16px;
-        margin-bottom: 24px;
-    }
-
-    .serviceDescriptionText {
-        font-size: 0.95rem;
-    }
-
-    .priceBox {
-        padding: 16px;
-        border-radius: 20px;
-    }
-
-    .priceValue {
-        font-size: 1.8rem;
-    }
-
-    .sectionHeading {
-        font-size: 1.3rem;
-    }
-
-    .planGrid {
-        gap: 12px;
     }
 }

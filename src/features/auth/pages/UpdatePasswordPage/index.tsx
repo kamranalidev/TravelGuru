@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Card, Alert, LinearProgress } from "@mui/material";
+import { Box, Typography, Card, Alert } from "@mui/material";
 import { PasswordField, ButtonComponent } from "../../../../components";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../../../supabaseClient";
-import { validatePassword, getPasswordStrengthColor } from "../../../../utils/passwordValidation";
 import "../../shared.css";
 
 export const UpdatePasswordPage = () => {
@@ -12,11 +11,6 @@ export const UpdatePasswordPage = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [passwordValidation, setPasswordValidation] = useState<{
-    isValid: boolean;
-    errors: string[];
-    strength: 'weak' | 'medium' | 'strong';
-  } | null>(null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -42,10 +36,8 @@ export const UpdatePasswordPage = () => {
       return;
     }
 
-    // Validate strong password
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
-      setError(passwordValidation.errors.join('. '));
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
       setLoading(false);
       return;
     }
@@ -113,69 +105,16 @@ export const UpdatePasswordPage = () => {
         )}
 
         <form onSubmit={handleUpdatePassword} className="auth-form">
-          <Box sx={{ width: "100%" }}>
-            <PasswordField
-              placeholder="New Password"
-              name="password"
-              value={password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const newPassword = e.target.value;
-                setPassword(newPassword);
-                if (newPassword) {
-                  const validation = validatePassword(newPassword);
-                  setPasswordValidation(validation);
-                } else {
-                  setPasswordValidation(null);
-                }
-              }}
-              required
-              fullWidth
-              helperText={
-                passwordValidation
-                  ? passwordValidation.errors.length > 0
-                    ? passwordValidation.errors[0]
-                    : `Password strength: ${passwordValidation.strength}`
-                  : "Must be at least 8 characters with uppercase, lowercase, number, and special character"
-              }
-              error={passwordValidation ? !passwordValidation.isValid : false}
-            />
-            {password && passwordValidation && (
-              <Box sx={{ mt: 1 }}>
-                <LinearProgress
-                  variant="determinate"
-                  value={
-                    passwordValidation.strength === 'weak'
-                      ? 33
-                      : passwordValidation.strength === 'medium'
-                      ? 66
-                      : 100
-                  }
-                  sx={{
-                    height: 4,
-                    borderRadius: 2,
-                    backgroundColor: '#e0e0e0',
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: getPasswordStrengthColor(passwordValidation.strength),
-                      borderRadius: 2,
-                    },
-                  }}
-                />
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: getPasswordStrengthColor(passwordValidation.strength),
-                    fontSize: '0.75rem',
-                    mt: 0.5,
-                    display: 'block',
-                  }}
-                >
-                  {passwordValidation.strength.charAt(0).toUpperCase() +
-                    passwordValidation.strength.slice(1)}{' '}
-                  password
-                </Typography>
-              </Box>
-            )}
-          </Box>
+          <PasswordField
+            placeholder="New Password"
+            name="password"
+            value={password}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setPassword(e.target.value)
+            }
+            required
+            fullWidth
+          />
           <PasswordField
             placeholder="Confirm Password"
             name="confirmPassword"

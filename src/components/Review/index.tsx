@@ -7,8 +7,6 @@ import {
   Alert,
 } from "@mui/material";
 import { supabase } from "../../supabaseClient";
-import { useAuth } from "../../hooks/useAuth";
-import { ReviewSubmission } from "../ReviewSubmission";
 
 interface Review {
   id: number;
@@ -27,22 +25,16 @@ interface ReviewComponentProps {
   serviceId?: number;
   bookingId?: number;
   limit?: number;
-  showReviewForm?: boolean;
-  allowReviewSubmission?: boolean;
 }
 
 export const ReviewComponent = ({
   serviceId,
   bookingId,
   limit = 10,
-  showReviewForm = false,
-  allowReviewSubmission = false,
 }: ReviewComponentProps) => {
-  const { session } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -130,11 +122,7 @@ export const ReviewComponent = ({
 
   useEffect(() => {
     fetchReviews();
-  }, [fetchReviews, refreshKey]);
-
-  const handleReviewSubmitted = () => {
-    setRefreshKey((prev) => prev + 1);
-  };
+  }, [fetchReviews]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -161,52 +149,14 @@ export const ReviewComponent = ({
     );
   }
 
-  // Check if user can review:
-  // - Must be logged in
-  // - Must have allowReviewSubmission enabled
-  // - Must have a bookingId (meaning they have a booking for this service)
-  const canUserReview = allowReviewSubmission && session?.user && bookingId;
-  
-  // Show review form button if user is logged in and can review
-  const showReviewButton = session?.user && canUserReview;
-
   if (reviews.length === 0) {
     return (
       <Box sx={{ p: 4, textAlign: "center" }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mb: 3,
-            flexWrap: "wrap",
-            gap: 2,
-          }}
-        >
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 700,
-              color: "#333",
-              fontSize: { xs: "1.5rem", md: "2rem" },
-            }}
-          >
-            Guest Reviews (0)
-          </Typography>
-          {showReviewForm && showReviewButton && bookingId && (
-            <ReviewSubmission
-              bookingId={bookingId}
-              onReviewSubmitted={handleReviewSubmitted}
-            />
-          )}
-        </Box>
         <Typography variant="h6" sx={{ color: "#666", mb: 1 }}>
           No reviews yet
         </Typography>
         <Typography variant="body2" sx={{ color: "#999" }}>
-          {session?.user
-            ? "Be the first to share your experience!"
-            : "Be the first to share your experience! Log in to write a review."}
+          Be the first to share your experience!
         </Typography>
       </Box>
     );
@@ -214,34 +164,16 @@ export const ReviewComponent = ({
 
   return (
     <Box sx={{ my: 4 }}>
-      <Box
+      <Typography
+        variant="h4"
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          fontWeight: 700,
           mb: 3,
-          flexWrap: "wrap",
-          gap: 2,
+          color: "#333",
         }}
       >
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            color: "#333",
-            fontSize: { xs: "1.5rem", md: "2rem" },
-          }}
-        >
-          Guest Reviews ({reviews.length})
-        </Typography>
-
-        {showReviewForm && showReviewButton && bookingId && (
-          <ReviewSubmission
-            bookingId={bookingId}
-            onReviewSubmitted={handleReviewSubmitted}
-          />
-        )}
-      </Box>
+        Guest Reviews ({reviews.length})
+      </Typography>
 
       {reviews.map((review) => (
         <Box

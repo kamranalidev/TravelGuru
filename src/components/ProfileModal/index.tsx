@@ -388,23 +388,21 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
   }
 
   return (
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: { xs: "16px", md: "24px" },
-            background: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255, 255, 255, 0.3)",
-            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
-            margin: { xs: "16px", md: "32px" },
-            maxHeight: { xs: "90vh", md: "85vh" },
-          },
-        }}
-      >
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: "16px",
+          background: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255, 255, 255, 0.3)",
+          boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
+        },
+      }}
+    >
       <DialogTitle
         sx={{
           display: "flex",
@@ -413,7 +411,7 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
           background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
           color: "white",
           m: 0,
-          p: { xs: 2, md: 3 },
+          p: 3,
         }}
       >
         <Box>
@@ -444,7 +442,7 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: { xs: 2, md: 3 }, overflowY: "auto" }}>
+      <DialogContent sx={{ p: 3 }}>
         {loading ? (
           <Box display="flex" justifyContent="center" py={4}>
             <CircularProgress />
@@ -745,7 +743,7 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
         )}
       </DialogContent>
 
-      <DialogActions sx={{ p: { xs: 2, md: 3 }, gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
+      <DialogActions sx={{ p: 3, gap: 2 }}>
         <Button
           onClick={handleClose}
           variant="outlined"

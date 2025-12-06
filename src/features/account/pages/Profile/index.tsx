@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Grid,
   Paper,
   Stack,
   TextField,
@@ -242,118 +243,116 @@ export const ProfilePage = () => {
         Update your personal information so we can personalize your travel
         experience.
       </Typography>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "1fr 2fr" },
-          gap: 4,
-        }}
-      >
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: 3,
-            border: "1px solid",
-            borderColor: "divider",
-            p: 3,
-            textAlign: "center",
-          }}
-        >
-          <Stack spacing={2} alignItems="center">
-            <Avatar
-              src={formState.avatarUrl || undefined}
-              alt={formState.fullName || "User avatar"}
-              sx={{
-                width: 96,
-                height: 96,
-                bgcolor: formState.avatarUrl ? "transparent" : "#FFE4D6",
-                color: formState.avatarUrl ? "inherit" : "#FF621F",
-                fontSize: "1.75rem",
-              }}
-            >
-              {!formState.avatarUrl ? initials : null}
-            </Avatar>
-            <Typography sx={{ fontWeight: 600 }}>{emailDisplay}</Typography>
-            <Typography sx={{ color: "text.secondary", fontSize: "0.9rem" }}>
-              This information is shared with your booking confirmations.
-            </Typography>
-          </Stack>
-        </Paper>
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: 3,
-            border: "1px solid",
-            borderColor: "divider",
-            p: { xs: 3, md: 4 },
-          }}
-        >
-          <form onSubmit={handleSubmit}>
-            <Stack spacing={3}>
-              {statusMessage && (
-                <Alert
-                  severity={statusMessage.type}
-                  onClose={() => setStatusMessage(null)}
-                >
-                  {statusMessage.message}
-                </Alert>
-              )}
-              <TextField
-                label="Full name"
-                name="fullName"
-                value={formState.fullName}
-                onChange={handleInputChange}
-                fullWidth
-                placeholder="e.g. Ryman Alex"
-              />
-              <TextField
-                label="Phone number"
-                name="phoneNumber"
-                value={formState.phoneNumber}
-                onChange={handleInputChange}
-                fullWidth
-                placeholder="+971 55 123 4567"
-              />
-              <TextField
-                label="Avatar URL"
-                name="avatarUrl"
-                value={formState.avatarUrl}
-                onChange={handleInputChange}
-                fullWidth
-                placeholder="https://example.com/avatar.png"
-                helperText="Paste a link to your profile photo."
-              />
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={2}
-                justifyContent="flex-end"
+      <Grid container spacing={4}>
+        <Grid item xs={12} md={4}>
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              border: "1px solid",
+              borderColor: "divider",
+              p: 3,
+              textAlign: "center",
+            }}
+          >
+            <Stack spacing={2} alignItems="center">
+              <Avatar
+                src={formState.avatarUrl || undefined}
+                alt={formState.fullName || "User avatar"}
+                sx={{
+                  width: 96,
+                  height: 96,
+                  bgcolor: formState.avatarUrl ? "transparent" : "#FFE4D6",
+                  color: formState.avatarUrl ? "inherit" : "#FF621F",
+                  fontSize: "1.75rem",
+                }}
               >
-                <Button
-                  type="button"
-                  variant="outlined"
-                  color="inherit"
-                  onClick={handleReset}
-                >
-                  Reset
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disableElevation
-                  sx={{
-                    backgroundColor: "#FF621F",
-                    "&:hover": { backgroundColor: "#f0550f" },
-                    minWidth: 140,
-                  }}
-                  disabled={isSaving}
-                >
-                  {isSaving ? "Saving..." : "Save changes"}
-                </Button>
-              </Stack>
+                {!formState.avatarUrl ? initials : null}
+              </Avatar>
+              <Typography sx={{ fontWeight: 600 }}>{emailDisplay}</Typography>
+              <Typography sx={{ color: "text.secondary", fontSize: "0.9rem" }}>
+                This information is shared with your booking confirmations.
+              </Typography>
             </Stack>
-          </form>
-        </Paper>
-      </Box>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={8}>
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              border: "1px solid",
+              borderColor: "divider",
+              p: { xs: 3, md: 4 },
+            }}
+          >
+            <form onSubmit={handleSubmit}>
+              <Stack spacing={3}>
+                {statusMessage && (
+                  <Alert
+                    severity={statusMessage.type}
+                    onClose={() => setStatusMessage(null)}
+                  >
+                    {statusMessage.message}
+                  </Alert>
+                )}
+                <TextField
+                  label="Full name"
+                  name="fullName"
+                  value={formState.fullName}
+                  onChange={handleInputChange}
+                  fullWidth
+                  placeholder="e.g. Ryman Alex"
+                />
+                <TextField
+                  label="Phone number"
+                  name="phoneNumber"
+                  value={formState.phoneNumber}
+                  onChange={handleInputChange}
+                  fullWidth
+                  placeholder="+971 55 123 4567"
+                />
+                <TextField
+                  label="Avatar URL"
+                  name="avatarUrl"
+                  value={formState.avatarUrl}
+                  onChange={handleInputChange}
+                  fullWidth
+                  placeholder="https://example.com/avatar.png"
+                  helperText="Paste a link to your profile photo."
+                />
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2}
+                  justifyContent="flex-end"
+                >
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    color="inherit"
+                    onClick={handleReset}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disableElevation
+                    sx={{
+                      backgroundColor: "#FF621F",
+                      "&:hover": { backgroundColor: "#f0550f" },
+                      minWidth: 140,
+                    }}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "Saving..." : "Save changes"}
+                  </Button>
+                </Stack>
+              </Stack>
+            </form>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 };

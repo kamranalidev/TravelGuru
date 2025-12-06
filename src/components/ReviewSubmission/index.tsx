@@ -1,20 +1,19 @@
 import { useState } from "react";
 import {
+  Box,
+  Typography,
+  TextField,
   Button,
+  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
-  Typography,
-  Alert,
-  IconButton,
+  CircularProgress,
 } from "@mui/material";
-import { Close as CloseIcon } from "@mui/icons-material";
+import { Rating } from "react-simple-star-rating";
 import { supabase } from "../../supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
-import { ButtonComponent } from "../Button";
-import theme from "../../theme";
 
 interface ReviewSubmissionProps {
   bookingId: number;
@@ -27,100 +26,129 @@ export const ReviewSubmission = ({
   serviceName,
   onReviewSubmitted,
 }: ReviewSubmissionProps) => {
-  const { session } = useAuth();
   const [open, setOpen] = useState(false);
+  const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [hasExistingReview, setHasExistingReview] = useState(false);
 
-  const handleOpen = () => {
+  const { session } = useAuth();
+
+  const handleOpen = async () => {
     setOpen(true);
-    setError(null);
-    setSuccess(false);
-    setReviewText("");
+    setFeedback(null);
+
+    // Check if user has already submitted a review for this booking
+    if (session?.user?.id) {
+      try {
+        const { data, error } = await supabase
+          .from("reviews")
+          .select("id")
+          .eq("booking_id", bookingId)
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (data && !error) {
+          setHasExistingReview(true);
+          setFeedback({
+            type: "error",
+            message: "You have already submitted a review for this booking.",
+          });
+        }
+      } catch (err) {
+        // No existing review found, which is fine
+        console.log("No existing review found");
+      }
+    }
   };
 
   const handleClose = () => {
-    if (!submitting) {
-      setOpen(false);
-      setReviewText("");
-      setError(null);
-      setSuccess(false);
-    }
+    setOpen(false);
+    setRating(0);
+    setReviewText("");
+    setFeedback(null);
+    setHasExistingReview(false);
   };
 
   const handleSubmit = async () => {
     if (!session?.user?.id) {
-      setError("Please log in to submit a review");
+      setFeedback({
+        type: "error",
+        message: "You must be logged in to submit a review.",
+      });
+      return;
+    }
+
+    if (rating === 0) {
+      setFeedback({
+        type: "error",
+        message: "Please provide a rating.",
+      });
       return;
     }
 
     if (!reviewText.trim()) {
-      setError("Please write a review before submitting");
+      setFeedback({
+        type: "error",
+        message: "Please write a review.",
+      });
       return;
     }
 
     if (reviewText.trim().length < 10) {
-      setError("Review must be at least 10 characters long");
+      setFeedback({
+        type: "error",
+        message: "Review must be at least 10 characters long.",
+      });
       return;
     }
 
     setSubmitting(true);
-    setError(null);
+    setFeedback(null);
 
     try {
-      // Check if user already reviewed this booking
-      const { data: existingReview, error: checkError } = await supabase
+      const { error } = await supabase
         .from("reviews")
-        .select("id")
-        .eq("booking_id", bookingId)
-        .eq("user_id", session.user.id)
+        .insert({
+          booking_id: bookingId,
+          user_id: session.user.id,
+          review: reviewText.trim(),
+          rating: rating,
+        })
+        .select()
         .single();
 
-      if (checkError && checkError.code !== "PGRST116") {
-        // PGRST116 = no rows returned (expected if no review exists)
-        throw checkError;
-      }
+      if (error) throw error;
 
-      if (existingReview) {
-        setError("You have already submitted a review for this booking");
-        setSubmitting(false);
-        return;
-      }
-
-      // Insert the review
-      const { error: insertError } = await supabase.from("reviews").insert({
-        booking_id: bookingId,
-        user_id: session.user.id,
-        review: reviewText.trim(),
+      setFeedback({
+        type: "success",
+        message:
+          "Thank you for your review! It has been submitted successfully.",
       });
 
-      if (insertError) {
-        throw insertError;
-      }
-
-      setSuccess(true);
+      // Clear form
+      setRating(0);
       setReviewText("");
 
-      // Call the callback to refresh reviews
+      // Notify parent component
       if (onReviewSubmitted) {
-        setTimeout(() => {
-          onReviewSubmitted();
-          setOpen(false);
-          setSuccess(false);
-        }, 1500);
-      } else {
-        setTimeout(() => {
-          setOpen(false);
-          setSuccess(false);
-        }, 1500);
+        onReviewSubmitted();
       }
-    } catch (err: any) {
-      console.error("Error submitting review:", err);
-      setError(
-        err.message || "Failed to submit review. Please try again later."
-      );
+
+      // Close dialog after 2 seconds
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      setFeedback({
+        type: "error",
+        message: "Failed to submit review. Please try again.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -128,13 +156,24 @@ export const ReviewSubmission = ({
 
   return (
     <>
-      <ButtonComponent
-        title="Write a Review"
+      <Button
+        variant="contained"
         onClick={handleOpen}
-        width="auto"
-        bgColor={theme.palette.secondary.main}
-        style={{ padding: "10px 20px" }}
-      />
+        sx={{
+          background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+          color: "white",
+          fontWeight: 600,
+          borderRadius: "12px",
+          textTransform: "none",
+          px: 3,
+          py: 1.5,
+          "&:hover": {
+            background: "linear-gradient(135deg, #E5541B, #E67B44)",
+          },
+        }}
+      >
+        Write a Review
+      </Button>
 
       <Dialog
         open={open}
@@ -143,91 +182,130 @@ export const ReviewSubmission = ({
         fullWidth
         PaperProps={{
           sx: {
-            borderRadius: "20px",
-            padding: { xs: "16px", md: "24px" },
+            borderRadius: "16px",
           },
         }}
       >
         <DialogTitle
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            pb: 2,
+            background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+            color: "white",
+            fontWeight: 600,
           }}
         >
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Write a Review
-          </Typography>
-          <IconButton
-            onClick={handleClose}
-            disabled={submitting}
-            sx={{ color: "#666" }}
-          >
-            <CloseIcon />
-          </IconButton>
+          Share Your Experience
         </DialogTitle>
 
-        <DialogContent>
+        <DialogContent sx={{ mt: 3 }}>
           {serviceName && (
-            <Typography
-              variant="body2"
-              sx={{ color: "#666", mb: 2, fontWeight: 600 }}
-            >
-              Reviewing: {serviceName}
+            <Typography variant="body2" sx={{ mb: 2, color: "#666" }}>
+              How was your experience with <strong>{serviceName}</strong>?
             </Typography>
           )}
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
+          {feedback && (
+            <Alert
+              severity={feedback.type}
+              onClose={() => setFeedback(null)}
+              sx={{ mb: 2 }}
+            >
+              {feedback.message}
             </Alert>
           )}
 
-          {success && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              Review submitted successfully!
-            </Alert>
-          )}
+          {!hasExistingReview && (
+            <>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                  Your Rating *
+                </Typography>
+                <Rating
+                  onClick={(rate) => setRating(rate)}
+                  initialValue={rating}
+                  size={32}
+                  fillColor="#FF621F"
+                  emptyColor="#ddd"
+                  transition
+                />
+              </Box>
 
-          <TextField
-            fullWidth
-            multiline
-            rows={6}
-            label="Your Review"
-            placeholder="Share your experience with this service..."
-            value={reviewText}
-            onChange={(e) => setReviewText(e.target.value)}
-            disabled={submitting || success}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "12px",
-              },
-            }}
-            helperText={`${reviewText.length} characters (minimum 10)`}
-            error={reviewText.length > 0 && reviewText.length < 10}
-          />
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                  Your Review *
+                </Typography>
+                <TextField
+                  multiline
+                  rows={6}
+                  fullWidth
+                  placeholder="Share details about your experience, what you enjoyed, and any suggestions for improvement..."
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  disabled={submitting}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "12px",
+                      "&:hover fieldset": {
+                        borderColor: "#FF621F",
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: "#FF621F",
+                      },
+                    },
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{ mt: 0.5, display: "block", color: "#666" }}
+                >
+                  {reviewText.length} characters (minimum 10)
+                </Typography>
+              </Box>
+            </>
+          )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3, gap: 2 }}>
+        <DialogActions sx={{ p: 3, gap: 1 }}>
           <Button
             onClick={handleClose}
+            variant="outlined"
             disabled={submitting}
             sx={{
+              borderColor: "#ddd",
               color: "#666",
               textTransform: "none",
+              "&:hover": {
+                borderColor: "#ccc",
+                backgroundColor: "#f5f5f5",
+              },
             }}
           >
             Cancel
           </Button>
-          <ButtonComponent
-            title={submitting ? "Submitting..." : "Submit Review"}
-            onClick={handleSubmit}
-            disabled={submitting || success || !reviewText.trim() || reviewText.trim().length < 10}
-            width="auto"
-            bgColor={theme.palette.secondary.main}
-            style={{ padding: "10px 24px" }}
-          />
+          {!hasExistingReview && (
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              disabled={submitting || rating === 0 || !reviewText.trim()}
+              sx={{
+                background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+                color: "white",
+                textTransform: "none",
+                minWidth: "120px",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #E5541B, #E67B44)",
+                },
+                "&:disabled": {
+                  background: "#ccc",
+                },
+              }}
+            >
+              {submitting ? (
+                <CircularProgress size={24} sx={{ color: "white" }} />
+              ) : (
+                "Submit Review"
+              )}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </>

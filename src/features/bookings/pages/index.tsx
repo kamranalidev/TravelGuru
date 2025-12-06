@@ -5,7 +5,6 @@ import {
   Header,
   ReviewComponent,
   ProfileModal,
-  Footer,
 } from "../../../components";
 import {
   Alert,
@@ -23,7 +22,6 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import Dialog from "@mui/material/Dialog";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
-import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../supabaseClient";
 import { useAuth } from "../../../hooks/useAuth";
@@ -117,18 +115,15 @@ export const BookingPage = () => {
   const [date, setDate] = useState(dayjs()); // today's date
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
-  const [departureArrivalTime, setDepartureArrivalTime] = useState<dayjs.Dayjs | null>(null);
   const navigate = useNavigate();
   const { session, profile, refreshProfile } = useAuth();
   const [bookingFeedback, setBookingFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [isBooking] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
-  const [userBookingId, setUserBookingId] = useState<number | null>(null);
-  const [canReview, setCanReview] = useState(false);
   const [pageData, setPageData] = useState({
     Image: [] as string[],
     description: "",
@@ -230,59 +225,6 @@ export const BookingPage = () => {
     // edge case if user directly lands on this page without navigation via refresh
   }, []);
 
-  // Check if user has a booking for this service that they can review
-  useEffect(() => {
-    const checkUserBooking = async () => {
-      if (!session?.user?.id || !pageData.id) {
-        setUserBookingId(null);
-        setCanReview(false);
-        return;
-      }
-
-      try {
-        // Check for bookings for this service by this user
-        // Allow reviews for any booking (not just completed ones)
-        const { data: bookings, error } = await supabase
-          .from("bookings")
-          .select("id, booking_date")
-          .eq("service_id", pageData.id)
-          .eq("user_id", session.user.id)
-          .order("created_at", { ascending: false })
-          .limit(1);
-
-        if (error) {
-          console.error("Error checking user bookings:", error);
-          return;
-        }
-
-        if (bookings && bookings.length > 0) {
-          // Check if user already reviewed this booking
-          const { data: existingReview } = await supabase
-            .from("reviews")
-            .select("id")
-            .eq("booking_id", bookings[0].id)
-            .eq("user_id", session.user.id)
-            .single();
-
-          if (!existingReview) {
-            setUserBookingId(bookings[0].id);
-            setCanReview(true);
-          } else {
-            setUserBookingId(null);
-            setCanReview(false);
-          }
-        } else {
-          setUserBookingId(null);
-          setCanReview(false);
-        }
-      } catch (err) {
-        console.error("Error checking user booking:", err);
-      }
-    };
-
-    checkUserBooking();
-  }, [session?.user?.id, pageData.id]);
-
   const handleClick = (imgSrc: string) => {
     setSelectedImg(imgSrc);
     setOpen(true);
@@ -313,11 +255,6 @@ export const BookingPage = () => {
     }
     return `AED ${Number(value).toLocaleString()}`;
   };
-
-  // Check if service is airport pickup
-  const isAirportPickup = pageData?.service_name?.toLowerCase().includes("airport pickup") || 
-                          pageData?.service_name?.toLowerCase().includes("airport") && 
-                          pageData?.service_name?.toLowerCase().includes("pickup");
 
   // Check if user profile has all required fields
   const checkProfileCompletion = () => {
@@ -416,39 +353,6 @@ export const BookingPage = () => {
       return;
     }
 
-    // Validate time for airport pickup services
-    if (isAirportPickup && !departureArrivalTime) {
-      setBookingFeedback({
-        type: "error",
-        message: "Please select your departure/arrival time.",
-      });
-      return;
-    }
-
-    // Check for duplicate booking on the same day
-    try {
-      const bookingDateString = date.format("YYYY-MM-DD");
-      const { data: existingBookings, error: checkError } = await supabase
-        .from("bookings")
-        .select("id")
-        .eq("user_id", session.user.id)
-        .eq("booking_date", bookingDateString);
-
-      if (checkError) {
-        console.error("Error checking for duplicate bookings:", checkError);
-        // Continue with booking if check fails (don't block user)
-      } else if (existingBookings && existingBookings.length > 0) {
-        setBookingFeedback({
-          type: "error",
-          message: "You already have a booking on this date. Please select a different date.",
-        });
-        return;
-      }
-    } catch (err) {
-      console.error("Error checking for duplicate bookings:", err);
-      // Continue with booking if check fails
-    }
-
     const bookingData = {
       trip: {
         id: pageData.id,
@@ -459,7 +363,6 @@ export const BookingPage = () => {
         images: pageData.Image, // Include all images
       },
       bookingDate: date.format("YYYY-MM-DD"), // Format date as string
-      departureArrivalTime: departureArrivalTime ? departureArrivalTime.format("HH:mm") : null,
       selectedPackage: selectedPackage || null,
       finalPrice: finalPrice,
       packageName: selectedPackage?.name || "Standard Experience",
@@ -646,41 +549,6 @@ export const BookingPage = () => {
               </LocalizationProvider>
             )}
 
-            {/* Time picker for airport pickup services */}
-            {isAirportPickup && (
-              <Box sx={{ mt: 2 }}>
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 600, marginBottom: "12px" }}
-                >
-                  Select departure/arrival time
-                </Typography>
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <TimePicker
-                    label="Departure/Arrival Time"
-                    value={departureArrivalTime}
-                    onChange={(newValue: any) => {
-                      setDepartureArrivalTime(newValue);
-                    }}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        required: true,
-                        sx: {
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        },
-                      },
-                    }}
-                    sx={{
-                      width: "100%",
-                    }}
-                  />
-                </LocalizationProvider>
-              </Box>
-            )}
-
             <ButtonComponent
               title={isBooking ? "Processing..." : "Book Now"}
               width="100%"
@@ -701,13 +569,7 @@ export const BookingPage = () => {
             )}
           </Box>
         </Box>
-        <ReviewComponent 
-          serviceId={pageData.id} 
-          bookingId={userBookingId || undefined}
-          limit={5}
-          showReviewForm={true} // Always show form button if user can review
-          allowReviewSubmission={canReview && !!session?.user} // Only allow if user is logged in and has booking
-        />
+        <ReviewComponent serviceId={pageData.id} limit={5} />
       </Box>
 
       {/* Dialog for fullscreen image */}
@@ -839,7 +701,6 @@ export const BookingPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <Footer />
     </div>
   );
 };

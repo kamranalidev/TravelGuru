@@ -1,137 +1,148 @@
 /* Hero Section Styles */
 .heroSection {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    padding: 80px 5% 60px;
-    min-height: 600px;
+    position: relative;
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-top: -64px;
+    padding-top: 64px;
+}
+
+.heroBackground {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.heroBackgroundImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.8s ease-in-out;
+}
+
+.heroOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0.4) 100%);
+    z-index: 1;
 }
 
 .heroContent {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    position: relative;
+    z-index: 2;
     max-width: 1400px;
     margin: 0 auto;
-    gap: 60px;
-    flex-wrap: wrap;
+    padding: 0 5%;
+    width: 100%;
 }
 
 .heroText {
-    flex: 1;
-    max-width: 500px;
-    min-width: 280px;
+    max-width: 700px;
+    color: white;
+}
+
+.heroBadge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 8px 20px;
+    border-radius: 30px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.heroBadge span {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: white;
 }
 
 .heroTitle {
-    font-size: 4.5rem;
-    font-weight: 800;
-    color: #1a1a1a;
+    font-size: 5rem;
+    font-weight: 900;
+    color: white;
     line-height: 1.1;
     margin: 0 0 20px 0;
-    letter-spacing: -1px;
+    letter-spacing: -2px;
+}
+
+.heroTitleHighlight {
+    color: #FF621F;
+    display: inline-block;
 }
 
 .heroSubtitle {
-    font-size: 1.3rem;
-    color: #666;
-    line-height: 1.6;
+    font-size: 1.4rem;
+    color: rgba(255, 255, 255, 0.95);
+    line-height: 1.7;
     margin: 0 0 40px 0;
+    font-weight: 400;
 }
 
-.heroImageContainer {
-    position: relative;
-    flex: 1;
-    max-width: 600px;
-    min-width: 280px;
-    overflow: hidden;
-    border-radius: 30px;
+.heroStats {
+    display: flex;
+    gap: 40px;
+    margin: 40px 0;
+    flex-wrap: wrap;
 }
 
-.heroImage {
-    width: 100%;
-    height: 450px;
-    object-fit: cover;
-    border-radius: 30px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-    transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+.heroStatItem {
+    display: flex;
+    flex-direction: column;
 }
 
-/* Responsive Hero Section */
-@media (max-width: 1024px) {
-    .heroContent {
-        flex-direction: column;
-        gap: 40px;
-    }
-    
-    .heroText {
-        max-width: 100%;
-        text-align: center;
-    }
-    
-    .heroTitle {
-        font-size: 3.5rem;
-    }
-    
-    .heroImageContainer {
-        max-width: 100%;
-        width: 100%;
-    }
+.heroStatItem strong {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #FF621F;
+    line-height: 1;
+    margin-bottom: 5px;
 }
 
-@media (max-width: 768px) {
-    .heroSection {
-        padding: 60px 4% 40px;
-        min-height: auto;
-    }
-    
-    .heroTitle {
-        font-size: 2.5rem;
-    }
-    
-    .heroSubtitle {
-        font-size: 1.1rem;
-    }
-    
-    .heroImage {
-        height: 300px;
-    }
-    
-    .heroImageBadge {
-        top: 15px;
-        right: 15px;
-        padding: 8px 16px;
-    }
-    
-    .heroTravelers {
-        bottom: 15px;
-        right: 15px;
-        padding: 10px 15px;
-        flex-direction: column;
-        gap: 8px;
-    }
+.heroStatItem span {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
 }
 
-@media (max-width: 480px) {
-    .heroSection {
-        padding: 40px 3% 30px;
-    }
-    
-    .heroTitle {
-        font-size: 2rem;
-    }
-    
-    .heroSubtitle {
-        font-size: 1rem;
-        margin: 0 0 30px 0;
-    }
-    
-    .heroImage {
-        height: 250px;
-    }
+.heroActions {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-top: 30px;
+}
+
+.heroSecondaryButton {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 14px 32px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.heroSecondaryButton:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
 }
 
 .heroImageIndicators {
     position: absolute;
-    bottom: 20px;
+    bottom: 40px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -161,77 +172,229 @@
     transform: scale(1.3);
 }
 
-.heroImageBadge {
-    position: absolute;
-    top: 30px;
-    right: 30px;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 12px 24px;
-    border-radius: 25px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+/* Section Container */
+.sectionContainer {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 5%;
 }
 
-.badgeText {
-    font-weight: 600;
+.sectionTitle {
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 15px 0;
+    line-height: 1.2;
+}
+
+.sectionTitleHighlight {
     color: #FF621F;
-    font-size: 1rem;
 }
 
-.heroTravelers {
-    position: absolute;
-    bottom: 30px;
-    right: 30px;
-    background: white;
-    padding: 15px 25px;
+.sectionSubtitle {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #666;
+    margin: 0 0 50px 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Featured Destinations Section */
+.featuredDestinations {
+    padding: 100px 0;
+    background: #fff;
+}
+
+.destinationsGrid {
+    margin-top: 50px;
+}
+
+.destinationCard {
     border-radius: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.destinationCard:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.destinationImage {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+}
+
+.destinationImage img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.destinationCard:hover .destinationImage img {
+    transform: scale(1.1);
+}
+
+.destinationOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-.travelerAvatars {
-    display: flex;
-    margin-left: -10px;
+.destinationCard:hover .destinationOverlay {
+    opacity: 1;
 }
 
-.avatar {
-    width: 35px;
-    height: 35px;
+.destinationName {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+}
+
+.destinationDescription {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Why Choose Us Section */
+.whyChooseUs {
+    padding: 100px 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.featuresGrid {
+    margin-top: 50px;
+}
+
+.featureCard {
+    text-align: center;
+    padding: 40px 30px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.featureCard:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.featureIcon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #FF621F 0%, #ff8533 100%);
     border-radius: 50%;
-    border: 3px solid white;
-    margin-left: -10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    color: white;
 }
 
-.avatar1 {
+.featureTitle {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+}
+
+.featureDescription {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Testimonials Section */
+.testimonialsSection {
+    padding: 100px 0;
+    background: #fff;
+}
+
+.testimonialsGrid {
+    margin-top: 50px;
+}
+
+.testimonialCard {
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+    background: white;
+}
+
+.testimonialCard:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.testimonialRating {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+}
+
+.testimonialText {
+    font-size: 1.05rem;
+    color: #555;
+    line-height: 1.7;
+    margin-bottom: 25px;
+    font-style: italic;
+}
+
+.testimonialAuthor {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.testimonialAvatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.avatar2 {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.avatar3 {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.travelerText {
-    font-size: 0.85rem;
-    line-height: 1.3;
-    color: #666;
-}
-
-.travelerText strong {
+.testimonialName {
+    font-size: 1rem;
+    font-weight: 700;
     color: #1a1a1a;
-    font-size: 1.1rem;
+    margin-bottom: 4px;
+}
+
+.testimonialLocation {
+    font-size: 0.9rem;
+    color: #666;
 }
 
 /* Services Section */
 .servicesHeader {
     text-align: center;
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin: 0 0 10px 0;
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0 0 15px 0;
     color: #1a1a1a;
 }
 
@@ -240,6 +403,9 @@
     font-size: 1.2rem;
     color: #666;
     margin: 0 0 50px 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .servicesGrid {
@@ -249,53 +415,6 @@
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 5%;
-}
-
-/* Responsive Services Grid */
-@media (max-width: 1024px) {
-    .servicesGrid {
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 24px;
-        padding: 0 3%;
-    }
-    
-    .servicesHeader {
-        font-size: 2.2rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .servicesGrid {
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        padding: 0 2%;
-    }
-    
-    .servicesHeader {
-        font-size: 2rem;
-        padding: 0 16px;
-    }
-    
-    .servicesSubtitle {
-        font-size: 1.1rem;
-        padding: 0 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    .servicesGrid {
-        grid-template-columns: 1fr;
-        gap: 20px;
-        padding: 0 12px;
-    }
-    
-    .servicesHeader {
-        font-size: 1.75rem;
-    }
-    
-    .serviceCard {
-        width: 100%;
-    }
 }
 
 .serviceCard {
@@ -503,7 +622,7 @@
 .subscribe {
     width: calc(100% - 80px);
     max-width: 1200px;
-    margin: 80px auto;
+    margin: 100px auto;
     background: linear-gradient(135deg, #ff7a28 0%, #ff9a3d 100%);
     border-radius: 40px;
     padding: 60px 30px;
@@ -535,7 +654,6 @@
     padding: 10px;
     gap: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    flex-wrap: wrap;
 }
 
 .subscribeField {
@@ -545,47 +663,6 @@
     font-size: 1rem;
     padding: 10px 20px;
     border-radius: 30px;
-    min-width: 200px;
-}
-
-/* Responsive Subscribe Section */
-@media (max-width: 768px) {
-    .subscribe {
-        width: calc(100% - 40px);
-        margin: 60px auto;
-        padding: 40px 20px;
-        border-radius: 30px;
-    }
-    
-    .subscribeHeader {
-        font-size: 2rem;
-        margin-bottom: 24px;
-    }
-    
-    .subscribeInput {
-        flex-direction: column;
-        border-radius: 30px;
-    }
-    
-    .subscribeField {
-        width: 100%;
-        min-width: auto;
-    }
-}
-
-@media (max-width: 480px) {
-    .subscribe {
-        width: calc(100% - 24px);
-        margin: 40px auto;
-        padding: 30px 16px;
-        border-radius: 24px;
-    }
-    
-    .subscribeHeader {
-        font-size: 1.5rem;
-        margin-bottom: 20px;
-    }
-}
     color: #333;
 }
 
@@ -696,14 +773,20 @@ hr {
   margin: 30px 0;
 }
 
+/* Services Section */
+.servicesSection {
+    padding: 100px 0;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .heroTitle {
     font-size: 3.5rem;
   }
   
-  .heroContent {
-    gap: 40px;
+  .sectionTitle {
+    font-size: 2.5rem;
   }
   
   .servicesGrid {
@@ -713,12 +796,7 @@ hr {
 
 @media (max-width: 768px) {
   .heroSection {
-    padding: 60px 5% 40px;
-  }
-  
-  .heroContent {
-    flex-direction: column;
-    gap: 30px;
+    min-height: 80vh;
   }
   
   .heroTitle {
@@ -728,9 +806,21 @@ hr {
   .heroSubtitle {
     font-size: 1.1rem;
   }
-  
-  .heroImage {
-    height: 350px;
+
+  .heroStats {
+    gap: 20px;
+  }
+
+  .heroStatItem strong {
+    font-size: 1.5rem;
+  }
+
+  .heroActions {
+    flex-direction: column;
+  }
+
+  .heroSecondaryButton {
+    width: 100%;
   }
   
   .servicesGrid {
@@ -743,12 +833,19 @@ hr {
     align-items: flex-start;
   }
   
-  .servicesHeader {
+  .sectionTitle {
     font-size: 2rem;
   }
   
-  .servicesSubtitle {
+  .sectionSubtitle {
     font-size: 1rem;
+  }
+
+  .featuredDestinations,
+  .whyChooseUs,
+  .testimonialsSection,
+  .servicesSection {
+    padding: 60px 0;
   }
 
   .subscribe {
@@ -776,22 +873,14 @@ hr {
   .heroSubtitle {
     font-size: 1rem;
   }
-  
-  .heroImage {
-    height: 280px;
-    border-radius: 20px;
+
+  .heroStats {
+    flex-direction: column;
+    gap: 15px;
   }
-  
-  .heroImageBadge {
-    top: 20px;
-    right: 20px;
-    padding: 8px 16px;
-  }
-  
-  .heroTravelers {
-    bottom: 20px;
-    right: 20px;
-    padding: 10px 15px;
+
+  .sectionTitle {
+    font-size: 1.8rem;
   }
 
   .subscribeHeader {

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import Stripe from "stripe";
+import nodemailer from "nodemailer";
 
 // Load environment variables
 dotenv.config();
@@ -13,6 +14,28 @@ const PORT = process.env.PORT || 3001;
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-11-20.acacia",
 });
+
+// Initialize Nodemailer
+const createEmailTransporter = () => {
+  // For Gmail, use these settings:
+  // SMTP_HOST=smtp.gmail.com
+  // SMTP_PORT=587
+  // SMTP_USER=your-email@gmail.com
+  // SMTP_PASS=your-app-password
+  
+  // For other providers, adjust accordingly
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  return transporter;
+};
 
 // Middleware
 app.use(cors());
@@ -153,6 +176,222 @@ app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, 
   }
 
   res.json({ received: true });
+});
+
+// Send Booking Confirmation Email endpoint
+app.post("/api/send-booking-confirmation", async (req, res) => {
+  try {
+    const {
+      to,
+      bookingId,
+      customerName,
+      serviceName,
+      location,
+      bookingDate,
+      packageName,
+      totalAmount,
+      paymentIntentId,
+    } = req.body;
+
+    // Validate required fields
+    if (!to || !bookingId || !serviceName || !totalAmount) {
+      return res.status(400).json({
+        error: "Missing required fields: to, bookingId, serviceName, totalAmount",
+      });
+    }
+
+    // Check if email is configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn("Email not configured. Skipping email send.");
+      return res.status(200).json({
+        success: true,
+        message: "Email not configured, but booking was successful",
+        skipped: true,
+      });
+    }
+
+    const transporter = createEmailTransporter();
+
+    // Format date
+    const formattedDate = bookingDate
+      ? new Date(bookingDate).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : "Not specified";
+
+    // Create HTML email template
+    const htmlTemplate = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Confirmation - TravelGuru</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #FF621F 0%, #ff8533 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Booking Confirmed!</h1>
+              <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 16px;">Thank you for choosing TravelGuru</p>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Dear ${customerName || "Valued Customer"},
+              </p>
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                We're excited to confirm your booking! Your reservation has been successfully processed and payment has been received.
+              </p>
+              
+              <!-- Booking Details Box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                <tr>
+                  <td>
+                    <h2 style="color: #FF621F; font-size: 20px; margin: 0 0 20px 0; padding-bottom: 10px; border-bottom: 2px solid #FF621F;">Booking Details</h2>
+                    
+                    <table width="100%" cellpadding="8" cellspacing="0">
+                      <tr>
+                        <td style="color: #666666; font-size: 14px; padding: 8px 0; width: 40%;"><strong>Booking ID:</strong></td>
+                        <td style="color: #333333; font-size: 14px; padding: 8px 0;"><strong>#${bookingId}</strong></td>
+                      </tr>
+                      <tr>
+                        <td style="color: #666666; font-size: 14px; padding: 8px 0;"><strong>Service:</strong></td>
+                        <td style="color: #333333; font-size: 14px; padding: 8px 0;">${serviceName}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #666666; font-size: 14px; padding: 8px 0;"><strong>Location:</strong></td>
+                        <td style="color: #333333; font-size: 14px; padding: 8px 0;">${location || "Dubai"}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #666666; font-size: 14px; padding: 8px 0;"><strong>Booking Date:</strong></td>
+                        <td style="color: #333333; font-size: 14px; padding: 8px 0;">${formattedDate}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #666666; font-size: 14px; padding: 8px 0;"><strong>Package:</strong></td>
+                        <td style="color: #333333; font-size: 14px; padding: 8px 0;">${packageName || "Standard"}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #666666; font-size: 14px; padding: 8px 0;"><strong>Total Amount:</strong></td>
+                        <td style="color: #FF621F; font-size: 18px; font-weight: bold; padding: 8px 0;">US$ ${parseFloat(totalAmount).toFixed(2)}</td>
+                      </tr>
+                      ${paymentIntentId ? `
+                      <tr>
+                        <td style="color: #666666; font-size: 14px; padding: 8px 0;"><strong>Payment ID:</strong></td>
+                        <td style="color: #333333; font-size: 14px; padding: 8px 0;">${paymentIntentId}</td>
+                      </tr>
+                      ` : ''}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 30px 0 20px 0;">
+                <strong>What's Next?</strong>
+              </p>
+              <ul style="color: #333333; font-size: 14px; line-height: 1.8; margin: 0 0 30px 0; padding-left: 20px;">
+                <li>You will receive a reminder email 24 hours before your booking date</li>
+                <li>Please arrive at the meeting point 15 minutes before the scheduled time</li>
+                <li>Keep this confirmation email for your records</li>
+                <li>If you have any questions, feel free to contact our support team</li>
+              </ul>
+              
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 30px 0 0 0;">
+                We look forward to providing you with an unforgettable experience!
+              </p>
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 10px 0 0 0;">
+                Best regards,<br>
+                <strong>The TravelGuru Team</strong>
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+              <p style="color: #666666; font-size: 12px; margin: 0 0 10px 0;">
+                This is an automated confirmation email. Please do not reply to this email.
+              </p>
+              <p style="color: #666666; font-size: 12px; margin: 0;">
+                © ${new Date().getFullYear()} TravelGuru. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+
+    // Plain text version
+    const textTemplate = `
+Booking Confirmation - TravelGuru
+
+Dear ${customerName || "Valued Customer"},
+
+We're excited to confirm your booking! Your reservation has been successfully processed and payment has been received.
+
+BOOKING DETAILS:
+- Booking ID: #${bookingId}
+- Service: ${serviceName}
+- Location: ${location || "Dubai"}
+- Booking Date: ${formattedDate}
+- Package: ${packageName || "Standard"}
+- Total Amount: US$ ${parseFloat(totalAmount).toFixed(2)}
+${paymentIntentId ? `- Payment ID: ${paymentIntentId}` : ''}
+
+WHAT'S NEXT?
+- You will receive a reminder email 24 hours before your booking date
+- Please arrive at the meeting point 15 minutes before the scheduled time
+- Keep this confirmation email for your records
+- If you have any questions, feel free to contact our support team
+
+We look forward to providing you with an unforgettable experience!
+
+Best regards,
+The TravelGuru Team
+
+---
+This is an automated confirmation email. Please do not reply to this email.
+© ${new Date().getFullYear()} TravelGuru. All rights reserved.
+    `;
+
+    // Send email
+    const mailOptions = {
+      from: `"TravelGuru" <${process.env.SMTP_USER}>`,
+      to: to,
+      subject: `Booking Confirmation - ${serviceName} | TravelGuru`,
+      text: textTemplate,
+      html: htmlTemplate,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+
+    console.log("Booking confirmation email sent:", info.messageId);
+
+    res.json({
+      success: true,
+      messageId: info.messageId,
+      message: "Booking confirmation email sent successfully",
+    });
+  } catch (error) {
+    console.error("Error sending booking confirmation email:", error);
+    res.status(500).json({
+      error: "Failed to send confirmation email",
+      message: error.message,
+    });
+  }
 });
 
 // Error handling middleware

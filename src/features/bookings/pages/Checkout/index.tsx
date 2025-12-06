@@ -3,29 +3,27 @@ import Box from "@mui/material/Box";
 import { Typography, Alert, CircularProgress } from "@mui/material";
 import theme from "../../../../theme";
 import { useNavigate, useLocation } from "react-router-dom";
-import { StepperComponent, Header, ButtonComponent } from "../../../../components";
-// COMMENTED OUT: Stripe Payment Imports
-// import { StripePayment } from "../../../../components";
-// import { loadStripe } from "@stripe/stripe-js";
-// import { Elements } from "@stripe/react-stripe-js";
-// import { createPaymentIntent } from "../../../../services/paymentService";
+import { StepperComponent, Header, StripePayment } from "../../../../components";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import { createPaymentIntent } from "../../../../services/paymentService";
+import { sendBookingConfirmationEmail } from "../../../../services/emailService";
 import { supabase } from "../../../../supabaseClient";
 import { useAuth } from "../../../../hooks/useAuth";
 import "./index.css";
 
-// COMMENTED OUT: Stripe Initialization
 // Initialize Stripe - Replace with your publishable key
-// const stripePromise = loadStripe(
-//   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
-//     "pk_test_51QEXAMPLE_REPLACE_WITH_YOUR_KEY"
-// );
+const stripePromise = loadStripe(
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
+    "pk_test_51QEXAMPLE_REPLACE_WITH_YOUR_KEY"
+);
 
 export const Checkout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { session } = useAuth();
+  const { session, profile } = useAuth();
   const bookingData = location.state;
-  // const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -36,63 +34,52 @@ export const Checkout = () => {
     return null;
   }
 
-  const { trip, bookingDate, departureArrivalTime, selectedPackage, finalPrice, packageName } =
+  const { trip, bookingDate, selectedPackage, finalPrice, packageName } =
     bookingData;
 
-  // COMMENTED OUT: Payment gateway initialization
-  // useEffect(() => {
-  //   const initializePayment = async () => {
-  //     if (!session?.user) {
-  //       setError("Please log in to complete your booking");
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     try {
-  //       setLoading(true);
-  //       setError(null);
-
-  //       // Create payment intent
-  //       const result = await createPaymentIntent({
-  //         amount: finalPrice,
-  //         currency: "aed",
-  //         metadata: {
-  //           service_id: trip.id,
-  //           package_id: selectedPackage?.id || null,
-  //           user_id: session.user.id,
-  //           booking_date: bookingDate,
-  //         },
-  //       });
-
-  //       if (result.error || !result.clientSecret) {
-  //         throw new Error(
-  //           result.error || "Failed to initialize payment. Please try again."
-  //         );
-  //       }
-
-  //       setClientSecret(result.clientSecret);
-  //     } catch (err: any) {
-  //       console.error("Error initializing payment:", err);
-  //       setError(err.message || "Failed to initialize payment");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   initializePayment();
-  // }, [session, finalPrice, trip.id, selectedPackage?.id, bookingDate]);
-
-  // Simulate payment initialization - skip loading
   useEffect(() => {
-    if (!session?.user) {
-      setError("Please log in to complete your booking");
-      setLoading(false);
-      return;
-    }
-    setLoading(false);
-  }, [session]);
+    const initializePayment = async () => {
+      if (!session?.user) {
+        setError("Please log in to complete your booking");
+        setLoading(false);
+        return;
+      }
 
-  const handlePaymentSuccess = async (paymentIntentId?: string) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Create payment intent
+        const result = await createPaymentIntent({
+          amount: finalPrice,
+          currency: "usd",
+          metadata: {
+            service_id: trip.id,
+            package_id: selectedPackage?.id || null,
+            user_id: session.user.id,
+            booking_date: bookingDate,
+          },
+        });
+
+        if (result.error || !result.clientSecret) {
+          throw new Error(
+            result.error || "Failed to initialize payment. Please try again."
+          );
+        }
+
+        setClientSecret(result.clientSecret);
+      } catch (err: any) {
+        console.error("Error initializing payment:", err);
+        setError(err.message || "Failed to initialize payment");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializePayment();
+  }, [session, finalPrice, trip.id, selectedPackage?.id, bookingDate]);
+
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
     if (!session?.user) {
       setError("User session not found");
       return;
@@ -100,37 +87,15 @@ export const Checkout = () => {
 
     setIsProcessingPayment(true);
     try {
-      // Check for duplicate booking on the same day before creating
-      const { data: existingBookings, error: checkError } = await supabase
-        .from("bookings")
-        .select("id")
-        .eq("user_id", session.user.id)
-        .eq("booking_date", bookingDate);
-
-      if (checkError) {
-        console.error("Error checking for duplicate bookings:", checkError);
-      } else if (existingBookings && existingBookings.length > 0) {
-        setError("You already have a booking on this date. Please select a different date.");
-        setIsProcessingPayment(false);
-        return;
-      }
-
       // Create booking after successful payment
-      const bookingPayload: any = {
-        service_id: trip.id,
-        package_id: selectedPackage?.id || null,
-        user_id: session.user.id,
-        booking_date: bookingDate,
-      };
-
-      // Add departure/arrival time if it exists (for airport pickup services)
-      if (departureArrivalTime) {
-        bookingPayload.departure_arrival_time = departureArrivalTime;
-      }
-
       const { data: booking, error: bookingError } = await supabase
         .from("bookings")
-        .insert(bookingPayload)
+        .insert({
+          service_id: trip.id,
+          package_id: selectedPackage?.id || null,
+          user_id: session.user.id,
+          booking_date: bookingDate,
+        })
         .select()
         .single();
 
@@ -138,33 +103,59 @@ export const Checkout = () => {
         throw bookingError;
       }
 
+      // Send booking confirmation email
+      const userEmail = session.user.email || profile?.email;
+      const userName = 
+        profile?.full_name || 
+        session.user.user_metadata?.full_name || 
+        session.user.user_metadata?.name ||
+        "Valued Customer";
+
+      if (userEmail) {
+        try {
+          await sendBookingConfirmationEmail({
+            to: userEmail,
+            bookingId: booking.id,
+            customerName: userName,
+            serviceName: trip.name || trip.service_name || "Dubai Experience",
+            location: trip.location || "Dubai",
+            bookingDate: bookingDate,
+            packageName: packageName || selectedPackage?.name || "Standard",
+            totalAmount: finalPrice,
+            paymentIntentId: paymentIntentId,
+          });
+          console.log("Booking confirmation email sent successfully");
+        } catch (emailError) {
+          // Log error but don't block navigation - email failure shouldn't break booking
+          console.error("Failed to send confirmation email:", emailError);
+        }
+      } else {
+        console.warn("User email not found, skipping confirmation email");
+      }
+
       // Navigate to payment confirmation with booking details
       navigate("/payment-confirmation", {
         state: {
           ...bookingData,
           bookingId: booking.id,
-          paymentIntentId: paymentIntentId || "simulated_payment_" + Date.now(),
+          paymentIntentId,
           booking,
         },
       });
     } catch (err: any) {
       console.error("Error creating booking:", err);
       setError(
-        "Failed to create booking. Please try again or contact support."
+        "Payment successful but failed to create booking. Please contact support with payment ID: " +
+          paymentIntentId
       );
       setIsProcessingPayment(false);
     }
   };
 
-  // Simulate payment success
-  const handleSimulatePayment = () => {
-    handlePaymentSuccess("simulated_payment_" + Date.now());
+  const handlePaymentError = (errorMessage: string) => {
+    setError(errorMessage);
+    setIsProcessingPayment(false);
   };
-
-  // const handlePaymentError = (errorMessage: string) => {
-  //   setError(errorMessage);
-  //   setIsProcessingPayment(false);
-  // };
 
   if (loading) {
     return (
@@ -193,13 +184,7 @@ export const Checkout = () => {
       <StepperComponent activeStep={2} />
       <Box
         className="centerSection"
-        sx={{ 
-          display: "flex", 
-          gap: { xs: "16px", md: "20px" }, 
-          padding: { xs: "12px", md: "20px" }, 
-          flexWrap: "wrap",
-          flexDirection: { xs: "column", md: "row" }
-        }}
+        sx={{ display: "flex", gap: "20px", padding: "20px", flexWrap: "wrap" }}
       >
         {/* Payment Form */}
         <Box
@@ -208,24 +193,23 @@ export const Checkout = () => {
             boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
             borderRadius: "20px",
             width: { xs: "100%", md: "55%" },
-            minHeight: { xs: "auto", md: "500px" },
-            order: { xs: 2, md: 1 }
+            minHeight: "500px",
           }}
         >
           <Typography
             variant="h4"
             sx={{
               textAlign: "left",
-              marginTop: { xs: "16px", md: "20px" },
+              marginTop: "20px",
               color: theme.palette.secondary.main,
               fontWeight: "bold",
-              fontSize: { xs: "18px", md: "20px" },
-              padding: { xs: "16px", md: "20px" },
+              fontSize: "20px",
+              padding: "20px",
             }}
           >
             Payment Information
           </Typography>
-          <Box sx={{ borderTop: "1px solid #e6e6e6", padding: { xs: "16px", md: "20px" } }}>
+          <Box sx={{ borderTop: "1px solid #e6e6e6", padding: "20px" }}>
             {error && (
               <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
                 {error}
@@ -239,8 +223,7 @@ export const Checkout = () => {
               </Box>
             )}
 
-            {/* COMMENTED OUT: Stripe Payment Integration */}
-            {/* {clientSecret && !isProcessingPayment && (
+            {clientSecret && !isProcessingPayment && (
               <Elements
                 stripe={stripePromise}
                 options={{
@@ -261,41 +244,12 @@ export const Checkout = () => {
               >
                 <StripePayment
                   amount={finalPrice}
-                  currency="aed"
+                  currency="usd"
                   onSuccess={handlePaymentSuccess}
                   onError={handlePaymentError}
                   clientSecret={clientSecret}
                 />
               </Elements>
-            )} */}
-
-            {/* Simulated Payment Button */}
-            {!isProcessingPayment && (
-              <Box sx={{ mt: 3 }}>
-                <ButtonComponent
-                  title="Confirm Booking (Simulated Payment)"
-                  width="100%"
-                  onClick={handleSimulatePayment}
-                  bgColor="#FF621F"
-                  style={{
-                    padding: "14px",
-                    fontSize: "1rem",
-                    fontWeight: 600,
-                  }}
-                />
-                <Typography
-                  variant="caption"
-                  sx={{
-                    display: "block",
-                    textAlign: "center",
-                    mt: 2,
-                    color: "#666",
-                    fontStyle: "italic",
-                  }}
-                >
-                  Payment gateway is currently disabled. Click to simulate successful payment.
-                </Typography>
-              </Box>
             )}
 
             <Typography
@@ -316,25 +270,24 @@ export const Checkout = () => {
             borderRadius: "20px",
             width: { xs: "100%", md: "40%" },
             height: "fit-content",
-            position: { xs: "static", md: "sticky" },
+            position: { md: "sticky" },
             top: { md: "20px" },
-            order: { xs: 1, md: 2 }
           }}
         >
           <Typography
             variant="h4"
             sx={{
               textAlign: "left",
-              marginTop: { xs: "16px", md: "20px" },
+              marginTop: "20px",
               color: theme.palette.secondary.main,
               fontWeight: "bold",
-              fontSize: { xs: "18px", md: "20px" },
-              padding: { xs: "16px", md: "20px" },
+              fontSize: "20px",
+              padding: "20px",
             }}
           >
             Booking Summary
           </Typography>
-          <Box sx={{ borderTop: "1px solid #e6e6e6", padding: { xs: "16px", md: "20px" } }}>
+          <Box sx={{ borderTop: "1px solid #e6e6e6", padding: "20px" }}>
             <Typography
               variant="h6"
               sx={{ fontWeight: "bold", marginBottom: "10px" }}
@@ -347,11 +300,6 @@ export const Checkout = () => {
             <Typography className="textStyle" sx={{ marginBottom: "10px" }}>
               📅 {bookingDate}
             </Typography>
-            {departureArrivalTime && (
-              <Typography className="textStyle" sx={{ marginBottom: "10px" }}>
-                🕐 {departureArrivalTime}
-              </Typography>
-            )}
             <Typography className="textStyle" sx={{ marginBottom: "10px" }}>
               📦 {packageName}
             </Typography>
@@ -369,9 +317,9 @@ export const Checkout = () => {
                   marginBottom: "5px",
                 }}
               >
-                <Typography className="textStyle" sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>Base Price:</Typography>
-                <Typography className="textStyle" sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
-                  AED {Number(trip.default_price).toLocaleString()}
+                <Typography className="textStyle">Base Price:</Typography>
+                <Typography className="textStyle">
+                  ${trip.default_price}
                 </Typography>
               </Box>
               {selectedPackage && (
@@ -382,9 +330,9 @@ export const Checkout = () => {
                     marginBottom: "5px",
                   }}
                 >
-                  <Typography className="textStyle" sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>Package Upgrade:</Typography>
-                  <Typography className="textStyle" sx={{ fontSize: { xs: "0.9rem", md: "1rem" } }}>
-                    AED {Number(selectedPackage.price).toLocaleString()}
+                  <Typography className="textStyle">Package Upgrade:</Typography>
+                  <Typography className="textStyle">
+                    ${selectedPackage.price}
                   </Typography>
                 </Box>
               )}
@@ -397,17 +345,17 @@ export const Checkout = () => {
                   borderTop: "2px solid #e6e6e6",
                 }}
               >
-                <Typography sx={{ fontWeight: "bold", fontSize: { xs: "16px", md: "18px" } }}>
+                <Typography sx={{ fontWeight: "bold", fontSize: "18px" }}>
                   Total:
                 </Typography>
                 <Typography
                   sx={{
                     fontWeight: "bold",
-                    fontSize: { xs: "18px", md: "20px" },
+                    fontSize: "20px",
                     color: theme.palette.secondary.main,
                   }}
                 >
-                  AED {Number(finalPrice).toLocaleString()}
+                  ${finalPrice.toFixed(2)}
                 </Typography>
               </Box>
             </Box>

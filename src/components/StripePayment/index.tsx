@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, FormEvent } from "react";
 import {
   Box,
   Typography,
@@ -25,8 +25,10 @@ interface StripePaymentProps {
 
 export const StripePayment = ({
   amount,
+  currency = "usd",
   onSuccess,
   onError,
+  clientSecret,
 }: StripePaymentProps) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -121,7 +123,7 @@ export const StripePayment = ({
               Secure payment powered by Stripe
             </Typography>
             <ButtonComponent
-              title={isProcessing ? "Processing..." : `Pay AED ${Number(amount).toLocaleString()}`}
+              title={isProcessing ? "Processing..." : `Pay $${amount.toFixed(2)}`}
               width="auto"
               type="submit"
               bgColor="#FF621F"

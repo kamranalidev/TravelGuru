@@ -104,11 +104,6 @@ const FAQPage = lazy(() =>
     default: module.FAQPage,
   }))
 );
-const MyBookingsPage = lazy(() =>
-  import("../features/bookings/pages/MyBookings").then((module) => ({
-    default: module.MyBookings,
-  }))
-);
 export default function AppRouter() {
   return (
     <>
@@ -192,14 +187,6 @@ export default function AppRouter() {
               <PublicRoute>
                 <FAQPage />
               </PublicRoute>
-            }
-          />
-          <Route
-            path="/bookings"
-            element={
-              <ProtectedRoute>
-                <MyBookingsPage />
-              </ProtectedRoute>
             }
           />
           {/* Add more routes here as needed */}

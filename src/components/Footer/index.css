@@ -4,15 +4,11 @@
   border-top: 1px solid #e5e7eb;
   color: #333;
   margin-top: auto;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .footerContent {
   max-width: 1200px;
   margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .footer-main {

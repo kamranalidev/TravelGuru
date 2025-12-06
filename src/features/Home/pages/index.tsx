@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header, ButtonComponent, Footer } from "../../../components";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Grid, Card, CardContent } from "@mui/material";
 import "./index.css";
-import theme from "../../../theme";
 import { supabase } from "../../../supabaseClient";
+import StarIcon from "@mui/icons-material/Star";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
 // Service Image Gallery Component
 const ServiceImageGallery = ({ service }: { service: any }) => {
@@ -239,92 +244,311 @@ export const Homepage = () => {
       <Header />
       {/* Hero Section */}
       <Box className="heroSection">
+        <div className="heroBackground">
+          <img
+            className="heroBackgroundImage"
+            src={dubaiImages[currentHeroImageIndex]}
+            alt="Dubai"
+            onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = dubaiImages[0];
+              setImageLoaded(true);
+            }}
+            style={{
+              transition: "opacity 0.8s ease-in-out",
+              opacity: imageLoaded ? 1 : 0.7,
+            }}
+          />
+          <div className="heroOverlay"></div>
+        </div>
         <div className="heroContent">
           <div className="heroText">
+            <div className="heroBadge">
+              <span>✨ Premium Dubai Tours</span>
+            </div>
             <h1 className="heroTitle">
-              Dubai Tours &<br />
-              Adventures
+              Discover Dubai's
+              <br />
+              <span className="heroTitleHighlight">Hidden Gems</span>
             </h1>
             <p className="heroSubtitle">
-              Experience the best of Dubai with our premium services
+              Experience luxury, adventure, and culture with our curated tours. 
+              From desert safaris to city explorations, we make your Dubai dreams come true.
             </p>
-            <ButtonComponent title="BOOK NOW" onClick={scrollToServices} />
+            <div className="heroStats">
+              <div className="heroStatItem">
+                <strong>100k+</strong>
+                <span>Happy Travelers</span>
+              </div>
+              <div className="heroStatItem">
+                <strong>500+</strong>
+                <span>Tours Completed</span>
+              </div>
+              <div className="heroStatItem">
+                <strong>4.9</strong>
+                <span>Average Rating</span>
+              </div>
+            </div>
+            <div className="heroActions">
+              <ButtonComponent 
+                title="Explore Tours" 
+                onClick={scrollToServices}
+                style={{ padding: "14px 32px", fontSize: "1.1rem" }}
+              />
+              <button 
+                className="heroSecondaryButton"
+                onClick={() => navigate("/faq")}
+              >
+                Learn More
+              </button>
+            </div>
           </div>
-          <div className="heroImageContainer">
-            <img
-              className="heroImage"
-              src={dubaiImages[currentHeroImageIndex]}
-              alt="Dubai"
-              onLoad={() => setImageLoaded(true)}
-              onError={(e) => {
-                // Fallback to first image if current image fails to load
-                const target = e.target as HTMLImageElement;
-                target.src = dubaiImages[0];
-                setImageLoaded(true);
-              }}
-              style={{
-                transition:
-                  "opacity 0.8s ease-in-out, transform 0.8s ease-in-out",
-                opacity: imageLoaded ? 1 : 0.8,
-                transform: `scale(${imageLoaded ? 1 : 1.05})`,
+        </div>
+        {/* Image carousel indicators */}
+        <div className="heroImageIndicators">
+          {dubaiImages.map((_, index) => (
+            <div
+              key={index}
+              className={`indicator ${
+                index === currentHeroImageIndex ? "active" : ""
+              }`}
+              onClick={() => {
+                setImageLoaded(false);
+                setTimeout(() => {
+                  setCurrentHeroImageIndex(index);
+                }, 200);
               }}
             />
-            <div className="heroImageBadge">
-              <span className="badgeText">Dubai</span>
-            </div>
+          ))}
+        </div>
+      </Box>
 
-            {/* Image carousel indicators */}
-            <div className="heroImageIndicators">
-              {dubaiImages.map((_, index) => (
-                <div
-                  key={index}
-                  className={`indicator ${
-                    index === currentHeroImageIndex ? "active" : ""
-                  }`}
-                  onClick={() => {
-                    setImageLoaded(false);
-                    setTimeout(() => {
-                      setCurrentHeroImageIndex(index);
-                    }, 200);
-                  }}
-                />
-              ))}
-            </div>
-            <div className="heroTravelers">
-              <div className="travelerAvatars">
-                <div className="avatar avatar1"></div>
-                <div className="avatar avatar2"></div>
-                <div className="avatar avatar3"></div>
+      {/* Featured Destinations Section */}
+      <Box className="featuredDestinations">
+        <div className="sectionContainer">
+          <Typography className="sectionTitle">
+            Popular <span className="sectionTitleHighlight">Destinations</span>
+          </Typography>
+          <Typography className="sectionSubtitle">
+            Explore our most loved destinations in Dubai
+          </Typography>
+          <Grid container spacing={3} className="destinationsGrid">
+            <Grid item xs={12} sm={6} md={4}>
+              <Card className="destinationCard">
+                <div className="destinationImage">
+                  <img src="/assets/burjKhalifa.jpg" alt="Burj Khalifa" />
+                  <div className="destinationOverlay">
+                    <ButtonComponent 
+                      title="Explore" 
+                      width="auto"
+                      onClick={() => scrollToServices()}
+                    />
+                  </div>
+                </div>
+                <CardContent>
+                  <Typography className="destinationName">Burj Khalifa</Typography>
+                  <Typography className="destinationDescription">
+                    World's tallest building with stunning city views
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card className="destinationCard">
+                <div className="destinationImage">
+                  <img src="/assets/IMG_0458.JPG" alt="Desert Safari" />
+                  <div className="destinationOverlay">
+                    <ButtonComponent 
+                      title="Explore" 
+                      width="auto"
+                      onClick={() => scrollToServices()}
+                    />
+                  </div>
+                </div>
+                <CardContent>
+                  <Typography className="destinationName">Desert Safari</Typography>
+                  <Typography className="destinationDescription">
+                    Thrilling dune bashing and traditional experiences
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <Card className="destinationCard">
+                <div className="destinationImage">
+                  <img src="/assets/IMG_0459.JPG" alt="Dubai Marina" />
+                  <div className="destinationOverlay">
+                    <ButtonComponent 
+                      title="Explore" 
+                      width="auto"
+                      onClick={() => scrollToServices()}
+                    />
+                  </div>
+                </div>
+                <CardContent>
+                  <Typography className="destinationName">Dubai Marina</Typography>
+                  <Typography className="destinationDescription">
+                    Luxury waterfront district with amazing architecture
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </div>
+      </Box>
+
+      {/* Why Choose Us Section */}
+      <Box className="whyChooseUs">
+        <div className="sectionContainer">
+          <Typography className="sectionTitle">
+            Why Choose <span className="sectionTitleHighlight">TravelGuru</span>
+          </Typography>
+          <Typography className="sectionSubtitle">
+            We're committed to making your Dubai experience unforgettable
+          </Typography>
+          <Grid container spacing={4} className="featuresGrid">
+            <Grid item xs={12} sm={6} md={3}>
+              <div className="featureCard">
+                <div className="featureIcon">
+                  <VerifiedUserIcon sx={{ fontSize: 40 }} />
+                </div>
+                <Typography className="featureTitle">Trusted & Verified</Typography>
+                <Typography className="featureDescription">
+                  All our tours are verified and trusted by thousands of travelers
+                </Typography>
               </div>
-              <div className="travelerText">
-                <strong>100k</strong>
-                <br />
-                <span>Travelers</span>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <div className="featureCard">
+                <div className="featureIcon">
+                  <SupportAgentIcon sx={{ fontSize: 40 }} />
+                </div>
+                <Typography className="featureTitle">24/7 Support</Typography>
+                <Typography className="featureDescription">
+                  Our team is always available to assist you throughout your journey
+                </Typography>
               </div>
-            </div>
-          </div>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <div className="featureCard">
+                <div className="featureIcon">
+                  <LocalOfferIcon sx={{ fontSize: 40 }} />
+                </div>
+                <Typography className="featureTitle">Best Prices</Typography>
+                <Typography className="featureDescription">
+                  Competitive pricing with no hidden fees or surprises
+                </Typography>
+              </div>
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <div className="featureCard">
+                <div className="featureIcon">
+                  <AccessTimeIcon sx={{ fontSize: 40 }} />
+                </div>
+                <Typography className="featureTitle">Flexible Booking</Typography>
+                <Typography className="featureDescription">
+                  Easy cancellation and rescheduling options available
+                </Typography>
+              </div>
+            </Grid>
+          </Grid>
+        </div>
+      </Box>
+
+      {/* Testimonials Section */}
+      <Box className="testimonialsSection">
+        <div className="sectionContainer">
+          <Typography className="sectionTitle">
+            What Our <span className="sectionTitleHighlight">Travelers Say</span>
+          </Typography>
+          <Typography className="sectionSubtitle">
+            Don't just take our word for it - hear from our satisfied customers
+          </Typography>
+          <Grid container spacing={3} className="testimonialsGrid">
+            <Grid item xs={12} md={4}>
+              <Card className="testimonialCard">
+                <CardContent>
+                  <div className="testimonialRating">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <StarIcon key={i} sx={{ color: "#FFD700", fontSize: 20 }} />
+                    ))}
+                  </div>
+                  <Typography className="testimonialText">
+                    "Amazing experience! The desert safari was absolutely incredible. 
+                    The guides were knowledgeable and the whole trip was well organized."
+                  </Typography>
+                  <div className="testimonialAuthor">
+                    <div className="testimonialAvatar"></div>
+                    <div>
+                      <Typography className="testimonialName">Sarah Johnson</Typography>
+                      <Typography className="testimonialLocation">United States</Typography>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Card className="testimonialCard">
+                <CardContent>
+                  <div className="testimonialRating">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <StarIcon key={i} sx={{ color: "#FFD700", fontSize: 20 }} />
+                    ))}
+                  </div>
+                  <Typography className="testimonialText">
+                    "Best tour company in Dubai! Professional service, great prices, 
+                    and unforgettable memories. Highly recommend to everyone!"
+                  </Typography>
+                  <div className="testimonialAuthor">
+                    <div className="testimonialAvatar"></div>
+                    <div>
+                      <Typography className="testimonialName">Michael Chen</Typography>
+                      <Typography className="testimonialLocation">Singapore</Typography>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Card className="testimonialCard">
+                <CardContent>
+                  <div className="testimonialRating">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <StarIcon key={i} sx={{ color: "#FFD700", fontSize: 20 }} />
+                    ))}
+                  </div>
+                  <Typography className="testimonialText">
+                    "Exceeded all expectations! The city tour was fantastic and the 
+                    booking process was so easy. Will definitely book again!"
+                  </Typography>
+                  <div className="testimonialAuthor">
+                    <div className="testimonialAvatar"></div>
+                    <div>
+                      <Typography className="testimonialName">Emma Williams</Typography>
+                      <Typography className="testimonialLocation">United Kingdom</Typography>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
         </div>
       </Box>
       {/* Featured Services */}
       <Box
         id="premium-services"
-        sx={{ backgroundColor: "#fff", padding: "60px 0" }}
+        className="servicesSection"
       >
-        <p className="servicesHeader">
-          Our Premium{" "}
-          <Typography
-            sx={{ color: theme.palette.secondary.main, fontSize: "2.5rem" }}
-            component="span"
-          >
-            Dubai Services
+        <div className="sectionContainer">
+          <Typography className="sectionTitle">
+            Our Premium <span className="sectionTitleHighlight">Dubai Services</span>
           </Typography>
-        </p>
-        <p className="servicesSubtitle">
-          Explore Dubai with our exclusive selection of premium tours and
-          services.
-        </p>
+          <Typography className="sectionSubtitle">
+            Explore Dubai with our exclusive selection of premium tours and services
+          </Typography>
 
-        <div className="servicesGrid">
+          <div className="servicesGrid">
           {loading ? (
             <div className="servicesPlaceholder">Loading services...</div>
           ) : error ? (
@@ -365,6 +589,7 @@ export const Homepage = () => {
               </div>
             ))
           )}
+          </div>
         </div>
       </Box>
 

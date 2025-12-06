@@ -81,7 +81,7 @@ export const createPaymentIntent = async (
  * This should NOT be used in production
  */
 export const createMockPaymentIntent = async (
-  _params: CreatePaymentIntentParams
+  params: CreatePaymentIntentParams
 ): Promise<PaymentIntentResponse> => {
   // This is a mock implementation for development
   // In production, this must be replaced with a real backend call
