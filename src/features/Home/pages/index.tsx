@@ -129,31 +129,10 @@ export const Homepage = () => {
   const [imageLoaded, setImageLoaded] = useState(true);
   const navigate = useNavigate();
 
-  // Dubai images from assets folder
   const dubaiImages = [
     "/assets/burjKhalifa.jpg",
     "/assets/IMG_0458.JPG",
     "/assets/IMG_0459.JPG",
-    "/assets/IMG_0460.JPG",
-    "/assets/IMG_0461.JPG",
-    "/assets/IMG_0462.JPG",
-    "/assets/IMG_0463.JPG",
-    "/assets/IMG_0464.JPG",
-    "/assets/IMG_0465.JPG",
-    "/assets/IMG_0466.JPG",
-    "/assets/IMG_0467.JPG",
-    "/assets/IMG_1972.JPG",
-    "/assets/IMG_1975.JPG",
-    "/assets/IMG_1981.JPG",
-    "/assets/IMG_3423.JPG",
-    "/assets/IMG_3425.JPG",
-    "/assets/IMG_3438.JPG",
-    "/assets/IMG_3439.JPG",
-    "/assets/IMG_3440.JPG",
-    "/assets/IMG_3441.JPG",
-    "/assets/IMG_3442.JPG",
-    "/assets/IMG_3443.JPG",
-    "/assets/IMG_3444.JPG",
   ];
 
   useEffect(() => {
@@ -233,7 +212,7 @@ export const Homepage = () => {
   };
 
   const scrollToServices = () => {
-    const servicesSection = document.getElementById("premium-services");
+    const servicesSection = document.querySelector(".featuredDestinations");
     if (servicesSection) {
       servicesSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -324,8 +303,7 @@ export const Homepage = () => {
         </div>
       </Box>
 
-      {/* Featured Destinations Section */}
-      <Box className="featuredDestinations">
+      <Box id="premium-services" className="featuredDestinations">
         <div className="sectionContainer">
           <Typography className="sectionTitle">
             Popular <span className="sectionTitleHighlight">Destinations</span>
@@ -333,68 +311,49 @@ export const Homepage = () => {
           <Typography className="sectionSubtitle">
             Explore our most loved destinations in Dubai
           </Typography>
-          <Grid container spacing={3} className="destinationsGrid">
-            <Grid item xs={12} sm={6} md={4}>
-              <Card className="destinationCard">
-                <div className="destinationImage">
-                  <img src="/assets/burjKhalifa.jpg" alt="Burj Khalifa" />
-                  <div className="destinationOverlay">
-                    <ButtonComponent 
-                      title="Explore" 
+
+          <div className="servicesGrid">
+          {loading ? (
+            <div className="servicesPlaceholder">Loading services...</div>
+          ) : error ? (
+            <div className="servicesPlaceholder">{error}</div>
+          ) : services.length === 0 ? (
+            <div className="servicesPlaceholder">
+              No services available right now. Please check back later.
+            </div>
+          ) : (
+            services.map((service) => (
+              <div
+                className="serviceCard"
+                key={service.id}
+                onClick={() => handleServiceClick(service)}
+              >
+                <ServiceImageGallery service={service} />
+                <div className="serviceInfo">
+                  <h3 className="serviceTitle">
+                    {service.service_name || "Untitled Service"}
+                  </h3>
+                  <p className="serviceLocation">
+                    {service.location ? `📍 ${service.location}` : "Dubai"}
+                  </p>
+                  <p className="serviceDescription">
+                    {service.service_description || "Premium Dubai experience."}
+                  </p>
+                  <div className="serviceMeta">
+                    <span className="servicePrice">
+                      {formatPrice(service.default_price)}
+                    </span>
+                    <ButtonComponent
+                      title="View Details"
                       width="auto"
-                      onClick={() => scrollToServices()}
+                      style={{ padding: "10px 20px", fontSize: "0.95rem" }}
                     />
                   </div>
                 </div>
-                <CardContent>
-                  <Typography className="destinationName">Burj Khalifa</Typography>
-                  <Typography className="destinationDescription">
-                    World's tallest building with stunning city views
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <Card className="destinationCard">
-                <div className="destinationImage">
-                  <img src="/assets/IMG_0458.JPG" alt="Desert Safari" />
-                  <div className="destinationOverlay">
-                    <ButtonComponent 
-                      title="Explore" 
-                      width="auto"
-                      onClick={() => scrollToServices()}
-                    />
-                  </div>
-                </div>
-                <CardContent>
-                  <Typography className="destinationName">Desert Safari</Typography>
-                  <Typography className="destinationDescription">
-                    Thrilling dune bashing and traditional experiences
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <Card className="destinationCard">
-                <div className="destinationImage">
-                  <img src="/assets/IMG_0459.JPG" alt="Dubai Marina" />
-                  <div className="destinationOverlay">
-                    <ButtonComponent 
-                      title="Explore" 
-                      width="auto"
-                      onClick={() => scrollToServices()}
-                    />
-                  </div>
-                </div>
-                <CardContent>
-                  <Typography className="destinationName">Dubai Marina</Typography>
-                  <Typography className="destinationDescription">
-                    Luxury waterfront district with amazing architecture
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
+              </div>
+            ))
+          )}
+          </div>
         </div>
       </Box>
 
@@ -535,64 +494,6 @@ export const Homepage = () => {
           </Grid>
         </div>
       </Box>
-      {/* Featured Services */}
-      <Box
-        id="premium-services"
-        className="servicesSection"
-      >
-        <div className="sectionContainer">
-          <Typography className="sectionTitle">
-            Our Premium <span className="sectionTitleHighlight">Dubai Services</span>
-          </Typography>
-          <Typography className="sectionSubtitle">
-            Explore Dubai with our exclusive selection of premium tours and services
-          </Typography>
-
-          <div className="servicesGrid">
-          {loading ? (
-            <div className="servicesPlaceholder">Loading services...</div>
-          ) : error ? (
-            <div className="servicesPlaceholder">{error}</div>
-          ) : services.length === 0 ? (
-            <div className="servicesPlaceholder">
-              No services available right now. Please check back later.
-            </div>
-          ) : (
-            services.map((service) => (
-              <div
-                className="serviceCard"
-                key={service.id}
-                onClick={() => handleServiceClick(service)}
-              >
-                <ServiceImageGallery service={service} />
-                <div className="serviceInfo">
-                  <h3 className="serviceTitle">
-                    {service.service_name || "Untitled Service"}
-                  </h3>
-                  <p className="serviceLocation">
-                    {service.location ? `📍 ${service.location}` : "Dubai"}
-                  </p>
-                  <p className="serviceDescription">
-                    {service.service_description || "Premium Dubai experience."}
-                  </p>
-                  <div className="serviceMeta">
-                    <span className="servicePrice">
-                      {formatPrice(service.default_price)}
-                    </span>
-                    <ButtonComponent
-                      title="View Details"
-                      width="auto"
-                      style={{ padding: "10px 20px", fontSize: "0.95rem" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-          </div>
-        </div>
-      </Box>
-
       {/* Subscribe  and get exclusive offers */}
       <Box className="subscribe">
         <div className="subscribeContent">

@@ -6,10 +6,12 @@
 }
 
 .faq-hero {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 80px 0 60px;
+  background: linear-gradient(135deg, #FF621F 0%, #ff8533 100%);
+  padding: 100px 0 80px;
   color: white;
   text-align: center;
+  margin-top: -64px;
+  padding-top: 164px;
 }
 
 .faq-title {
@@ -57,7 +59,7 @@
 }
 
 .faq-accordion-summary.Mui-expanded {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #FF621F 0%, #ff8533 100%);
   color: white;
 }
 
@@ -119,13 +121,13 @@
 .contact-link {
   display: inline-block;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #FF621F 0%, #ff8533 100%);
   color: white;
   text-decoration: none;
   border-radius: 8px;
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 15px rgba(255, 98, 31, 0.4);
 }
 
 .contact-link:hover {
@@ -138,7 +140,8 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .faq-hero {
-    padding: 60px 0 40px;
+    padding: 80px 0 60px;
+    padding-top: 144px;
   }
   
   .faq-title {

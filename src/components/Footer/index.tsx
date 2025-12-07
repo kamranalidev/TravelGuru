@@ -1,41 +1,112 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Grid } from "@mui/material";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
+import EmailIcon from "@mui/icons-material/Email";
+import PhoneIcon from "@mui/icons-material/Phone";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { useNavigate } from "react-router-dom";
+import "./index.css";
 
 export const Footer = () => {
   const navigate = useNavigate();
 
   return (
-    <Box className="footer">
+    <Box className="footer" component="footer">
       <Box className="footerContent">
-        <Box className="footer-main">
-          <Box className="footer-brand">
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                marginBottom: 2,
-                cursor: "pointer",
-              }}
-              onClick={() => navigate("/")}
-            >
-              <img
-                src="/assets/Logo-02.png"
-                alt="TravelGuru Logo"
-                style={{ height: "36px", width: "auto", marginRight: "12px" }}
-              />
-              <Typography className="logo">Travel Guru</Typography>
+        <Grid container spacing={4} className="footer-grid">
+          <Grid item xs={12} md={4} className="footer-column">
+            <Box className="footer-logo-section">
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  marginBottom: 2,
+                  cursor: "pointer",
+                }}
+                onClick={() => navigate("/")}
+              >
+                <img
+                  src="/assets/Logo-02.png"
+                  alt="TravelGuru Logo"
+                  className="footer-logo"
+                />
+                <Typography className="footer-logo-text">Travel Guru</Typography>
+              </Box>
+              <Typography className="footer-tagline">
+                Your trusted partner for unforgettable Dubai experiences.
+              </Typography>
             </Box>
-            <Typography className="footer-tagline">
-              Your trusted partner for unforgettable Dubai experiences.
-            </Typography>
-            <Box className="social-icons">
+          </Grid>
+
+          <Grid item xs={12} md={4} className="footer-column">
+            <Typography className="footer-column-title">Business</Typography>
+            <Box className="footer-links-column">
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/");
+                }}
+                className="footer-link"
+              >
+                About us
+              </a>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                }}
+                className="footer-link"
+              >
+                Partner with us
+              </a>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                }}
+                className="footer-link"
+              >
+                Become an affiliate
+              </a>
+            </Box>
+          </Grid>
+
+          <Grid item xs={12} md={4} className="footer-column">
+            <Typography className="footer-column-title">Get Help 24/7</Typography>
+            <Box className="footer-contact-info">
+              <Box className="contact-info-item">
+                <EmailIcon className="contact-icon" />
+                <a href="mailto:info@travelguru.com" className="contact-link">
+                  info@travelguru.com
+                </a>
+              </Box>
+              <Box className="contact-info-item">
+                <PhoneIcon className="contact-icon" />
+                <a href="tel:+971586257508" className="contact-link">
+                  +971 58 625 7508
+                </a>
+              </Box>
+              <Box className="contact-info-item">
+                <WhatsAppIcon className="contact-icon" />
+                <a
+                  href="https://wa.me/971586257508"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="contact-link"
+                >
+                  +971 58 625 7508
+                </a>
+              </Box>
+            </Box>
+            
+            <Box className="footer-social-icons">
               <a
                 href="https://www.facebook.com/profile.php?id=61579936145705"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
+                className="social-icon-link"
               >
                 <FacebookIcon />
               </a>
@@ -44,6 +115,7 @@ export const Footer = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
+                className="social-icon-link"
               >
                 <InstagramIcon />
               </a>
@@ -52,11 +124,11 @@ export const Footer = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="TikTok"
-                className="tiktok-icon"
+                className="social-icon-link tiktok-icon"
               >
                 <svg
-                  width="24"
-                  height="24"
+                  width="20"
+                  height="20"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   xmlns="http://www.w3.org/2000/svg"
@@ -65,22 +137,13 @@ export const Footer = () => {
                 </svg>
               </a>
             </Box>
-          </Box>
-        </Box>
+          </Grid>
+        </Grid>
 
         <Box className="footer-bottom">
           <Typography className="copyright">
             © {new Date().getFullYear()} TravelGuru. All rights reserved.
           </Typography>
-          <Box className="footer-links-minimal">
-            <a href="#" onClick={(e) => { e.preventDefault(); navigate("/faq"); }}>
-              FAQ
-            </a>
-            <span className="separator">•</span>
-            <a href="#">Privacy Policy</a>
-            <span className="separator">•</span>
-            <a href="#">Terms & Conditions</a>
-          </Box>
         </Box>
       </Box>
     </Box>

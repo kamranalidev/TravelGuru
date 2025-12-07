@@ -104,6 +104,11 @@ const FAQPage = lazy(() =>
     default: module.FAQPage,
   }))
 );
+const ContactPage = lazy(() =>
+  import("../features/Contact").then((module) => ({
+    default: module.ContactPage,
+  }))
+);
 export default function AppRouter() {
   return (
     <>
@@ -186,6 +191,14 @@ export default function AppRouter() {
             element={
               <PublicRoute>
                 <FAQPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/contact"
+            element={
+              <PublicRoute>
+                <ContactPage />
               </PublicRoute>
             }
           />

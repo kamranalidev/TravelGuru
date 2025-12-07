@@ -29,6 +29,7 @@ const pages: PageItem[] = [
   { label: "Home", route: "/" },
   { label: "Services", route: "/#premium-services", isScroll: true },
   { label: "FAQ", route: "/faq" },
+  { label: "Contact Us", route: "/contact" },
 ];
 
 export const Header = (props: { hidePages?: boolean }) => {
@@ -165,28 +166,12 @@ export const Header = (props: { hidePages?: boolean }) => {
               alignItems: "center",
               justifyContent: "space-between",
               gap: { xs: 2, md: 4 },
-              // Glassmorphism styling
-              background: "rgba(255, 255, 255, 0.25)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)", // Safari support
-              borderRadius: "24px",
-              border: "1px solid rgba(255, 255, 255, 0.3)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
-              px: { xs: 3, md: 6 }, // Increased padding for better width utilization
-              py: { xs: 1.25, md: 1.5 }, // Reduced height slightly
-              position: "relative",
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                borderRadius: "24px",
-                background:
-                  "linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05))",
-                zIndex: -1,
-              },
+              background: "#ffffff",
+              borderRadius: "16px",
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
+              px: { xs: 3, md: 6 },
+              py: { xs: 1.25, md: 1.5 },
             }}
           >
             <Box
