@@ -3,155 +3,175 @@ export interface ChatMessage {
   content: string;
 }
 
-const faqDatabase: { keywords: string[]; answer: string }[] = [
+interface KnowledgeBase {
+  category: string;
+  keywords: string[];
+  answer: string;
+}
+
+const knowledgeBase: KnowledgeBase[] = [
   {
-    keywords: ['price', 'cost', 'how much', 'pricing', 'fee', 'charge'],
-    answer: 'Our tour prices vary depending on the package you choose. Prices start from AED 100 and can go up based on the experience. You can view detailed pricing on each service page. For custom packages, please contact us directly.'
+    category: 'services',
+    keywords: ['services', 'tours', 'what do you offer', 'what can i book', 'activities', 'experiences'],
+    answer: 'TravelGuru offers a comprehensive range of Dubai travel services including desert safaris, city tours, yacht charters, skydiving experiences, cultural tours, luxury hotel bookings, and customized travel packages. We specialize in creating unforgettable Dubai experiences for all types of travelers. You can browse all our services on the homepage.'
   },
   {
-    keywords: ['booking', 'book', 'reserve', 'reservation', 'how to book'],
-    answer: 'You can book any tour directly from our website! Simply browse our services, select your preferred package, choose your date, and complete the payment. You\'ll receive a confirmation email with all the details.'
+    category: 'booking',
+    keywords: ['book', 'booking', 'how to book', 'make a reservation', 'reserve', 'how do i book'],
+    answer: 'Making a booking is simple! Browse our services on the homepage, select your preferred package, choose your dates, and click "Book Now". You\'ll need to create an account or log in, provide your details, and complete the payment process. You\'ll receive instant confirmation via email.'
   },
   {
-    keywords: ['desert safari', 'desert', 'safari', 'dune bashing'],
-    answer: 'Our Desert Safari includes thrilling dune bashing, camel rides, traditional entertainment, BBQ dinner, and stargazing. It\'s a full-day adventure in the golden dunes of Dubai. Duration is typically 6-8 hours.'
+    category: 'payment',
+    keywords: ['payment', 'pay', 'credit card', 'stripe', 'how to pay', 'payment methods', 'visa', 'mastercard'],
+    answer: 'We accept all major credit cards (Visa, MasterCard, American Express) through our secure Stripe payment gateway. All payments are processed securely to ensure your financial information is protected.'
   },
   {
-    keywords: ['dhow cruise', 'dhow', 'cruise', 'boat', 'marina'],
-    answer: 'The Dhow Cruise is a traditional wooden boat experience along Dubai Marina or Dubai Creek. Enjoy dinner, live entertainment, and stunning views of Dubai\'s skyline. Available for both lunch and dinner cruises.'
+    category: 'cancellation',
+    keywords: ['cancel', 'cancellation', 'refund', 'modify booking', 'change booking', 'reschedule'],
+    answer: 'Yes, you can cancel or modify your booking depending on our cancellation policy. Free cancellation is available up to 24-48 hours before your experience (varies by service). Modifications are subject to availability and may incur additional charges.'
   },
   {
-    keywords: ['abu dhabi', 'abudhabi', 'city tour', 'sheikh zayed'],
-    answer: 'Our Abu Dhabi City Tour takes you to iconic landmarks including the Sheikh Zayed Grand Mosque, Emirates Palace, Ferrari World, and the Corniche. It\'s a full-day tour with professional guides.'
+    category: 'pickup',
+    keywords: ['pickup', 'hotel pickup', 'transportation', 'transfer', 'pick up', 'drop off'],
+    answer: 'Yes, most of our tours include complimentary hotel pickup and drop-off from major Dubai hotels and locations. Pickup times vary depending on your location and the selected tour. We\'ll confirm your pickup time 24 hours before your experience.'
   },
   {
-    keywords: ['cancellation', 'cancel', 'refund', 'money back'],
-    answer: 'We offer flexible cancellation policies. You can cancel up to 24 hours before your tour for a full refund. Cancellations within 24 hours may be subject to a fee. Please check the specific terms for your booking.'
+    category: 'guides',
+    keywords: ['guide', 'guides', 'tour guide', 'licensed', 'experienced', 'professional'],
+    answer: 'Absolutely! All our guides are licensed professionals with extensive knowledge of Dubai\'s history, culture, and attractions. They speak multiple languages and are trained to provide safe, informative, and entertaining experiences.'
   },
   {
-    keywords: ['pickup', 'pick up', 'transportation', 'hotel', 'location'],
-    answer: 'We provide complimentary hotel pickup and drop-off for most tours in Dubai and Abu Dhabi. Please provide your hotel details during booking. Pickup times are typically 30-60 minutes before the tour starts.'
+    category: 'weather',
+    keywords: ['weather', 'rain', 'bad weather', 'cancel due to weather', 'reschedule weather'],
+    answer: 'Dubai has excellent weather year-round, but in rare cases of extreme weather, we may need to reschedule or modify activities for safety reasons. We\'ll contact you immediately and offer alternative dates or full refunds if needed.'
   },
   {
-    keywords: ['duration', 'how long', 'time', 'hours'],
-    answer: 'Tour durations vary: Desert Safari (6-8 hours), Dhow Cruise (2-3 hours), City Tours (4-6 hours), and Abu Dhabi Tour (8-10 hours). Exact timings are provided when you book.'
+    category: 'contact',
+    keywords: ['contact', 'support', 'help', 'customer service', 'email', 'phone', 'whatsapp', 'reach out'],
+    answer: 'Our customer support team is available 24/7. You can reach us through the contact form on our website, email us at info@travelguru.com, call us at +971 58 625 7508, or message us on WhatsApp at +971 58 625 7508. We\'re here to assist you before, during, and after your Dubai experience.'
   },
   {
-    keywords: ['what to bring', 'what should i bring', 'items', 'things'],
-    answer: 'For Desert Safari: comfortable clothes, sunglasses, sunscreen, camera. For Dhow Cruise: casual wear, camera. For City Tours: comfortable walking shoes, hat, camera. We provide most equipment needed.'
+    category: 'pricing',
+    keywords: ['price', 'pricing', 'cost', 'how much', 'expensive', 'cheap', 'affordable', 'aed'],
+    answer: 'Our prices vary depending on the service and package you choose. All prices are displayed in AED (UAE Dirhams) and are competitive with no hidden fees. You can view pricing for each service on the service details page. We offer the best prices with transparent pricing.'
   },
   {
-    keywords: ['weather', 'temperature', 'hot', 'cold', 'season'],
-    answer: 'Dubai has a desert climate - hot summers (May-September) and pleasant winters (October-April). Best time to visit is November to March. All our tours are designed to be comfortable year-round.'
+    category: 'location',
+    keywords: ['dubai', 'where', 'location', 'address', 'office', 'headquarters'],
+    answer: 'We are based in Dubai, United Arab Emirates. Our services cover all major attractions and locations throughout Dubai. For specific location details, please contact us at info@travelguru.com or +971 58 625 7508.'
   },
   {
-    keywords: ['payment', 'pay', 'credit card', 'cash', 'methods'],
-    answer: 'We accept all major credit cards, debit cards, and online payment methods through our secure payment gateway. Cash payments may be available for some tours - please contact us for details.'
+    category: 'about',
+    keywords: ['about', 'who are you', 'company', 'travelguru', 'what is travelguru'],
+    answer: 'TravelGuru is your trusted partner for unforgettable Dubai experiences. We specialize in premium Dubai tours and travel services, helping over 100,000 happy travelers discover Dubai\'s hidden gems. We offer verified tours, 24/7 support, best prices, and flexible booking options.'
   },
   {
-    keywords: ['group', 'private', 'individual', 'family'],
-    answer: 'We offer both group tours and private tours. Group tours are cost-effective and social, while private tours offer personalized experiences. Family packages are also available with special rates for children.'
+    category: 'features',
+    keywords: ['why choose', 'features', 'benefits', 'advantages', 'what makes you different'],
+    answer: 'We stand out because we offer: 1) Trusted & Verified tours trusted by thousands, 2) 24/7 Support available anytime, 3) Best Prices with no hidden fees, and 4) Flexible Booking with easy cancellation and rescheduling options.'
   },
   {
-    keywords: ['children', 'kids', 'baby', 'infant', 'age'],
-    answer: 'Children are welcome on most tours! Infants (0-2 years) usually travel free. Children (3-12 years) get discounted rates. Some activities like dune bashing may have age restrictions for safety.'
+    category: 'account',
+    keywords: ['account', 'login', 'sign up', 'register', 'profile', 'create account'],
+    answer: 'To create an account, click on the "Login" button in the header, then select "Sign Up" or "Create Account". You\'ll need to provide your email and create a password. Once registered, you can manage your bookings, view your profile, and access exclusive offers.'
   },
   {
-    keywords: ['contact', 'phone', 'email', 'whatsapp', 'reach'],
-    answer: 'You can contact us via WhatsApp (+971586257508), email, or through our website contact form. Our customer support is available 24/7 to assist you with any questions or bookings.'
+    category: 'packages',
+    keywords: ['packages', 'package options', 'different packages', 'package types'],
+    answer: 'Each service offers multiple package options with different inclusions and pricing. When you select a service, you\'ll see all available packages with their features and prices. You can choose the package that best fits your needs and budget.'
   },
   {
-    keywords: ['hello', 'hi', 'hey', 'greetings'],
-    answer: 'Hello! 👋 Welcome to TravelGuru! I\'m here to help you with any questions about our Dubai tours and services. What would you like to know?'
+    category: 'reviews',
+    keywords: ['reviews', 'ratings', 'testimonials', 'feedback', 'what others say'],
+    answer: 'We have excellent reviews from our travelers! We maintain a 4.9 average rating with thousands of satisfied customers. You can read testimonials on our homepage from travelers like Sarah Johnson, Michael Chen, and Emma Williams who had amazing experiences with us.'
   },
   {
-    keywords: ['help', 'support', 'assistance'],
-    answer: 'I\'m here to help! You can ask me about our tours, pricing, booking, cancellation policies, or anything else about TravelGuru. What would you like to know?'
+    category: 'social',
+    keywords: ['facebook', 'instagram', 'tiktok', 'social media', 'follow'],
+    answer: 'You can follow us on social media! Find us on Facebook (TravelGuru), Instagram (@travelguroo_), and TikTok (@travelguroo) for the latest updates, travel tips, and exclusive offers.'
   }
 ];
 
-const findBestMatch = (userMessage: string): string | null => {
-  const lowerMessage = userMessage.toLowerCase();
+const greetings = [
+  'Hello! How can I help you today?',
+  'Hi there! What would you like to know?',
+  'Welcome! I\'m here to help with any questions about TravelGuru.',
+  'Hello! Ask me anything about our Dubai tours and services.'
+];
+
+const fallbackResponses = [
+  'I\'m not sure I understand that question. Could you rephrase it? I can help you with booking information, our services, payment methods, cancellations, and more.',
+  'I don\'t have information about that specific topic. However, I can help you with: booking processes, our services, payment options, cancellations, or contact information. What would you like to know?',
+  'Let me help you with something else. I can answer questions about: our services, how to make a booking, payment methods, cancellation policies, or contact support. What do you need?'
+];
+
+function normalizeText(text: string): string {
+  return text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function calculateMatchScore(query: string, keywords: string[]): number {
+  const normalizedQuery = normalizeText(query);
+  const queryWords = normalizedQuery.split(' ');
   
-  let bestMatch: { keywords: string[]; answer: string } | null = null;
-  let maxMatches = 0;
-
-  for (const faq of faqDatabase) {
-    const matches = faq.keywords.filter(keyword => 
-      lowerMessage.includes(keyword)
-    ).length;
-    
-    if (matches > maxMatches) {
-      maxMatches = matches;
-      bestMatch = faq;
+  let score = 0;
+  keywords.forEach(keyword => {
+    const normalizedKeyword = normalizeText(keyword);
+    if (normalizedQuery.includes(normalizedKeyword)) {
+      score += 2;
     }
-  }
+    queryWords.forEach(word => {
+      if (normalizedKeyword.includes(word) || word.includes(normalizedKeyword)) {
+        score += 1;
+      }
+    });
+  });
+  
+  return score;
+}
 
-  if (maxMatches > 0 && bestMatch) {
+export function getChatbotResponse(userMessage: string): string {
+  const normalizedMessage = normalizeText(userMessage);
+  
+  if (normalizedMessage.match(/\b(hi|hello|hey|greetings|good morning|good afternoon|good evening)\b/)) {
+    return greetings[Math.floor(Math.random() * greetings.length)];
+  }
+  
+  if (normalizedMessage.match(/\b(thanks|thank you|thankyou|appreciate)\b/)) {
+    return 'You\'re welcome! Is there anything else I can help you with?';
+  }
+  
+  if (normalizedMessage.match(/\b(bye|goodbye|see you|farewell)\b/)) {
+    return 'Thank you for chatting with TravelGuru! Have a great day and we hope to see you in Dubai soon!';
+  }
+  
+  let bestMatch: KnowledgeBase | null = null;
+  let bestScore = 0;
+  
+  knowledgeBase.forEach(kb => {
+    const score = calculateMatchScore(userMessage, kb.keywords);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = kb;
+    }
+  });
+  
+  if (bestMatch && bestScore > 0) {
     return bestMatch.answer;
   }
-
-  return null;
-};
-
-const useParrotGPT = async (message: string): Promise<string | null> => {
-  const PARROT_API_KEY = import.meta.env.VITE_PARROT_API_KEY;
-  const PARROT_API_URL = import.meta.env.VITE_PARROT_API_URL;
   
-  if (!PARROT_API_KEY || !PARROT_API_URL) {
-    return null;
-  }
+  return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+}
 
-  try {
-    const response = await fetch(PARROT_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${PARROT_API_KEY}`
-      },
-      body: JSON.stringify({ message })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      return data.response || data.answer || null;
-    }
-  } catch (error) {
-    console.error('ParrotGPT API error:', error);
-  }
-
-  return null;
-};
-
-export const getChatbotResponse = async (
-  message: string,
-  conversationHistory: ChatMessage[] = []
-): Promise<string> => {
-  const trimmedMessage = message.trim().toLowerCase();
-
-  if (trimmedMessage === '' || trimmedMessage.length < 2) {
-    return 'Please ask me a question about our tours and services!';
-  }
-
-  const parrotResponse = await useParrotGPT(message);
-  if (parrotResponse) {
-    return parrotResponse;
-  }
-
-  const faqAnswer = findBestMatch(message);
-  
-  if (faqAnswer) {
-    return faqAnswer;
-  }
-
-  const genericResponses = [
-    'I understand you\'re asking about that. Could you provide more details? For specific information about bookings, pricing, or tour details, please visit our service pages or contact our support team at +971586257508.',
-    'That\'s a great question! For detailed information, I recommend checking our service pages or reaching out to our customer support team who can provide personalized assistance. You can contact us via WhatsApp at +971586257508.',
-    'I\'m still learning about that topic. For the most accurate information, please visit our website\'s service pages or contact our support team. They\'re available 24/7 to help you!'
+export function getQuickQuestions(): string[] {
+  return [
+    'What services do you offer?',
+    'How do I make a booking?',
+    'What payment methods do you accept?',
+    'Can I cancel my booking?',
+    'Do you provide hotel pickup?',
+    'How can I contact support?'
   ];
-
-  const randomResponse = genericResponses[Math.floor(Math.random() * genericResponses.length)];
-  
-  return randomResponse;
-};
-
+}

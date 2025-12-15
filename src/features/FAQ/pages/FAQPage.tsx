@@ -8,7 +8,7 @@ import {
   Container,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { Header, Footer } from "../../../components";
+import { Header, Footer, ScrollAnimation } from "../../../components";
 import "./index.css";
 
 const faqData = [
@@ -88,45 +88,52 @@ const FAQPage: React.FC = () => {
       <Box className="faq-content">
         <Container maxWidth="lg">
           <Box className="faq-accordions">
-            {faqData.map((faq) => (
-              <Accordion
+            {faqData.map((faq, index) => (
+              <ScrollAnimation
                 key={faq.id}
-                expanded={expanded === `panel${faq.id}`}
-                onChange={handleChange(`panel${faq.id}`)}
-                className="faq-accordion"
+                animationType="slideUp"
+                delay={index * 50}
               >
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  className="faq-accordion-summary"
+                <Accordion
+                  expanded={expanded === `panel${faq.id}`}
+                  onChange={handleChange(`panel${faq.id}`)}
+                  className="faq-accordion"
                 >
-                  <Typography className="faq-question">
-                    {faq.question}
-                  </Typography>
-                </AccordionSummary>
-                <AccordionDetails className="faq-accordion-details">
-                  <Typography className="faq-answer">{faq.answer}</Typography>
-                </AccordionDetails>
-              </Accordion>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    className="faq-accordion-summary"
+                  >
+                    <Typography className="faq-question">
+                      {faq.question}
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails className="faq-accordion-details">
+                    <Typography className="faq-answer">{faq.answer}</Typography>
+                  </AccordionDetails>
+                </Accordion>
+              </ScrollAnimation>
             ))}
           </Box>
 
-          <Box className="faq-contact">
-            <Typography variant="h4" className="contact-title">
-              Still have questions?
-            </Typography>
-            <Typography variant="body1" className="contact-subtitle">
-              Can't find the answer you're looking for? Our friendly customer
-              support team is here to help!
-            </Typography>
-            <Box className="contact-actions">
-              <a href="mailto:support@travelguru.com" className="contact-link">
-                Email Support
-              </a>
-              <a href="tel:+971-50-123-4567" className="contact-link">
-                Call Us
-              </a>
+          <ScrollAnimation animationType="fadeIn" delay={400}>
+            <Box className="faq-contact">
+              <Typography variant="h4" className="contact-title">
+                Still have questions?
+              </Typography>
+              <Typography variant="body1" className="contact-subtitle">
+                Can't find the answer you're looking for? Our friendly customer
+                support team is here to help!
+              </Typography>
+              <Box className="contact-actions">
+                <a href="mailto:support@travelguru.com" className="contact-link">
+                  Email Support
+                </a>
+                <a href="tel:+971-50-123-4567" className="contact-link">
+                  Call Us
+                </a>
+              </Box>
             </Box>
-          </Box>
+          </ScrollAnimation>
         </Container>
       </Box>
 

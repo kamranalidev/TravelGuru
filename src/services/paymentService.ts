@@ -21,6 +21,8 @@
  * });
  */
 
+import { supabase } from "../supabaseClient";
+
 export interface CreatePaymentIntentParams {
   amount: number;
   currency?: string;
@@ -34,39 +36,40 @@ export interface CreatePaymentIntentParams {
 
 export interface PaymentIntentResponse {
   clientSecret: string;
+  paymentIntentId?: string;
   error?: string;
 }
 
-/**
- * Create a payment intent via your backend API
- * 
- * Replace this URL with your actual backend endpoint
- */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+const PAYMENT_FUNCTION_NAME =
+  import.meta.env.VITE_SUPABASE_PAYMENT_FUNCTION || "create-payment-intent";
 
 export const createPaymentIntent = async (
   params: CreatePaymentIntentParams
 ): Promise<PaymentIntentResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/create-payment-intent`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        amount: params.amount,
-        currency: params.currency || "usd",
-        metadata: params.metadata,
-      }),
-    });
+    const { data, error } = await supabase.functions.invoke(
+      PAYMENT_FUNCTION_NAME,
+      {
+        body: {
+          amount: params.amount,
+          currency: params.currency || "usd",
+          metadata: params.metadata,
+        },
+      }
+    );
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to create payment intent");
+    if (error) {
+      throw new Error(error.message || "Failed to create payment intent");
     }
 
-    const data = await response.json();
-    return { clientSecret: data.clientSecret };
+    if (!data?.clientSecret) {
+      throw new Error("Invalid response from payment function");
+    }
+
+    return {
+      clientSecret: data.clientSecret,
+      paymentIntentId: data.paymentIntentId,
+    };
   } catch (error: any) {
     console.error("Error creating payment intent:", error);
     return {

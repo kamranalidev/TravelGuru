@@ -1,25 +1,24 @@
-import { useState, useRef, useEffect } from 'react';
-import { Box, IconButton, TextField, Paper, Typography, Avatar } from '@mui/material';
-import ChatIcon from '@mui/icons-material/Chat';
+import React, { useState, useRef, useEffect } from 'react';
+import { Box, Typography, TextField, IconButton, Paper } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import PersonIcon from '@mui/icons-material/Person';
-import { getChatbotResponse, ChatMessage } from '../../services/chatbotService';
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+import { getChatbotResponse, getQuickQuestions } from '../../services/chatbotService';
+import type { ChatMessage } from '../../services/chatbotService';
 import './index.css';
 
-export const Chatbot = () => {
+export const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: 'Hello! 👋 Welcome to TravelGuru! I\'m here to help you with questions about our Dubai tours and services. How can I assist you today?'
+      content: 'Hello! I\'m your TravelGuru assistant. How can I help you today?'
     }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -31,248 +30,138 @@ export const Chatbot = () => {
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     }
   }, [isOpen]);
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleSendMessage = (message?: string) => {
+    const userMessage = message || inputValue.trim();
+    if (!userMessage) return;
 
-    const userMessage: ChatMessage = {
+    const newUserMessage: ChatMessage = {
       role: 'user',
-      content: inputValue.trim()
+      content: userMessage
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, newUserMessage]);
     setInputValue('');
     setIsLoading(true);
 
-    try {
-      const response = await getChatbotResponse(userMessage.content, messages);
+    setTimeout(() => {
+      const response = getChatbotResponse(userMessage);
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: response
       };
       setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      const errorMessage: ChatMessage = {
-        role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again or contact our support team at +971586257508.'
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
       setIsLoading(false);
-    }
+    }, 500);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
+  const quickQuestions = getQuickQuestions();
+
   return (
     <>
       {!isOpen && (
-        <IconButton
+        <button
           className="chatbot-toggle-button"
           onClick={() => setIsOpen(true)}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            width: 64,
-            height: 64,
-            backgroundColor: '#FF621F',
-            color: 'white',
-            boxShadow: '0 4px 20px rgba(255, 98, 31, 0.4)',
-            '&:hover': {
-              backgroundColor: '#ff8533',
-              transform: 'scale(1.1)',
-            },
-            transition: 'all 0.3s ease',
-            zIndex: 1000,
-          }}
+          aria-label="Open chatbot"
         >
-          <ChatIcon sx={{ fontSize: 32 }} />
-        </IconButton>
+          <ChatBubbleIcon sx={{ fontSize: 28 }} />
+        </button>
       )}
 
       {isOpen && (
-        <Paper
-          className="chatbot-container"
-          elevation={8}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            width: '400px',
-            height: '600px',
-            display: 'flex',
-            flexDirection: 'column',
-            zIndex: 1000,
-            borderRadius: '20px',
-            overflow: 'hidden',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
-          }}
-        >
-          <Box
-            sx={{
-              backgroundColor: '#FF621F',
-              color: 'white',
-              padding: '16px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <SmartToyIcon />
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Paper className="chatbot-container" elevation={8}>
+          <Box className="chatbot-header">
+            <Box className="chatbot-header-content">
+              <Typography variant="h6" className="chatbot-title">
                 TravelGuru Assistant
+              </Typography>
+              <Typography variant="caption" className="chatbot-subtitle">
+                Ask me anything about our services
               </Typography>
             </Box>
             <IconButton
+              size="small"
               onClick={() => setIsOpen(false)}
-              sx={{ color: 'white', padding: '4px' }}
+              className="chatbot-close-button"
+              aria-label="Close chatbot"
             >
               <CloseIcon />
             </IconButton>
           </Box>
 
-          <Box
-            sx={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '20px',
-              backgroundColor: '#f8f9fa',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-            }}
-          >
+          <Box className="chatbot-messages">
             {messages.map((message, index) => (
               <Box
                 key={index}
-                sx={{
-                  display: 'flex',
-                  justifyContent: message.role === 'user' ? 'flex-end' : 'flex-start',
-                  gap: 1,
-                }}
+                className={`chatbot-message chatbot-message-${message.role}`}
               >
-                {message.role === 'assistant' && (
-                  <Avatar
-                    sx={{
-                      backgroundColor: '#FF621F',
-                      width: 32,
-                      height: 32,
-                    }}
-                  >
-                    <SmartToyIcon sx={{ fontSize: 20 }} />
-                  </Avatar>
-                )}
-                <Box
-                  sx={{
-                    maxWidth: '75%',
-                    padding: '12px 16px',
-                    borderRadius: message.role === 'user' 
-                      ? '20px 20px 4px 20px' 
-                      : '20px 20px 20px 4px',
-                    backgroundColor: message.role === 'user' ? '#FF621F' : 'white',
-                    color: message.role === 'user' ? 'white' : '#333',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                  }}
-                >
-                  <Typography variant="body2" sx={{ lineHeight: 1.5 }}>
-                    {message.content}
-                  </Typography>
-                </Box>
-                {message.role === 'user' && (
-                  <Avatar
-                    sx={{
-                      backgroundColor: '#e0e0e0',
-                      width: 32,
-                      height: 32,
-                    }}
-                  >
-                    <PersonIcon sx={{ fontSize: 20, color: '#666' }} />
-                  </Avatar>
-                )}
+                <Typography variant="body2" className="chatbot-message-content">
+                  {message.content}
+                </Typography>
               </Box>
             ))}
             {isLoading && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  gap: 1,
-                }}
-              >
-                <Avatar
-                  sx={{
-                    backgroundColor: '#FF621F',
-                    width: 32,
-                    height: 32,
-                  }}
-                >
-                  <SmartToyIcon sx={{ fontSize: 20 }} />
-                </Avatar>
-                <Box
-                  sx={{
-                    padding: '12px 16px',
-                    borderRadius: '20px 20px 20px 4px',
-                    backgroundColor: 'white',
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                  }}
-                >
-                  <Typography variant="body2" sx={{ color: '#666' }}>
-                    Typing...
-                  </Typography>
-                </Box>
+              <Box className="chatbot-message chatbot-message-assistant">
+                <Typography variant="body2" className="chatbot-typing">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </Typography>
               </Box>
             )}
             <div ref={messagesEndRef} />
           </Box>
 
-          <Box
-            sx={{
-              padding: '16px',
-              backgroundColor: 'white',
-              borderTop: '1px solid #e0e0e0',
-              display: 'flex',
-              gap: 1,
-            }}
-          >
+          {messages.length === 1 && (
+            <Box className="chatbot-quick-questions">
+              <Typography variant="caption" className="quick-questions-title">
+                Quick questions:
+              </Typography>
+              <Box className="quick-questions-list">
+                {quickQuestions.map((question, index) => (
+                  <button
+                    key={index}
+                    className="quick-question-button"
+                    onClick={() => handleSendMessage(question)}
+                  >
+                    {question}
+                  </button>
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          <Box className="chatbot-input-container">
             <TextField
               inputRef={inputRef}
               fullWidth
               placeholder="Type your message..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyPress}
-              disabled={isLoading}
+              onKeyPress={handleKeyPress}
+              variant="outlined"
               size="small"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '24px',
-                },
-              }}
+              className="chatbot-input"
+              disabled={isLoading}
             />
             <IconButton
-              onClick={handleSendMessage}
+              onClick={() => handleSendMessage()}
               disabled={!inputValue.trim() || isLoading}
-              sx={{
-                backgroundColor: '#FF621F',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: '#ff8533',
-                },
-                '&:disabled': {
-                  backgroundColor: '#e0e0e0',
-                  color: '#999',
-                },
-              }}
+              className="chatbot-send-button"
+              aria-label="Send message"
             >
               <SendIcon />
             </IconButton>
@@ -282,4 +171,3 @@ export const Chatbot = () => {
     </>
   );
 };
-

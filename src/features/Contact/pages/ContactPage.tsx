@@ -5,7 +5,7 @@ import {
   Container,
   TextField,
 } from "@mui/material";
-import { Header, Footer } from "../../../components";
+import { Header, Footer, ScrollAnimation } from "../../../components";
 import "./index.css";
 
 const ContactPage: React.FC = () => {
@@ -76,12 +76,15 @@ const ContactPage: React.FC = () => {
 
       <Box className="contact-content">
         <Container maxWidth="lg">
-          <Typography variant="body1" className="contact-main-description">
-            We are committed to processing the information in order to contact you and talk about your project.
-          </Typography>
+          <ScrollAnimation animationType="fadeIn">
+            <Typography variant="body1" className="contact-main-description">
+              We are committed to processing the information in order to contact you and talk about your project.
+            </Typography>
+          </ScrollAnimation>
 
-          <Box className="contact-main-card">
-            <form onSubmit={handleSubmit} className="contact-form-section">
+          <ScrollAnimation animationType="slideUp" delay={100}>
+            <Box className="contact-main-card">
+              <form onSubmit={handleSubmit} className="contact-form-section">
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <Box className="form-field-wrapper">
@@ -162,7 +165,8 @@ const ContactPage: React.FC = () => {
                 </Box>
               </Box>
             </form>
-          </Box>
+            </Box>
+          </ScrollAnimation>
         </Container>
       </Box>
 
