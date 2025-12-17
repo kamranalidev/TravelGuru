@@ -14,9 +14,9 @@ import "./index.css";
 const faqData = [
   {
     id: 1,
-    question: "What services does TravelGuru offer?",
+    question: "What services does Travel Guroo offer?",
     answer:
-      "TravelGuru offers a comprehensive range of Dubai travel services including desert safaris, city tours, yacht charters, skydiving experiences, cultural tours, luxury hotel bookings, and customized travel packages. We specialize in creating unforgettable Dubai experiences for all types of travelers.",
+      "Travel Guroo offers a comprehensive range of Dubai travel services including desert safaris, city tours, yacht charters, skydiving experiences, cultural tours, luxury hotel bookings, and customized travel packages. We specialize in creating unforgettable Dubai experiences for all types of travelers.",
   },
   {
     id: 2,

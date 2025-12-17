@@ -5,11 +5,11 @@ import {
   Box,
   Button,
   CircularProgress,
-  Grid,
   Paper,
   Stack,
   TextField,
   Typography,
+  Grid,
 } from "@mui/material";
 import { useAuth } from "../../../../hooks/useAuth";
 import { supabase } from "../../../../supabaseClient";
@@ -244,7 +244,7 @@ export const ProfilePage = () => {
         experience.
       </Typography>
       <Grid container spacing={4}>
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
           <Paper
             elevation={0}
             sx={{
@@ -276,7 +276,7 @@ export const ProfilePage = () => {
             </Stack>
           </Paper>
         </Grid>
-        <Grid item xs={12} md={8}>
+        <Grid xs={12} md={8}>
           <Paper
             elevation={0}
             sx={{

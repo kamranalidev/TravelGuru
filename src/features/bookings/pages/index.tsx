@@ -121,7 +121,7 @@ export const BookingPage = () => {
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [isBooking, setIsBooking] = useState(false);
+  const [isBooking] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [pageData, setPageData] = useState({

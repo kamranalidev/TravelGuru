@@ -1,4 +1,4 @@
-import { Box, Typography, Grid } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import FacebookIcon from "@mui/icons-material/Facebook";
 import InstagramIcon from "@mui/icons-material/Instagram";
 import EmailIcon from "@mui/icons-material/Email";
@@ -13,8 +13,15 @@ export const Footer = () => {
   return (
     <Box className="footer" component="footer">
       <Box className="footerContent">
-        <Grid container spacing={4} className="footer-grid">
-          <Grid item xs={12} md={4} className="footer-column">
+        <Box
+          className="footer-grid"
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+            gap: 4,
+          }}
+        >
+          <Box className="footer-column">
             <Box className="footer-logo-section">
               <Box
                 sx={{
@@ -27,18 +34,20 @@ export const Footer = () => {
               >
                 <img
                   src="/assets/Logo-02.png"
-                  alt="TravelGuru Logo"
+                  alt="Travel Guroo Logo"
                   className="footer-logo"
                 />
-                <Typography className="footer-logo-text">Travel Guru</Typography>
+                <Typography className="footer-logo-text">
+                  Travel Guroo
+                </Typography>
               </Box>
               <Typography className="footer-tagline">
                 Your trusted partner for unforgettable Dubai experiences.
               </Typography>
             </Box>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={4} className="footer-column">
+          <Box className="footer-column">
             <Typography className="footer-column-title">Business</Typography>
             <Box className="footer-links-column">
               <a
@@ -70,15 +79,17 @@ export const Footer = () => {
                 Become an affiliate
               </a>
             </Box>
-          </Grid>
+          </Box>
 
-          <Grid item xs={12} md={4} className="footer-column">
-            <Typography className="footer-column-title">Get Help 24/7</Typography>
+          <Box className="footer-column">
+            <Typography className="footer-column-title">
+              Get Help 24/7
+            </Typography>
             <Box className="footer-contact-info">
               <Box className="contact-info-item">
                 <EmailIcon className="contact-icon" />
-                <a href="mailto:info@travelguru.com" className="contact-link">
-                  info@travelguru.com
+                <a href="mailto:info@travelguroo.com" className="contact-link">
+                  info@travelguroo.com
                 </a>
               </Box>
               <Box className="contact-info-item">
@@ -99,7 +110,7 @@ export const Footer = () => {
                 </a>
               </Box>
             </Box>
-            
+
             <Box className="footer-social-icons">
               <a
                 href="https://www.facebook.com/profile.php?id=61579936145705"
@@ -137,12 +148,12 @@ export const Footer = () => {
                 </svg>
               </a>
             </Box>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         <Box className="footer-bottom">
           <Typography className="copyright">
-            © {new Date().getFullYear()} TravelGuru. All rights reserved.
+            © {new Date().getFullYear()} Travel Guroo. All rights reserved.
           </Typography>
         </Box>
       </Box>

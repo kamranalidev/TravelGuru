@@ -13,7 +13,7 @@ const knowledgeBase: KnowledgeBase[] = [
   {
     category: 'services',
     keywords: ['services', 'tours', 'what do you offer', 'what can i book', 'activities', 'experiences'],
-    answer: 'TravelGuru offers a comprehensive range of Dubai travel services including desert safaris, city tours, yacht charters, skydiving experiences, cultural tours, luxury hotel bookings, and customized travel packages. We specialize in creating unforgettable Dubai experiences for all types of travelers. You can browse all our services on the homepage.'
+    answer: 'Travel Guroo offers a comprehensive range of Dubai travel services including desert safaris, city tours, yacht charters, skydiving experiences, cultural tours, luxury hotel bookings, and customized travel packages. We specialize in creating unforgettable Dubai experiences for all types of travelers. You can browse all our services on the homepage.'
   },
   {
     category: 'booking',
@@ -63,7 +63,7 @@ const knowledgeBase: KnowledgeBase[] = [
   {
     category: 'about',
     keywords: ['about', 'who are you', 'company', 'travelguru', 'what is travelguru'],
-    answer: 'TravelGuru is your trusted partner for unforgettable Dubai experiences. We specialize in premium Dubai tours and travel services, helping over 100,000 happy travelers discover Dubai\'s hidden gems. We offer verified tours, 24/7 support, best prices, and flexible booking options.'
+    answer: 'Travel Guroo is your trusted partner for unforgettable Dubai experiences. We specialize in premium Dubai tours and travel services, helping over 100,000 happy travelers discover Dubai\'s hidden gems. We offer verified tours, 24/7 support, best prices, and flexible booking options.'
   },
   {
     category: 'features',
@@ -88,14 +88,14 @@ const knowledgeBase: KnowledgeBase[] = [
   {
     category: 'social',
     keywords: ['facebook', 'instagram', 'tiktok', 'social media', 'follow'],
-    answer: 'You can follow us on social media! Find us on Facebook (TravelGuru), Instagram (@travelguroo_), and TikTok (@travelguroo) for the latest updates, travel tips, and exclusive offers.'
+    answer: 'You can follow us on social media! Find us on Facebook (Travel Guroo), Instagram (@travelguroo_), and TikTok (@travelguroo) for the latest updates, travel tips, and exclusive offers.'
   }
 ];
 
 const greetings = [
   'Hello! How can I help you today?',
   'Hi there! What would you like to know?',
-  'Welcome! I\'m here to help with any questions about TravelGuru.',
+  'Welcome! I\'m here to help with any questions about Travel Guroo.',
   'Hello! Ask me anything about our Dubai tours and services.'
 ];
 
@@ -144,7 +144,7 @@ export function getChatbotResponse(userMessage: string): string {
   }
   
   if (normalizedMessage.match(/\b(bye|goodbye|see you|farewell)\b/)) {
-    return 'Thank you for chatting with TravelGuru! Have a great day and we hope to see you in Dubai soon!';
+    return 'Thank you for chatting with Travel Guroo! Have a great day and we hope to see you in Dubai soon!';
   }
   
   let bestMatch: KnowledgeBase | null = null;

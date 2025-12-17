@@ -256,7 +256,7 @@ export const Checkout = () => {
               variant="body2"
               sx={{ color: "#666", mt: 3, fontSize: "0.875rem" }}
             >
-              By continuing, you acknowledge and agree to TravelGuru's general
+              By continuing, you acknowledge and agree to Travel Guroo's general
               terms and conditions, privacy policy, and cancellation policy.
             </Typography>
           </Box>

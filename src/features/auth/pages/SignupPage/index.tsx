@@ -73,7 +73,7 @@ export const SignupPage = () => {
         <Box className="auth-header">
           <img
             src="/assets/Logo-02.png"
-            alt="TravelGuru Logo"
+            alt="Travel Guroo Logo"
             className="auth-logo"
           />
           <Typography variant="h4" className="auth-title">

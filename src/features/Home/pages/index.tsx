@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header, ButtonComponent, Footer, ScrollAnimation } from "../../../components";
-import { Box, Typography, Grid, Card, CardContent } from "@mui/material";
+import {
+  Header,
+  ButtonComponent,
+  Footer,
+  ScrollAnimation,
+} from "../../../components";
+import { Box, Typography, Card, CardContent } from "@mui/material";
 import "./index.css";
 import { supabase } from "../../../supabaseClient";
 import StarIcon from "@mui/icons-material/Star";
@@ -199,7 +204,7 @@ export const Homepage = () => {
       description:
         service?.service_description ??
         service?.description ??
-        "Premium experience curated by Travel Guru.",
+        "Premium experience curated by Travel Guroo.",
     };
     navigate(`/bookings/${service.id}`, { state: servicePayload });
   };
@@ -252,8 +257,9 @@ export const Homepage = () => {
               <span className="heroTitleHighlight">Hidden Gems</span>
             </h1>
             <p className="heroSubtitle">
-              Experience luxury, adventure, and culture with our curated tours. 
-              From desert safaris to city explorations, we make your Dubai dreams come true.
+              Experience luxury, adventure, and culture with our curated tours.
+              From desert safaris to city explorations, we make your Dubai
+              dreams come true.
             </p>
             <div className="heroStats">
               <div className="heroStatItem">
@@ -270,12 +276,12 @@ export const Homepage = () => {
               </div>
             </div>
             <div className="heroActions">
-              <ButtonComponent 
-                title="Explore Tours" 
+              <ButtonComponent
+                title="Explore Tours"
                 onClick={scrollToServices}
                 style={{ padding: "14px 32px", fontSize: "1.1rem" }}
               />
-              <button 
+              <button
                 className="heroSecondaryButton"
                 onClick={() => navigate("/faq")}
               >
@@ -307,7 +313,8 @@ export const Homepage = () => {
         <div className="sectionContainer">
           <ScrollAnimation animationType="fadeIn">
             <Typography className="sectionTitle">
-              Popular <span className="sectionTitleHighlight">Destinations</span>
+              Popular{" "}
+              <span className="sectionTitleHighlight">Destinations</span>
             </Typography>
             <Typography className="sectionSubtitle">
               Explore our most loved destinations in Dubai
@@ -315,51 +322,52 @@ export const Homepage = () => {
           </ScrollAnimation>
 
           <div className="servicesGrid">
-          {loading ? (
-            <div className="servicesPlaceholder">Loading services...</div>
-          ) : error ? (
-            <div className="servicesPlaceholder">{error}</div>
-          ) : services.length === 0 ? (
-            <div className="servicesPlaceholder">
-              No services available right now. Please check back later.
-            </div>
-          ) : (
-            services.map((service, index) => (
-              <ScrollAnimation
-                key={service.id}
-                animationType="slideUp"
-                delay={index * 100}
-              >
-                <div
-                  className="serviceCard"
-                  onClick={() => handleServiceClick(service)}
+            {loading ? (
+              <div className="servicesPlaceholder">Loading services...</div>
+            ) : error ? (
+              <div className="servicesPlaceholder">{error}</div>
+            ) : services.length === 0 ? (
+              <div className="servicesPlaceholder">
+                No services available right now. Please check back later.
+              </div>
+            ) : (
+              services.map((service, index) => (
+                <ScrollAnimation
+                  key={service.id}
+                  animationType="slideUp"
+                  delay={index * 100}
                 >
-                  <ServiceImageGallery service={service} />
-                  <div className="serviceInfo">
-                    <h3 className="serviceTitle">
-                      {service.service_name || "Untitled Service"}
-                    </h3>
-                    <p className="serviceLocation">
-                      {service.location ? `📍 ${service.location}` : "Dubai"}
-                    </p>
-                    <p className="serviceDescription">
-                      {service.service_description || "Premium Dubai experience."}
-                    </p>
-                    <div className="serviceMeta">
-                      <span className="servicePrice">
-                        {formatPrice(service.default_price)}
-                      </span>
-                      <ButtonComponent
-                        title="View Details"
-                        width="auto"
-                        style={{ padding: "10px 20px", fontSize: "0.95rem" }}
-                      />
+                  <div
+                    className="serviceCard"
+                    onClick={() => handleServiceClick(service)}
+                  >
+                    <ServiceImageGallery service={service} />
+                    <div className="serviceInfo">
+                      <h3 className="serviceTitle">
+                        {service.service_name || "Untitled Service"}
+                      </h3>
+                      <p className="serviceLocation">
+                        {service.location ? `📍 ${service.location}` : "Dubai"}
+                      </p>
+                      <p className="serviceDescription">
+                        {service.service_description ||
+                          "Premium Dubai experience."}
+                      </p>
+                      <div className="serviceMeta">
+                        <span className="servicePrice">
+                          {formatPrice(service.default_price)}
+                        </span>
+                        <ButtonComponent
+                          title="View Details"
+                          width="auto"
+                          style={{ padding: "10px 20px", fontSize: "0.95rem" }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </ScrollAnimation>
-            ))
-          )}
+                </ScrollAnimation>
+              ))
+            )}
           </div>
         </div>
       </Box>
@@ -369,27 +377,42 @@ export const Homepage = () => {
         <div className="sectionContainer">
           <ScrollAnimation animationType="fadeIn">
             <Typography className="sectionTitle">
-              Why Choose <span className="sectionTitleHighlight">TravelGuru</span>
+              Why Choose{" "}
+              <span className="sectionTitleHighlight">Travel Guroo</span>
             </Typography>
             <Typography className="sectionSubtitle">
               We're committed to making your Dubai experience unforgettable
             </Typography>
           </ScrollAnimation>
-          <Grid container spacing={4} className="featuresGrid">
-            <Grid item xs={12} sm={6} md={3}>
+          <Box
+            className="featuresGrid"
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(0, 1fr))",
+                md: "repeat(4, minmax(0, 1fr))",
+              },
+              gap: 4,
+            }}
+          >
+            <Box>
               <ScrollAnimation animationType="slideUp" delay={0}>
                 <div className="featureCard">
                   <div className="featureIcon">
                     <VerifiedUserIcon sx={{ fontSize: 40 }} />
                   </div>
-                  <Typography className="featureTitle">Trusted & Verified</Typography>
+                  <Typography className="featureTitle">
+                    Trusted & Verified
+                  </Typography>
                   <Typography className="featureDescription">
-                    All our tours are verified and trusted by thousands of travelers
+                    All our tours are verified and trusted by thousands of
+                    travelers
                   </Typography>
                 </div>
               </ScrollAnimation>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box>
               <ScrollAnimation animationType="slideUp" delay={100}>
                 <div className="featureCard">
                   <div className="featureIcon">
@@ -397,12 +420,13 @@ export const Homepage = () => {
                   </div>
                   <Typography className="featureTitle">24/7 Support</Typography>
                   <Typography className="featureDescription">
-                    Our team is always available to assist you throughout your journey
+                    Our team is always available to assist you throughout your
+                    journey
                   </Typography>
                 </div>
               </ScrollAnimation>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box>
               <ScrollAnimation animationType="slideUp" delay={200}>
                 <div className="featureCard">
                   <div className="featureIcon">
@@ -414,21 +438,23 @@ export const Homepage = () => {
                   </Typography>
                 </div>
               </ScrollAnimation>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box>
               <ScrollAnimation animationType="slideUp" delay={300}>
                 <div className="featureCard">
                   <div className="featureIcon">
                     <AccessTimeIcon sx={{ fontSize: 40 }} />
                   </div>
-                  <Typography className="featureTitle">Flexible Booking</Typography>
+                  <Typography className="featureTitle">
+                    Flexible Booking
+                  </Typography>
                   <Typography className="featureDescription">
                     Easy cancellation and rescheduling options available
                   </Typography>
                 </div>
               </ScrollAnimation>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </div>
       </Box>
 
@@ -437,86 +463,122 @@ export const Homepage = () => {
         <div className="sectionContainer">
           <ScrollAnimation animationType="fadeIn">
             <Typography className="sectionTitle">
-              What Our <span className="sectionTitleHighlight">Travelers Say</span>
+              What Our{" "}
+              <span className="sectionTitleHighlight">Travelers Say</span>
             </Typography>
             <Typography className="sectionSubtitle">
-              Don't just take our word for it - hear from our satisfied customers
+              Don't just take our word for it - hear from our satisfied
+              customers
             </Typography>
           </ScrollAnimation>
-          <Grid container spacing={3} className="testimonialsGrid">
-            <Grid item xs={12} md={4}>
+          <Box
+            className="testimonialsGrid"
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(3, minmax(0, 1fr))",
+              },
+              gap: 3,
+            }}
+          >
+            <Box>
               <ScrollAnimation animationType="slideUp" delay={0}>
                 <Card className="testimonialCard">
                   <CardContent>
                     <div className="testimonialRating">
                       {[1, 2, 3, 4, 5].map((i) => (
-                        <StarIcon key={i} sx={{ color: "#FFD700", fontSize: 20 }} />
+                        <StarIcon
+                          key={i}
+                          sx={{ color: "#FFD700", fontSize: 20 }}
+                        />
                       ))}
                     </div>
                     <Typography className="testimonialText">
-                      "Amazing experience! The desert safari was absolutely incredible. 
-                      The guides were knowledgeable and the whole trip was well organized."
+                      "Amazing experience! The desert safari was absolutely
+                      incredible. The guides were knowledgeable and the whole
+                      trip was well organized."
                     </Typography>
                     <div className="testimonialAuthor">
                       <div className="testimonialAvatar"></div>
                       <div>
-                        <Typography className="testimonialName">Sarah Johnson</Typography>
-                        <Typography className="testimonialLocation">United States</Typography>
+                        <Typography className="testimonialName">
+                          Sarah Johnson
+                        </Typography>
+                        <Typography className="testimonialLocation">
+                          United States
+                        </Typography>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </ScrollAnimation>
-            </Grid>
-            <Grid item xs={12} md={4}>
+            </Box>
+            <Box>
               <ScrollAnimation animationType="slideUp" delay={100}>
                 <Card className="testimonialCard">
                   <CardContent>
                     <div className="testimonialRating">
                       {[1, 2, 3, 4, 5].map((i) => (
-                        <StarIcon key={i} sx={{ color: "#FFD700", fontSize: 20 }} />
+                        <StarIcon
+                          key={i}
+                          sx={{ color: "#FFD700", fontSize: 20 }}
+                        />
                       ))}
                     </div>
                     <Typography className="testimonialText">
-                      "Best tour company in Dubai! Professional service, great prices, 
-                      and unforgettable memories. Highly recommend to everyone!"
+                      "Best tour company in Dubai! Professional service, great
+                      prices, and unforgettable memories. Highly recommend to
+                      everyone!"
                     </Typography>
                     <div className="testimonialAuthor">
                       <div className="testimonialAvatar"></div>
                       <div>
-                        <Typography className="testimonialName">Michael Chen</Typography>
-                        <Typography className="testimonialLocation">Singapore</Typography>
+                        <Typography className="testimonialName">
+                          Michael Chen
+                        </Typography>
+                        <Typography className="testimonialLocation">
+                          Singapore
+                        </Typography>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </ScrollAnimation>
-            </Grid>
-            <Grid item xs={12} md={4}>
+            </Box>
+            <Box>
               <ScrollAnimation animationType="slideUp" delay={200}>
                 <Card className="testimonialCard">
                   <CardContent>
                     <div className="testimonialRating">
                       {[1, 2, 3, 4, 5].map((i) => (
-                        <StarIcon key={i} sx={{ color: "#FFD700", fontSize: 20 }} />
+                        <StarIcon
+                          key={i}
+                          sx={{ color: "#FFD700", fontSize: 20 }}
+                        />
                       ))}
                     </div>
                     <Typography className="testimonialText">
-                      "Exceeded all expectations! The city tour was fantastic and the 
-                      booking process was so easy. Will definitely book again!"
+                      "Exceeded all expectations! The city tour was fantastic
+                      and the booking process was so easy. Will definitely book
+                      again!"
                     </Typography>
                     <div className="testimonialAuthor">
                       <div className="testimonialAvatar"></div>
                       <div>
-                        <Typography className="testimonialName">Emma Williams</Typography>
-                        <Typography className="testimonialLocation">United Kingdom</Typography>
+                        <Typography className="testimonialName">
+                          Emma Williams
+                        </Typography>
+                        <Typography className="testimonialLocation">
+                          United Kingdom
+                        </Typography>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </ScrollAnimation>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </div>
       </Box>
       {/* Subscribe  and get exclusive offers */}

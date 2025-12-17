@@ -27,7 +27,7 @@ interface PageItem {
 
 const pages: PageItem[] = [
   { label: "Home", route: "/" },
-  { label: "Services", route: "/#premium-services", isScroll: true },
+  { label: "Services", route: "/services" },
   { label: "FAQ", route: "/faq" },
   { label: "Contact Us", route: "/contact" },
 ];
@@ -184,7 +184,7 @@ export const Header = (props: { hidePages?: boolean }) => {
             >
               <img
                 src="/assets/Logo-02.png"
-                alt="TravelGuru Logo"
+                alt="Travel Guroo Logo"
                 style={{ width: "120px", height: "auto" }} // Slightly larger logo
               />
             </Box>

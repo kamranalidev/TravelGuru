@@ -12,7 +12,7 @@ export const Chatbot: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: 'Hello! I\'m your TravelGuru assistant. How can I help you today?'
+      content: 'Hello! I\'m your Travel Guroo assistant. How can I help you today?'
     }
   ]);
   const [inputValue, setInputValue] = useState('');
@@ -86,7 +86,7 @@ export const Chatbot: React.FC = () => {
           <Box className="chatbot-header">
             <Box className="chatbot-header-content">
               <Typography variant="h6" className="chatbot-title">
-                TravelGuru Assistant
+                Travel Guroo Assistant
               </Typography>
               <Typography variant="caption" className="chatbot-subtitle">
                 Ask me anything about our services

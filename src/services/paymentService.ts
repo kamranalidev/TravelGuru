@@ -1,36 +1,25 @@
 /**
  * Payment Service
- * 
- * This service handles communication with your backend to create payment intents.
- * 
- * IMPORTANT: For production, you MUST create a backend endpoint to securely create
- * payment intents. Never use your Stripe secret key in the frontend.
- * 
- * Example backend endpoint (Node.js/Express):
- * 
- * app.post('/api/create-payment-intent', async (req, res) => {
- *   const { amount, currency, metadata } = req.body;
- *   
- *   const paymentIntent = await stripe.paymentIntents.create({
- *     amount: amount * 100, // Convert to cents
- *     currency: currency || 'usd',
- *     metadata: metadata,
- *   });
- *   
- *   res.json({ clientSecret: paymentIntent.client_secret });
- * });
+ * Handles all payment-related API calls to the Node.js backend server
  */
 
-import { supabase } from "../supabaseClient";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 export interface CreatePaymentIntentParams {
   amount: number;
   currency?: string;
+  description?: string;
+  receiptEmail?: string;
   metadata?: {
     service_id?: number;
+    service_name?: string;
     package_id?: number | null;
+    package_name?: string | null;
     user_id?: string;
+    user_email?: string;
+    booking_id?: number;
     booking_date?: string;
+    [key: string]: any;
   };
 }
 
@@ -40,30 +29,40 @@ export interface PaymentIntentResponse {
   error?: string;
 }
 
-const PAYMENT_FUNCTION_NAME =
-  import.meta.env.VITE_SUPABASE_PAYMENT_FUNCTION || "create-payment-intent";
-
+/**
+ * Create a payment intent using Node.js backend
+ */
 export const createPaymentIntent = async (
   params: CreatePaymentIntentParams
 ): Promise<PaymentIntentResponse> => {
   try {
-    const { data, error } = await supabase.functions.invoke(
-      PAYMENT_FUNCTION_NAME,
-      {
-        body: {
-          amount: params.amount,
-          currency: params.currency || "usd",
-          metadata: params.metadata,
-        },
-      }
-    );
+    // Validate amount
+    if (!params.amount || params.amount <= 0) {
+      throw new Error("Invalid amount. Must be greater than 0.");
+    }
 
-    if (error) {
-      throw new Error(error.message || "Failed to create payment intent");
+    const response = await fetch(`${API_URL}/create-payment-intent`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        amount: params.amount,
+        currency: params.currency || "aed",
+        description: params.description,
+        receiptEmail: params.receiptEmail,
+        metadata: params.metadata || {},
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to create payment intent");
     }
 
     if (!data?.clientSecret) {
-      throw new Error("Invalid response from payment function");
+      throw new Error("Invalid response from payment server");
     }
 
     return {
@@ -80,27 +79,99 @@ export const createPaymentIntent = async (
 };
 
 /**
- * For development/testing: Create a mock payment intent
- * This should NOT be used in production
+ * Create a booking and payment intent in one transaction
  */
-export const createMockPaymentIntent = async (
-  params: CreatePaymentIntentParams
-): Promise<PaymentIntentResponse> => {
-  // This is a mock implementation for development
-  // In production, this must be replaced with a real backend call
-  console.warn(
-    "Using mock payment intent. Replace with real backend endpoint in production."
-  );
+export const createBookingWithPayment = async (params: {
+  userId: string;
+  serviceId: number;
+  serviceName: string;
+  packageId?: number | null;
+  packageName?: string | null;
+  bookingDate: string;
+  amount: number;
+  currency?: string;
+  userEmail?: string;
+  additionalDetails?: any;
+}): Promise<{
+  bookingId?: number;
+  clientSecret?: string;
+  paymentIntentId?: string;
+  error?: string;
+}> => {
+  try {
+    const response = await fetch(`${API_URL}/create-booking-with-payment`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: params.userId,
+        userEmail: params.userEmail,
+        serviceId: params.serviceId,
+        serviceName: params.serviceName,
+        packageId: params.packageId || null,
+        packageName: params.packageName || null,
+        bookingDate: params.bookingDate,
+        amount: params.amount,
+        currency: params.currency || "aed",
+        additionalDetails: params.additionalDetails || {},
+      }),
+    });
 
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
+    const data = await response.json();
 
-  // Return a mock client secret (this won't work with real Stripe)
-  // For testing, you can use Stripe's test mode with a real backend
-  return {
-    clientSecret: "mock_client_secret_for_development_only",
-    error: "Mock mode - configure backend endpoint for production",
-  };
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to create booking with payment");
+    }
+
+    return {
+      bookingId: data.bookingId,
+      clientSecret: data.clientSecret,
+      paymentIntentId: data.paymentIntentId,
+    };
+  } catch (error: any) {
+    console.error("Error creating booking with payment:", error);
+    return {
+      error: error.message || "Failed to create booking with payment",
+    };
+  }
+};
+
+/**
+ * Verify payment status from Stripe via backend
+ */
+export const verifyPaymentStatus = async (
+  paymentIntentId: string
+): Promise<{
+  status: string;
+  amount?: number;
+  error?: string;
+}> => {
+  try {
+    const response = await fetch(`${API_URL}/payment-intent/${paymentIntentId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to verify payment");
+    }
+
+    return {
+      status: data.status,
+      amount: data.amount,
+    };
+  } catch (error: any) {
+    console.error("Error verifying payment:", error);
+    return {
+      status: "error",
+      error: error.message || "Failed to verify payment",
+    };
+  }
 };
 
 
