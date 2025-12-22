@@ -45,7 +45,6 @@
     object-fit: contain;
 }
 
-/* Responsive Design for Auth Pages */
 @media (max-width: 768px) {
     .main {
         flex-direction: column;

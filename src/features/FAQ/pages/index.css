@@ -137,7 +137,6 @@
   color: white;
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .faq-hero {
     padding: 80px 0 60px;

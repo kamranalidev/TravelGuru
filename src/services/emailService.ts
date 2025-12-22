@@ -1,9 +1,3 @@
-/**
- * Email Service
- * 
- * This service handles sending booking confirmation emails via the backend API.
- */
-
 export interface BookingConfirmationEmailParams {
   to: string;
   bookingId: number | string;
@@ -24,9 +18,6 @@ export interface EmailResponse {
   skipped?: boolean;
 }
 
-/**
- * Send booking confirmation email via backend API
- */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
 
 export const sendBookingConfirmationEmail = async (
@@ -50,16 +41,9 @@ export const sendBookingConfirmationEmail = async (
     return data;
   } catch (error: any) {
     console.error("Error sending booking confirmation email:", error);
-    // Don't throw error - email failure shouldn't break the booking flow
     return {
       success: false,
       error: error.message || "Failed to send confirmation email",
     };
   }
 };
-
-
-
-
-
-

@@ -356,5 +356,3 @@ export const ProfilePage = () => {
     </Box>
   );
 };
-
-

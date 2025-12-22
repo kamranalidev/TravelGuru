@@ -11,16 +11,8 @@
   margin: 16px 0;
 }
 
-/* Stripe Elements styling */
-.payment-element-wrapper .StripeElement {
-  padding: 12px;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
   .payment-element-wrapper {
     padding: 16px;
   }
 }
-
-

@@ -43,10 +43,8 @@ export const Header = (props: { hidePages?: boolean }) => {
     if (isScroll && route.includes("#")) {
       const [path, sectionId] = route.split("#");
 
-      // If we're not on the home page, navigate first
       if (window.location.pathname !== path) {
         navigate(path);
-        // Wait for navigation to complete, then scroll
         setTimeout(() => {
           const element = document.getElementById(sectionId);
           if (element) {
@@ -58,7 +56,6 @@ export const Header = (props: { hidePages?: boolean }) => {
           }
         }, 100);
       } else {
-        // Already on the right page, just scroll
         const element = document.getElementById(sectionId);
         if (element) {
           element.scrollIntoView({
@@ -154,7 +151,7 @@ export const Header = (props: { hidePages?: boolean }) => {
           disableGutters
           sx={{
             width: "100%",
-            maxWidth: "1400px", // Increased max width
+            maxWidth: "1400px", 
             margin: "0 auto",
             px: { xs: 2, md: 4 },
           }}
@@ -185,7 +182,7 @@ export const Header = (props: { hidePages?: boolean }) => {
               <img
                 src="/assets/Logo-02.png"
                 alt="TravelGuru Logo"
-                style={{ width: "120px", height: "auto" }} // Slightly larger logo
+                style={{ width: "120px", height: "auto" }} 
               />
             </Box>
             {!props.hidePages && (
@@ -203,7 +200,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                       onClick={() => handleNavigate(page.route, page.isScroll)}
                       sx={{
                         color: theme.palette.secondary.main,
-                        fontWeight: 600, // Increased font weight for better visibility
+                        fontWeight: 600, 
                         textTransform: "none",
                         fontSize: "1rem",
                         px: 2,
@@ -349,7 +346,6 @@ export const Header = (props: { hidePages?: boolean }) => {
         </Toolbar>
       </AppBar>
 
-      {/* Profile Modal */}
       <ProfileModal
         open={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}

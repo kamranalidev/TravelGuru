@@ -1,4 +1,3 @@
-// theme.js or theme.ts
 import { createTheme } from '@mui/material/styles';
 import { enUS } from "@mui/material/locale";
 

@@ -4,31 +4,26 @@ import dotenv from "dotenv";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2024-11-20.acacia",
 });
 
-// Initialize Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL || "",
   process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 );
 
-// Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5173",
   credentials: true,
 }));
 app.use(express.json());
 
-// Health check endpoint
 app.get("/health", (req, res) => {
   res.json({ 
     status: "ok", 
@@ -37,22 +32,16 @@ app.get("/health", (req, res) => {
   });
 });
 
-/**
- * POST /api/create-payment-intent
- * Creates a Stripe payment intent
- */
 app.post("/api/create-payment-intent", async (req, res) => {
   try {
     const { amount, currency, metadata, description, receiptEmail } = req.body;
 
-    // Validate required fields
     if (!amount || amount <= 0) {
       return res.status(400).json({
         error: "Invalid amount. Amount must be greater than 0.",
       });
     }
 
-    // Validate Stripe is configured
     if (!process.env.STRIPE_SECRET_KEY) {
       console.error("STRIPE_SECRET_KEY is not set in environment variables");
       return res.status(500).json({
@@ -66,9 +55,8 @@ app.post("/api/create-payment-intent", async (req, res) => {
       metadata,
     });
 
-    // Create payment intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
+      amount: Math.round(amount * 100), 
       currency: currency || "aed",
       metadata: metadata || {},
       description: description || undefined,
@@ -87,7 +75,6 @@ app.post("/api/create-payment-intent", async (req, res) => {
   } catch (error) {
     console.error("Error creating payment intent:", error);
 
-    // Handle Stripe-specific errors
     if (error.type === "StripeCardError") {
       return res.status(400).json({
         error: error.message || "Card error occurred",
@@ -106,10 +93,6 @@ app.post("/api/create-payment-intent", async (req, res) => {
   }
 });
 
-/**
- * POST /api/create-booking-with-payment
- * Creates a booking and payment intent atomically
- */
 app.post("/api/create-booking-with-payment", async (req, res) => {
   try {
     const {
@@ -125,7 +108,6 @@ app.post("/api/create-booking-with-payment", async (req, res) => {
       additionalDetails,
     } = req.body;
 
-    // Validate required fields
     if (!userId || !serviceId || !serviceName || !bookingDate || !amount) {
       return res.status(400).json({
         error: "Missing required fields",
@@ -140,7 +122,6 @@ app.post("/api/create-booking-with-payment", async (req, res) => {
 
     console.log("Creating booking for user:", userId);
 
-    // 1. Create booking in Supabase
     const { data: bookingData, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -165,7 +146,6 @@ app.post("/api/create-booking-with-payment", async (req, res) => {
 
     console.log("Booking created:", bookingData.id);
 
-    // 2. Create payment intent with booking metadata
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
       currency: currency || "aed",
@@ -188,7 +168,6 @@ app.post("/api/create-booking-with-payment", async (req, res) => {
 
     console.log("Payment intent created:", paymentIntent.id);
 
-    // 3. Update booking with payment intent ID
     const { error: updateError } = await supabase
       .from("bookings")
       .update({
@@ -214,7 +193,6 @@ app.post("/api/create-booking-with-payment", async (req, res) => {
   }
 });
 
-// Retrieve Payment Intent endpoint (for checking status)
 app.get("/api/payment-intent/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -230,7 +208,7 @@ app.get("/api/payment-intent/:id", async (req, res) => {
     res.json({
       id: paymentIntent.id,
       status: paymentIntent.status,
-      amount: paymentIntent.amount / 100, // Convert from cents
+      amount: paymentIntent.amount / 100, 
       currency: paymentIntent.currency,
       metadata: paymentIntent.metadata,
     });
@@ -242,7 +220,6 @@ app.get("/api/payment-intent/:id", async (req, res) => {
   }
 });
 
-// Webhook endpoint (for production - verify webhook signatures)
 app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   const sig = req.headers["stripe-signature"];
 
@@ -251,10 +228,8 @@ app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, 
   try {
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       console.warn("STRIPE_WEBHOOK_SECRET not set, using test mode");
-      // In development, parse the body directly
       event = JSON.parse(req.body.toString());
     } else {
-      // Verify webhook signature in production
       event = stripe.webhooks.constructEvent(
         req.body,
         sig,
@@ -268,7 +243,6 @@ app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, 
 
   console.log("Webhook received:", event.type);
 
-  // Handle the event
   try {
     switch (event.type) {
       case "payment_intent.succeeded": {
@@ -278,7 +252,6 @@ app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, 
         const bookingId = paymentIntent.metadata?.booking_id;
 
         if (bookingId) {
-          // Update booking status in Supabase
           const { error } = await supabase
             .from("bookings")
             .update({
@@ -352,7 +325,6 @@ app.post("/api/webhook", express.raw({ type: "application/json" }), async (req, 
   res.json({ received: true });
 });
 
-// Send Booking Confirmation Email endpoint
 app.post("/api/send-booking-confirmation", async (req, res) => {
   try {
     const {
@@ -367,14 +339,12 @@ app.post("/api/send-booking-confirmation", async (req, res) => {
       paymentIntentId,
     } = req.body;
 
-    // Validate required fields
     if (!to || !bookingId || !serviceName || !totalAmount) {
       return res.status(400).json({
         error: "Missing required fields: to, bookingId, serviceName, totalAmount",
       });
     }
 
-    // Check if email is configured
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.warn("Email not configured. Skipping email send.");
       return res.status(200).json({
@@ -386,7 +356,6 @@ app.post("/api/send-booking-confirmation", async (req, res) => {
 
     const transporter = createEmailTransporter();
 
-    // Format date
     const formattedDate = bookingDate
       ? new Date(bookingDate).toLocaleDateString("en-US", {
           year: "numeric",
@@ -395,7 +364,6 @@ app.post("/api/send-booking-confirmation", async (req, res) => {
         })
       : "Not specified";
 
-    // Create HTML email template
     const htmlTemplate = `
 <!DOCTYPE html>
 <html>
@@ -409,7 +377,6 @@ app.post("/api/send-booking-confirmation", async (req, res) => {
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <!-- Header -->
           <tr>
             <td style="background: linear-gradient(135deg, #FF621F 0%, #ff8533 100%); padding: 40px 30px; text-align: center;">
               <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Booking Confirmed!</h1>
@@ -417,7 +384,6 @@ app.post("/api/send-booking-confirmation", async (req, res) => {
             </td>
           </tr>
           
-          <!-- Content -->
           <tr>
             <td style="padding: 40px 30px;">
               <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
@@ -427,7 +393,6 @@ app.post("/api/send-booking-confirmation", async (req, res) => {
                 We're excited to confirm your booking! Your reservation has been successfully processed and payment has been received.
               </p>
               
-              <!-- Booking Details Box -->
               <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
                 <tr>
                   <td>
@@ -489,7 +454,6 @@ app.post("/api/send-booking-confirmation", async (req, res) => {
             </td>
           </tr>
           
-          <!-- Footer -->
           <tr>
             <td style="background-color: #f8f9fa; padding: 30px; text-align: center; border-top: 1px solid #e0e0e0;">
               <p style="color: #666666; font-size: 12px; margin: 0 0 10px 0;">
@@ -508,7 +472,6 @@ app.post("/api/send-booking-confirmation", async (req, res) => {
 </html>
     `;
 
-    // Plain text version
     const textTemplate = `
 Booking Confirmation - Travel Guroo
 
@@ -541,7 +504,6 @@ This is an automated confirmation email. Please do not reply to this email.
 © ${new Date().getFullYear()} Travel Guroo. All rights reserved.
     `;
 
-    // Send email
     const mailOptions = {
       from: `"Travel Guroo" <${process.env.SMTP_USER}>`,
       to: to,
@@ -568,7 +530,6 @@ This is an automated confirmation email. Please do not reply to this email.
   }
 });
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({
@@ -577,7 +538,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Travel Guroo Payment Server running on http://localhost:${PORT}`);
   console.log(`📝 Health check: http://localhost:${PORT}/health`);
@@ -589,5 +549,3 @@ app.listen(PORT, () => {
     console.log("✅ Stripe configured");
   }
 });
-
-

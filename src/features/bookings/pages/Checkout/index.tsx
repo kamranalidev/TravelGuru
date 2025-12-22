@@ -12,7 +12,6 @@ import { supabase } from "../../../../supabaseClient";
 import { useAuth } from "../../../../hooks/useAuth";
 import "./index.css";
 
-// Initialize Stripe - Replace with your publishable key
 const stripePromise = loadStripe(
   import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ||
     "pk_test_51QEXAMPLE_REPLACE_WITH_YOUR_KEY"
@@ -28,7 +27,6 @@ export const Checkout = () => {
   const [error, setError] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // If no booking data, redirect back to home
   if (!bookingData) {
     navigate("/");
     return null;
@@ -49,7 +47,6 @@ export const Checkout = () => {
         setLoading(true);
         setError(null);
 
-        // Create payment intent
         const result = await createPaymentIntent({
           amount: finalPrice,
           currency: "usd",
@@ -87,7 +84,6 @@ export const Checkout = () => {
 
     setIsProcessingPayment(true);
     try {
-      // Create booking after successful payment
       const { data: booking, error: bookingError } = await supabase
         .from("bookings")
         .insert({
@@ -103,7 +99,6 @@ export const Checkout = () => {
         throw bookingError;
       }
 
-      // Send booking confirmation email
       const userEmail = session.user.email || profile?.email;
       const userName = 
         profile?.full_name || 
@@ -126,14 +121,12 @@ export const Checkout = () => {
           });
           console.log("Booking confirmation email sent successfully");
         } catch (emailError) {
-          // Log error but don't block navigation - email failure shouldn't break booking
           console.error("Failed to send confirmation email:", emailError);
         }
       } else {
         console.warn("User email not found, skipping confirmation email");
       }
 
-      // Navigate to payment confirmation with booking details
       navigate("/payment-confirmation", {
         state: {
           ...bookingData,
@@ -186,7 +179,6 @@ export const Checkout = () => {
         className="centerSection"
         sx={{ display: "flex", gap: "20px", padding: "20px", flexWrap: "wrap" }}
       >
-        {/* Payment Form */}
         <Box
           sx={{
             backgroundColor: "#fff",
@@ -262,7 +254,6 @@ export const Checkout = () => {
           </Box>
         </Box>
 
-        {/* Booking Summary */}
         <Box
           sx={{
             backgroundColor: "#fff",

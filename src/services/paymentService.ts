@@ -1,8 +1,3 @@
-/**
- * Payment Service
- * Handles all payment-related API calls to the Node.js backend server
- */
-
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001/api";
 
 export interface CreatePaymentIntentParams {
@@ -29,14 +24,10 @@ export interface PaymentIntentResponse {
   error?: string;
 }
 
-/**
- * Create a payment intent using Node.js backend
- */
 export const createPaymentIntent = async (
   params: CreatePaymentIntentParams
 ): Promise<PaymentIntentResponse> => {
   try {
-    // Validate amount
     if (!params.amount || params.amount <= 0) {
       throw new Error("Invalid amount. Must be greater than 0.");
     }
@@ -78,9 +69,6 @@ export const createPaymentIntent = async (
   }
 };
 
-/**
- * Create a booking and payment intent in one transaction
- */
 export const createBookingWithPayment = async (params: {
   userId: string;
   serviceId: number;
@@ -137,9 +125,6 @@ export const createBookingWithPayment = async (params: {
   }
 };
 
-/**
- * Verify payment status from Stripe via backend
- */
 export const verifyPaymentStatus = async (
   paymentIntentId: string
 ): Promise<{
@@ -173,5 +158,3 @@ export const verifyPaymentStatus = async (
     };
   }
 };
-
-

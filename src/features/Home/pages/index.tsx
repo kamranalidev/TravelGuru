@@ -16,7 +16,6 @@ import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
-// Service Image Gallery Component
 const ServiceImageGallery = ({ service }: { service: any }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [images, setImages] = useState<string[]>([]);
@@ -28,12 +27,12 @@ const ServiceImageGallery = ({ service }: { service: any }) => {
   }, [service]);
 
   const nextImage = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering service click
+    e.stopPropagation();
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
 
   const prevImage = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering service click
+    e.stopPropagation();
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
@@ -88,12 +87,10 @@ const ServiceImageGallery = ({ service }: { service: any }) => {
   );
 };
 
-// Helper function to extract images from service data
 const getServiceImages = (service: any): string[] => {
   try {
     let images: string[] = [];
 
-    // Check if service_image is a string (JSON) that needs parsing
     if (service?.service_image && typeof service.service_image === "string") {
       const parsedImages = JSON.parse(service.service_image);
       if (Array.isArray(parsedImages)) {
@@ -102,7 +99,6 @@ const getServiceImages = (service: any): string[] => {
         );
       }
     }
-    // Check if service_image is already an object with url array
     else if (
       service?.service_image &&
       Array.isArray(service.service_image.url)
@@ -111,14 +107,12 @@ const getServiceImages = (service: any): string[] => {
         (img: any) => typeof img === "string" && img.trim() !== ""
       );
     }
-    // Check if service_image is already an array
     else if (Array.isArray(service?.service_image)) {
       images = service.service_image.filter(
         (img: any) => typeof img === "string" && img.trim() !== ""
       );
     }
 
-    // Return array of valid images or fallback
     return images.length > 0 ? images : ["/assets/desertSafari.jpg"];
   } catch (imgError) {
     console.warn("Error parsing service images:", imgError);
@@ -144,7 +138,7 @@ export const Homepage = () => {
     const fetchServices = async () => {
       try {
         const { data, error } = await supabase
-          .from("services") // table name
+          .from("services")
           .select(
             "id, service_name, service_description, location, service_image, default_price"
           )
@@ -156,7 +150,6 @@ export const Homepage = () => {
           setError("Unable to load services at the moment.");
           setServices([]);
         } else {
-          // Ensure data is an array and contains valid entries
           const validServices = Array.isArray(data)
             ? data.filter((service) => service && service.id)
             : [];
@@ -175,21 +168,19 @@ export const Homepage = () => {
     fetchServices();
   }, []);
 
-  // Auto-change hero image every 5 seconds with smooth transition
   useEffect(() => {
     const interval = setInterval(() => {
-      setImageLoaded(false); // Start fade out
+      setImageLoaded(false);
       setTimeout(() => {
         setCurrentHeroImageIndex(
           (prevIndex) => (prevIndex + 1) % dubaiImages.length
         );
-      }, 200); // Small delay for smooth transition
-    }, 5000); // Change image every 5 seconds
+      }, 200);
+    }, 5000);
 
-    return () => clearInterval(interval); // Cleanup on unmount
+    return () => clearInterval(interval);
   }, [dubaiImages.length]);
 
-  // Preload images for smooth transitions
   useEffect(() => {
     dubaiImages.forEach((src) => {
       const img = new Image();
@@ -226,7 +217,6 @@ export const Homepage = () => {
   return (
     <div>
       <Header />
-      {/* Hero Section */}
       <Box className="heroSection">
         <div className="heroBackground">
           <img
@@ -290,7 +280,6 @@ export const Homepage = () => {
             </div>
           </div>
         </div>
-        {/* Image carousel indicators */}
         <div className="heroImageIndicators">
           {dubaiImages.map((_, index) => (
             <div
@@ -372,7 +361,6 @@ export const Homepage = () => {
         </div>
       </Box>
 
-      {/* Why Choose Us Section */}
       <Box className="whyChooseUs">
         <div className="sectionContainer">
           <ScrollAnimation animationType="fadeIn">
@@ -458,7 +446,6 @@ export const Homepage = () => {
         </div>
       </Box>
 
-      {/* Testimonials Section */}
       <Box className="testimonialsSection">
         <div className="sectionContainer">
           <ScrollAnimation animationType="fadeIn">
@@ -581,7 +568,6 @@ export const Homepage = () => {
           </Box>
         </div>
       </Box>
-      {/* Subscribe  and get exclusive offers */}
       <Box className="subscribe">
         <ScrollAnimation animationType="scale">
           <div className="subscribeContent">
@@ -601,7 +587,6 @@ export const Homepage = () => {
           </div>
         </ScrollAnimation>
       </Box>
-      {/* Footer */}
       <Footer />
     </div>
   );

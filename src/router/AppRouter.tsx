@@ -51,7 +51,6 @@ export function PublicRoute({ children }: any) {
     );
   }
 
-  // Otherwise, render the public page
   return children;
 }
 const LoginPage = lazy(() =>
@@ -223,10 +222,8 @@ export default function AppRouter() {
               </PublicRoute>
             }
           />
-          {/* Add more routes here as needed */}
 
           <Route path="*" element={<Navigate to="/" />} />
-          {/* Add more routes here as needed */}
         </Routes>
       </Suspense>
     </>

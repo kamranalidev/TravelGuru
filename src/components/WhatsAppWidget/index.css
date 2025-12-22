@@ -55,7 +55,6 @@
   }
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .whatsapp-widget-container {
     bottom: 20px;
@@ -98,7 +97,6 @@
   }
 }
 
-/* Accessibility - reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
   .whatsapp-pulse-ring {
     animation: none;
@@ -108,4 +106,3 @@
     transition: none !important;
   }
 }
-

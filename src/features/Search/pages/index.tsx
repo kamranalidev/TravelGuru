@@ -20,7 +20,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { LocationOn, AccessTime } from "@mui/icons-material";
-import "./styles.css";
+import "../pages/";
 
 interface Service {
   id: string;
@@ -38,14 +38,12 @@ export const SearchPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Filter states
   const [searchQuery] = useState(searchParams.get("query") || "");
   const [priceRange, setPriceRange] = useState<number[]>([0, 2000]);
   const [sortBy, setSortBy] = useState("recommended");
   const [instantConfirmation, setInstantConfirmation] = useState(false);
   const [maxPrice, setMaxPrice] = useState<number>(2000);
 
-  // Format currency as AED
   const formatAED = (value: number) =>
     new Intl.NumberFormat("en-AE", {
       style: "currency",
@@ -71,7 +69,6 @@ export const SearchPage = () => {
       if (error) throw error;
       setServices(data || []);
 
-      // Adjust price slider limits dynamically so all services are visible by default
       const computedMax =
         data && data.length
           ? Math.max(...data.map((s: Service) => Number(s.default_price) || 0))
@@ -90,7 +87,6 @@ export const SearchPage = () => {
   const applyFilters = () => {
     let filtered = [...services];
 
-    // Search filter
     if (searchQuery) {
       filtered = filtered.filter(
         (service) =>
@@ -104,14 +100,12 @@ export const SearchPage = () => {
       );
     }
 
-    // Price filter
     filtered = filtered.filter(
       (service) =>
         service.default_price >= priceRange[0] &&
         service.default_price <= priceRange[1]
     );
 
-    // Sort
     switch (sortBy) {
       case "price-low":
         filtered.sort((a, b) => a.default_price - b.default_price);
@@ -120,7 +114,6 @@ export const SearchPage = () => {
         filtered.sort((a, b) => b.default_price - a.default_price);
         break;
       default:
-        // Recommended (default order)
         break;
     }
 
@@ -163,7 +156,6 @@ export const SearchPage = () => {
       <Header />
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <Box sx={{ display: "flex", gap: 3 }}>
-          {/* Left Sidebar - Filters */}
           <Box
             sx={{
               width: "280px",
@@ -180,7 +172,6 @@ export const SearchPage = () => {
                 top: 20,
               }}
             >
-              {/* Location Filter */}
               <Box sx={{ mb: 3, pb: 3, borderBottom: "1px solid #e0e0e0" }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   Location
@@ -205,7 +196,6 @@ export const SearchPage = () => {
                 </Button>
               </Box>
 
-              {/* Date Filter */}
               <Box sx={{ mb: 3, pb: 3, borderBottom: "1px solid #e0e0e0" }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   Dates
@@ -248,7 +238,6 @@ export const SearchPage = () => {
                 </Button>
               </Box>
 
-              {/* Price Range Filter */}
               <Box sx={{ mb: 3, pb: 3, borderBottom: "1px solid #e0e0e0" }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   Price range
@@ -319,7 +308,6 @@ export const SearchPage = () => {
                 </Box>
               </Box>
 
-              {/* Others Filter */}
               <Box>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   Others
@@ -341,9 +329,7 @@ export const SearchPage = () => {
             </Box>
           </Box>
 
-          {/* Right Content - Services Grid */}
           <Box sx={{ flex: 1 }}>
-            {/* Header with results count and sort */}
             <Box
               sx={{
                 display: "flex",
@@ -371,7 +357,6 @@ export const SearchPage = () => {
               </Box>
             </Box>
 
-            {/* Services Grid */}
             <Box
               sx={{
                 display: "grid",
@@ -410,7 +395,6 @@ export const SearchPage = () => {
                         }}
                         onClick={() => handleServiceClick(service)}
                       >
-                        {/* Image */}
                         <CardMedia
                           component="img"
                           height="200"
@@ -420,7 +404,6 @@ export const SearchPage = () => {
                         />
 
                         <CardContent sx={{ p: 2 }}>
-                          {/* Title */}
                           <Typography
                             variant="h6"
                             sx={{ fontWeight: 600, mb: 0.5, fontSize: "1rem" }}
@@ -428,7 +411,6 @@ export const SearchPage = () => {
                             {service.service_name}
                           </Typography>
 
-                          {/* Description (truncated) */}
                           <Typography
                             variant="body2"
                             color="text.secondary"
@@ -444,7 +426,6 @@ export const SearchPage = () => {
                             {service.service_description}
                           </Typography>
 
-                          {/* Location + Price */}
                           <Box
                             sx={{
                               display: "flex",
@@ -483,7 +464,6 @@ export const SearchPage = () => {
                   })}
             </Box>
 
-            {/* No Results */}
             {!loading && filteredServices.length === 0 && (
               <Box
                 sx={{

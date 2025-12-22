@@ -15,7 +15,6 @@ export const UpdatePasswordPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if we have the proper tokens from the email link
     const accessToken = searchParams.get("access_token");
     const refreshToken = searchParams.get("refresh_token");
 

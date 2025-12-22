@@ -1,4 +1,3 @@
-/* Shared Auth Styles with Glassmorphism Card Design */
 .auth-main {
   position: relative;
   display: flex;
@@ -197,7 +196,6 @@
   }
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .auth-main {
     padding: 16px;
