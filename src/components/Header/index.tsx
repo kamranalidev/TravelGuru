@@ -184,7 +184,7 @@ export const Header = (props: { hidePages?: boolean }) => {
             >
               <img
                 src="/assets/Logo-02.png"
-                alt="Travel Guroo Logo"
+                alt="TravelGuru Logo"
                 style={{ width: "120px", height: "auto" }} // Slightly larger logo
               />
             </Box>

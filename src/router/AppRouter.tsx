@@ -44,7 +44,7 @@ export function PublicRoute({ children }: any) {
       >
         <CircularProgress />
         <Box sx={{ textAlign: "center" }}>
-          <h3 style={{ margin: 0, color: "#666" }}>Loading Travel Guroo...</h3>
+          <h3 style={{ margin: 0, color: "#666" }}>Loading TravelGuru...</h3>
           <p style={{ margin: "8px 0 0 0", color: "#888" }}>Please wait</p>
         </Box>
       </Box>
@@ -112,11 +112,6 @@ const ContactPage = lazy(() =>
 const SearchPage = lazy(() =>
   import("../features/Search/pages").then((module) => ({
     default: module.SearchPage,
-  }))
-);
-const ServicesPage = lazy(() =>
-  import("../features/Services/pages").then((module) => ({
-    default: module.ServicesPage,
   }))
 );
 export default function AppRouter() {
@@ -224,7 +219,7 @@ export default function AppRouter() {
             path="/services"
             element={
               <PublicRoute>
-                <ServicesPage />
+                <SearchPage />
               </PublicRoute>
             }
           />

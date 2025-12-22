@@ -1,11 +1,13 @@
 # Travel Guroo Services Page Implementation
 
 ## Overview
+
 Created a modern, Klook-style services listing page with advanced filtering and sorting capabilities.
 
 ## Features Implemented
 
 ### 1. **Services Grid Layout**
+
 - Responsive grid with 3 columns on desktop, 2 on tablet, 1 on mobile
 - Card-based design with hover effects
 - Service images with favorite button
@@ -14,12 +16,14 @@ Created a modern, Klook-style services listing page with advanced filtering and 
 - Pricing with discount badges
 
 ### 2. **Left Sidebar Filters**
+
 - **Location Filter**: Filter by service locations
 - **Date Filter**: Quick buttons for "Today", "Tomorrow", and "All dates"
 - **Price Range Slider**: Dynamic price filtering with min/max inputs (US$ 0 - 2000)
 - **Others**: Instant confirmation checkbox
 
 ### 3. **Sorting Options**
+
 - Recommended (default)
 - Price: Low to High
 - Price: High to Low
@@ -27,6 +31,7 @@ Created a modern, Klook-style services listing page with advanced filtering and 
 - Most Popular
 
 ### 4. **Service Card Features**
+
 - High-quality service images
 - Category and location tags
 - Service title (truncated at 2 lines)
@@ -37,6 +42,7 @@ Created a modern, Klook-style services listing page with advanced filtering and 
 - Favorite heart icon (toggleable)
 
 ### 5. **Interactive Elements**
+
 - Click on any service card to navigate to booking page
 - Toggle favorites by clicking the heart icon
 - Responsive design for all screen sizes
@@ -56,16 +62,19 @@ The Header component now navigates to `/services` instead of scrolling to a sect
 ## Usage
 
 ### Navigate to Services Page
+
 ```typescript
 // From any component
-navigate('/services');
+navigate("/services");
 
 // Or with search query
-navigate('/search?query=cruise');
+navigate("/search?query=cruise");
 ```
 
 ### Filter Services Programmatically
+
 The page supports URL search parameters:
+
 - `?query=dhow cruise` - Pre-fill search query
 - Can be extended for other filters
 
@@ -80,18 +89,21 @@ src/features/Search/pages/
 ## Design Highlights
 
 ### Color Scheme
+
 - Primary Orange: `#FF621F`
 - Background: `#f5f5f5`
 - White cards with subtle shadows
 - Rating star: `#FFB400`
 
 ### Typography
+
 - Service titles: 16px, weight 600
 - Prices: 18px, weight 700, orange color
 - Categories: 12px, secondary color
 - Tags: 11px chips
 
 ### Responsive Breakpoints
+
 - Desktop (>960px): 3 columns
 - Tablet (600-960px): 2 columns
 - Mobile (<600px): 1 column
@@ -99,7 +111,9 @@ src/features/Search/pages/
 ## Integration with Existing System
 
 ### Data Source
+
 Fetches from Supabase `services` table with fields:
+
 - `id`
 - `service_name`
 - `service_description`
@@ -111,32 +125,38 @@ Fetches from Supabase `services` table with fields:
 - `reviews_count` (optional)
 
 ### Navigation Integration
+
 Clicking a service navigates to `/booking?serviceId={id}` with service state passed via React Router.
 
 ## Future Enhancements
 
 1. **Add to Database**:
+
    - Add `category` column to services table
    - Add `rating` column (or calculate from reviews)
    - Add `reviews_count` column
    - Add `duration` column
 
 2. **Advanced Filters**:
+
    - Category checkboxes
    - Duration filter
    - Time of day filter
    - Group size filter
 
 3. **Search Functionality**:
+
    - Full-text search across service names and descriptions
    - Search suggestions/autocomplete
    - Recent searches
 
 4. **Map View**:
+
    - Toggle between grid and map view
    - Show services on interactive map
 
 5. **Favorites System**:
+
    - Save favorites to user profile
    - Persist across sessions
    - Favorites page
@@ -170,16 +190,19 @@ Clicking a service navigates to `/booking?serviceId={id}` with service state pas
 ## Troubleshooting
 
 ### No Services Showing
+
 - Check Supabase connection
 - Verify services table has data
 - Check browser console for errors
 
 ### Images Not Loading
+
 - Verify `service_image` field format in database
 - Check image URLs are accessible
 - Fallback image should load automatically
 
 ### Filters Not Working
+
 - Check state management in component
 - Verify filter logic in `applyFilters()` function
 - Check browser console for errors

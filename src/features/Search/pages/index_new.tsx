@@ -85,8 +85,12 @@ export const SearchPage = () => {
     if (searchQuery) {
       filtered = filtered.filter(
         (service) =>
-          service.service_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          service.service_description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.service_name
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          service.service_description
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
           service.location?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -188,7 +192,9 @@ export const SearchPage = () => {
                 <Box sx={{ px: 1 }}>
                   <Slider
                     value={priceRange}
-                    onChange={(_, newValue) => setPriceRange(newValue as number[])}
+                    onChange={(_, newValue) =>
+                      setPriceRange(newValue as number[])
+                    }
                     valueLabelDisplay="auto"
                     min={0}
                     max={2000}
@@ -200,7 +206,13 @@ export const SearchPage = () => {
                       },
                     }}
                   />
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mt: 2,
+                    }}
+                  >
                     <Typography variant="body2" color="text.secondary">
                       US$ {priceRange[0]}
                     </Typography>
@@ -247,7 +259,8 @@ export const SearchPage = () => {
               }}
             >
               <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                {filteredServices.length} result{filteredServices.length !== 1 ? "s" : ""} found
+                {filteredServices.length} result
+                {filteredServices.length !== 1 ? "s" : ""} found
               </Typography>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                 <Typography variant="body2">Sort by</Typography>
@@ -339,9 +352,21 @@ export const SearchPage = () => {
 
                         <CardContent sx={{ p: 2 }}>
                           {/* Location */}
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 1 }}>
-                            <LocationOn sx={{ fontSize: 16, color: "#FF621F" }} />
-                            <Typography variant="caption" color="text.secondary">
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              mb: 1,
+                            }}
+                          >
+                            <LocationOn
+                              sx={{ fontSize: 16, color: "#FF621F" }}
+                            />
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               {service.location || "Dubai"}
                             </Typography>
                           </Box>
@@ -382,9 +407,20 @@ export const SearchPage = () => {
                           </Typography>
 
                           {/* Rating */}
-                          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                            <Star sx={{ color: "#FFB400", fontSize: 16, mr: 0.5 }} />
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              mb: 1,
+                            }}
+                          >
+                            <Star
+                              sx={{ color: "#FFB400", fontSize: 16, mr: 0.5 }}
+                            />
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 600 }}
+                            >
                               4.5
                             </Typography>
                             <Typography
@@ -397,7 +433,13 @@ export const SearchPage = () => {
                           </Box>
 
                           {/* Price */}
-                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                            }}
+                          >
                             <Typography
                               variant="h6"
                               sx={{ fontWeight: 700, color: "#FF621F" }}

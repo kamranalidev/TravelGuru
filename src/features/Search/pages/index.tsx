@@ -9,22 +9,17 @@ import {
   CardContent,
   CardMedia,
   Typography,
+  TextField,
   Slider,
   Button,
-  Chip,
-  IconButton,
   MenuItem,
   Select,
   FormControl,
   Skeleton,
-  Grid,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
-import {
-  Favorite,
-  FavoriteBorder,
-  LocationOn,
-  Star,
-} from "@mui/icons-material";
+import { LocationOn, AccessTime } from "@mui/icons-material";
 import "./styles.css";
 
 interface Service {
@@ -41,18 +36,22 @@ export const SearchPage = () => {
   const [filteredServices, setFilteredServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
   // Filter states
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("query") || ""
-  );
+  const [searchQuery] = useState(searchParams.get("query") || "");
   const [priceRange, setPriceRange] = useState<number[]>([0, 2000]);
   const [sortBy, setSortBy] = useState("recommended");
+  const [instantConfirmation, setInstantConfirmation] = useState(false);
+  const [maxPrice, setMaxPrice] = useState<number>(2000);
 
-  // Get unique locations from services
-  const locations = Array.from(new Set(services.map((s) => s.location).filter(Boolean)));
+  // Format currency as AED
+  const formatAED = (value: number) =>
+    new Intl.NumberFormat("en-AE", {
+      style: "currency",
+      currency: "AED",
+      maximumFractionDigits: 2,
+    }).format(value);
 
   useEffect(() => {
     fetchServices();
@@ -60,7 +59,7 @@ export const SearchPage = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [services, searchQuery, priceRange, sortBy]);
+  }, [services, searchQuery, priceRange, sortBy, instantConfirmation]);
 
   const fetchServices = async () => {
     try {
@@ -69,16 +68,24 @@ export const SearchPage = () => {
         .from("services")
         .select("*")
         .order("created_at", { ascending: false });
-
       if (error) throw error;
-
       setServices(data || []);
+
+      // Adjust price slider limits dynamically so all services are visible by default
+      const computedMax =
+        data && data.length
+          ? Math.max(...data.map((s: Service) => Number(s.default_price) || 0))
+          : 0;
+      const safeMax = Math.max(2000, computedMax);
+      setMaxPrice(safeMax);
+      setPriceRange((prev) => [prev[0], Math.max(prev[1], safeMax)]);
     } catch (error) {
       console.error("Error fetching services:", error);
     } finally {
       setLoading(false);
     }
   };
+  console.log(services, "These are the services being fetched");
 
   const applyFilters = () => {
     let filtered = [...services];
@@ -87,15 +94,14 @@ export const SearchPage = () => {
     if (searchQuery) {
       filtered = filtered.filter(
         (service) =>
-          service.service_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          service.service_description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          service.service_name
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          service.service_description
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
           service.location?.toLowerCase().includes(searchQuery.toLowerCase())
       );
-    }
-
-    // Location filter
-    if (selectedLocation !== "all") {
-      filtered = filtered.filter((service) => service.location === selectedLocation);
     }
 
     // Price filter
@@ -113,12 +119,6 @@ export const SearchPage = () => {
       case "price-high":
         filtered.sort((a, b) => b.default_price - a.default_price);
         break;
-      case "rating":
-        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        break;
-      case "popular":
-        filtered.sort((a, b) => (b.reviews_count || 0) - (a.reviews_count || 0));
-        break;
       default:
         // Recommended (default order)
         break;
@@ -127,26 +127,14 @@ export const SearchPage = () => {
     setFilteredServices(filtered);
   };
 
-  const toggleFavorite = (serviceId: string) => {
-    setFavorites((prev) => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(serviceId)) {
-        newFavorites.delete(serviceId);
-      } else {
-        newFavorites.add(serviceId);
-      }
-      return newFavorites;
-    });
-  };
-
   const getServiceImages = (service: Service): string[] => {
     try {
       if (typeof service.service_image === "string") {
         const parsed = JSON.parse(service.service_image);
         if (Array.isArray(parsed)) return parsed.filter((img) => img);
       }
-      if (Array.isArray(service.service_image?.url)) {
-        return service.service_image.url.filter((img: string) => img);
+      if (Array.isArray((service as any).service_image?.url)) {
+        return (service as any).service_image.url.filter((img: string) => img);
       }
       if (Array.isArray(service.service_image)) {
         return service.service_image.filter((img) => img);
@@ -158,26 +146,31 @@ export const SearchPage = () => {
   };
 
   const handleServiceClick = (service: Service) => {
-    navigate(`/booking?serviceId=${service.id}`, {
-      state: {
-        service: {
-          ...service,
-          name: service.service_name,
-          description: service.service_description,
-          price: service.default_price,
-        },
-      },
-    });
+    const payload = {
+      ...service,
+      name: service.service_name,
+      description:
+        service.service_description ||
+        "Premium experience curated by Travel Guroo.",
+      price: service.default_price,
+    };
+
+    navigate(`/bookings/${service.id}`, { state: payload });
   };
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f5f5f5" }}>
       <Header />
-
       <Container maxWidth="xl" sx={{ py: 4 }}>
-        <Grid container spacing={3}>
+        <Box sx={{ display: "flex", gap: 3 }}>
           {/* Left Sidebar - Filters */}
-          <Grid xs={12} md={3}>
+          <Box
+            sx={{
+              width: "280px",
+              flexShrink: 0,
+              display: { xs: "none", md: "block" },
+            }}
+          >
             <Box
               sx={{
                 bgcolor: "white",
@@ -188,12 +181,16 @@ export const SearchPage = () => {
               }}
             >
               {/* Location Filter */}
-              <Box sx={{ mb: 3 }}>
+              <Box sx={{ mb: 3, pb: 3, borderBottom: "1px solid #e0e0e0" }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   Location
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  Locations including products found with "{searchQuery || "dhow cruise"}"
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  Locations including products found
                 </Typography>
                 <Button
                   startIcon={<LocationOn />}
@@ -201,6 +198,7 @@ export const SearchPage = () => {
                     textTransform: "none",
                     color: "#FF621F",
                     justifyContent: "flex-start",
+                    p: 0,
                   }}
                 >
                   See all
@@ -208,11 +206,11 @@ export const SearchPage = () => {
               </Box>
 
               {/* Date Filter */}
-              <Box sx={{ mb: 3 }}>
+              <Box sx={{ mb: 3, pb: 3, borderBottom: "1px solid #e0e0e0" }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   Dates
                 </Typography>
-                <Box sx={{ display: "flex", gap: 1 }}>
+                <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
                   <Button
                     variant="outlined"
                     sx={{
@@ -220,6 +218,7 @@ export const SearchPage = () => {
                       borderRadius: 2,
                       borderColor: "#ddd",
                       color: "#333",
+                      flex: 1,
                     }}
                   >
                     Today
@@ -231,6 +230,7 @@ export const SearchPage = () => {
                       borderRadius: 2,
                       borderColor: "#ddd",
                       color: "#333",
+                      flex: 1,
                     }}
                   >
                     Tomorrow
@@ -241,7 +241,7 @@ export const SearchPage = () => {
                   sx={{
                     textTransform: "none",
                     color: "#FF621F",
-                    mt: 1,
+                    p: 0,
                   }}
                 >
                   All dates
@@ -249,17 +249,19 @@ export const SearchPage = () => {
               </Box>
 
               {/* Price Range Filter */}
-              <Box sx={{ mb: 3 }}>
+              <Box sx={{ mb: 3, pb: 3, borderBottom: "1px solid #e0e0e0" }}>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
                   Price range
                 </Typography>
                 <Box sx={{ px: 1 }}>
                   <Slider
                     value={priceRange}
-                    onChange={(_, newValue) => setPriceRange(newValue as number[])}
+                    onChange={(_, newValue) =>
+                      setPriceRange(newValue as number[])
+                    }
                     valueLabelDisplay="auto"
                     min={0}
-                    max={2000}
+                    max={maxPrice}
                     sx={{
                       color: "#FF621F",
                       "& .MuiSlider-thumb": {
@@ -268,28 +270,49 @@ export const SearchPage = () => {
                       },
                     }}
                   />
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      mt: 2,
+                      gap: 1,
+                    }}
+                  >
                     <TextField
                       value={priceRange[0]}
                       onChange={(e) =>
-                        setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])
+                        setPriceRange([
+                          parseInt(e.target.value) || 0,
+                          priceRange[1],
+                        ])
                       }
                       size="small"
-                      sx={{ width: "45%" }}
+                      sx={{ flex: 1 }}
                       InputProps={{
-                        startAdornment: <Typography sx={{ mr: 0.5 }}>US$</Typography>,
+                        startAdornment: (
+                          <Typography sx={{ mr: 0.5, fontSize: "0.875rem" }}>
+                            AED
+                          </Typography>
+                        ),
                       }}
                     />
                     <Typography sx={{ alignSelf: "center" }}>-</Typography>
                     <TextField
                       value={priceRange[1]}
                       onChange={(e) =>
-                        setPriceRange([priceRange[0], parseInt(e.target.value) || 2000])
+                        setPriceRange([
+                          priceRange[0],
+                          parseInt(e.target.value) || maxPrice,
+                        ])
                       }
                       size="small"
-                      sx={{ width: "45%" }}
+                      sx={{ flex: 1 }}
                       InputProps={{
-                        startAdornment: <Typography sx={{ mr: 0.5 }}>US$</Typography>,
+                        startAdornment: (
+                          <Typography sx={{ mr: 0.5, fontSize: "0.875rem" }}>
+                            AED
+                          </Typography>
+                        ),
                       }}
                     />
                   </Box>
@@ -306,17 +329,20 @@ export const SearchPage = () => {
                     <Checkbox
                       checked={instantConfirmation}
                       onChange={(e) => setInstantConfirmation(e.target.checked)}
-                      sx={{ color: "#FF621F", "&.Mui-checked": { color: "#FF621F" } }}
+                      sx={{
+                        color: "#FF621F",
+                        "&.Mui-checked": { color: "#FF621F" },
+                      }}
                     />
                   }
                   label="Instant confirmation"
                 />
               </Box>
             </Box>
-          </Grid>
+          </Box>
 
           {/* Right Content - Services Grid */}
-          <Grid xs={12} md={9}>
+          <Box sx={{ flex: 1 }}>
             {/* Header with results count and sort */}
             <Box
               sx={{
@@ -340,179 +366,122 @@ export const SearchPage = () => {
                     <MenuItem value="recommended">Recommended</MenuItem>
                     <MenuItem value="price-low">Price: Low to High</MenuItem>
                     <MenuItem value="price-high">Price: High to Low</MenuItem>
-                    <MenuItem value="rating">Top Rated</MenuItem>
-                    <MenuItem value="popular">Most Popular</MenuItem>
                   </Select>
                 </FormControl>
               </Box>
             </Box>
 
             {/* Services Grid */}
-            <Grid container spacing={3}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  lg: "repeat(3, 1fr)",
+                },
+                gap: 3,
+              }}
+            >
               {loading
                 ? Array.from(new Array(6)).map((_, index) => (
-                    <Grid xs={12} sm={6} lg={4} key={index}>
-                      <Card sx={{ borderRadius: 2 }}>
-                        <Skeleton variant="rectangular" height={200} />
-                        <CardContent>
-                          <Skeleton />
-                          <Skeleton width="60%" />
-                        </CardContent>
-                      </Card>
-                    </Grid>
+                    <Card key={index} sx={{ borderRadius: 2 }}>
+                      <Skeleton variant="rectangular" height={200} />
+                      <CardContent>
+                        <Skeleton />
+                        <Skeleton width="60%" />
+                      </CardContent>
+                    </Card>
                   ))
                 : filteredServices.map((service) => {
                     const images = getServiceImages(service);
-                    const isFavorite = favorites.has(service.id);
-
                     return (
-                      <Grid xs={12} sm={6} lg={4} key={service.id}>
-                        <Card
-                          sx={{
-                            borderRadius: 2,
-                            cursor: "pointer",
-                            transition: "all 0.3s",
-                            position: "relative",
-                            "&:hover": {
-                              transform: "translateY(-4px)",
-                              boxShadow: 6,
-                            },
-                          }}
-                          onClick={() => handleServiceClick(service)}
-                        >
-                          {/* Badge */}
-                          {service.category && (
-                            <Chip
-                              label="Klook's choice"
-                              size="small"
-                              sx={{
-                                position: "absolute",
-                                top: 12,
-                                left: 12,
-                                bgcolor: "#FF621F",
-                                color: "white",
-                                fontWeight: 600,
-                                zIndex: 1,
-                              }}
-                            />
-                          )}
+                      <Card
+                        key={service.id}
+                        sx={{
+                          borderRadius: 2,
+                          cursor: "pointer",
+                          transition: "all 0.3s",
+                          position: "relative",
+                          "&:hover": {
+                            transform: "translateY(-4px)",
+                            boxShadow: 6,
+                          },
+                        }}
+                        onClick={() => handleServiceClick(service)}
+                      >
+                        {/* Image */}
+                        <CardMedia
+                          component="img"
+                          height="200"
+                          image={images[0]}
+                          alt={service.service_name}
+                          sx={{ objectFit: "cover" }}
+                        />
 
-                          {/* Favorite Button */}
-                          <IconButton
+                        <CardContent sx={{ p: 2 }}>
+                          {/* Title */}
+                          <Typography
+                            variant="h6"
+                            sx={{ fontWeight: 600, mb: 0.5, fontSize: "1rem" }}
+                          >
+                            {service.service_name}
+                          </Typography>
+
+                          {/* Description (truncated) */}
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
                             sx={{
-                              position: "absolute",
-                              top: 8,
-                              right: 8,
-                              bgcolor: "rgba(255,255,255,0.9)",
-                              zIndex: 1,
-                              "&:hover": { bgcolor: "white" },
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavorite(service.id);
+                              mb: 1,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical",
                             }}
                           >
-                            {isFavorite ? (
-                              <Favorite sx={{ color: "#FF621F" }} />
-                            ) : (
-                              <FavoriteBorder />
-                            )}
-                          </IconButton>
+                            {service.service_description}
+                          </Typography>
 
-                          {/* Image */}
-                          <CardMedia
-                            component="img"
-                            height="200"
-                            image={images[0]}
-                            alt={service.service_name}
-                            sx={{ objectFit: "cover" }}
-                          />
-
-                          <CardContent sx={{ p: 2 }}>
-                            {/* Category */}
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ display: "block", mb: 0.5 }}
-                            >
-                              {service.category || "Sightseeing cruises"} •{" "}
-                              {service.location || "Dubai"}
-                            </Typography>
-
-                            {/* Title */}
-                            <Typography
-                              variant="h6"
+                          {/* Location + Price */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 1,
+                            }}
+                          >
+                            <Box
                               sx={{
-                                fontWeight: 600,
-                                mb: 1,
-                                fontSize: "1rem",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
                               }}
                             >
-                              {service.service_name}
-                            </Typography>
-
-                            {/* Tags */}
-                            <Box sx={{ display: "flex", gap: 0.5, mb: 1, flexWrap: "wrap" }}>
-                              <Chip
-                                label="Hotel pick-up"
-                                size="small"
-                                sx={{ fontSize: "0.7rem", height: 20 }}
+                              <LocationOn
+                                sx={{ fontSize: 16, color: "#9e9e9e" }}
                               />
-                              <Chip
-                                label="Book now for today"
-                                size="small"
-                                sx={{ fontSize: "0.7rem", height: 20 }}
-                              />
-                            </Box>
-
-                            {/* Rating */}
-                            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                              <Star sx={{ color: "#FFB400", fontSize: 16, mr: 0.5 }} />
-                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {service.rating || "4.3"}
-                              </Typography>
                               <Typography
                                 variant="caption"
                                 color="text.secondary"
-                                sx={{ ml: 0.5 }}
                               >
-                                ({service.reviews_count || "1,000"}+) • 10K+ booked
+                                {service.location || "Dubai"}
                               </Typography>
                             </Box>
-
-                            {/* Price */}
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Typography
-                                variant="h6"
-                                sx={{ fontWeight: 700, color: "#FF621F" }}
-                              >
-                                From US$ {service.default_price.toFixed(2)}
-                              </Typography>
-                              {service.default_price > 30 && (
-                                <Chip
-                                  label="30% off"
-                                  size="small"
-                                  sx={{
-                                    bgcolor: "#fff0eb",
-                                    color: "#FF621F",
-                                    fontSize: "0.7rem",
-                                    height: 20,
-                                    fontWeight: 600,
-                                  }}
-                                />
-                              )}
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      </Grid>
+                            <Typography
+                              variant="h6"
+                              sx={{ fontWeight: 700, color: "#FF621F" }}
+                            >
+                              {formatAED(service.default_price)}
+                            </Typography>
+                          </Box>
+                        </CardContent>
+                      </Card>
                     );
                   })}
-            </Grid>
+            </Box>
 
             {/* No Results */}
             {!loading && filteredServices.length === 0 && (
@@ -533,22 +502,20 @@ export const SearchPage = () => {
                     mt: 2,
                     bgcolor: "#FF621F",
                     "&:hover": { bgcolor: "#e55a1c" },
+                    textTransform: "none",
                   }}
                   onClick={() => {
-                    setSearchQuery("");
-                    setSelectedLocation("all");
-                    setPriceRange([0, 2000]);
-                    setSelectedCategories([]);
+                    setPriceRange([0, maxPrice]);
+                    setInstantConfirmation(false);
                   }}
                 >
                   Clear Filters
                 </Button>
               </Box>
             )}
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Container>
-
       <Footer />
     </Box>
   );
