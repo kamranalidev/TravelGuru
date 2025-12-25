@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import {
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Box,
@@ -257,7 +256,6 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
       errors.phone_number = "Please enter a valid phone number";
     }
 
-
     if (!formData.nationality?.trim()) {
       errors.nationality = "Nationality is required";
     }
@@ -393,6 +391,7 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
       onClose={handleClose}
       maxWidth="md"
       fullWidth
+      aria-labelledby="profile-dialog-title"
       PaperProps={{
         sx: {
           borderRadius: "16px",
@@ -403,7 +402,7 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
         },
       }}
     >
-      <DialogTitle
+      <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
@@ -415,11 +414,20 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
         }}
       >
         <Box>
-          <Typography variant="h5" fontWeight="600">
+          <Typography
+            id="profile-dialog-title"
+            component="h2"
+            variant="h6"
+            fontWeight="600"
+          >
             My Profile
           </Typography>
           <Box sx={{ mt: 1 }}>
-            <Typography variant="body2" sx={{ opacity: 0.9, mb: 0.5 }}>
+            <Typography
+              component="span"
+              variant="body2"
+              sx={{ opacity: 0.9, mb: 0.5, display: "block" }}
+            >
               Profile {calculateProfileCompletion()}% complete
             </Typography>
             <LinearProgress
@@ -440,7 +448,7 @@ export const ProfileModal = ({ open, onClose }: ProfileModalProps) => {
         <IconButton onClick={handleClose} sx={{ color: "white" }}>
           <CloseIcon />
         </IconButton>
-      </DialogTitle>
+      </Box>
 
       <DialogContent sx={{ p: 3 }}>
         {loading ? (

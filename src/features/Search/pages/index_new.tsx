@@ -24,7 +24,7 @@ import {
   LocationOn,
   Star,
 } from "@mui/icons-material";
-import "./styles.css";
+import "../pages/index";
 
 interface Service {
   id: string;

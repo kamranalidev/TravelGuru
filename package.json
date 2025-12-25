@@ -17,7 +17,7 @@
     "@mui/x-date-pickers": "^8.10.0",
     "@reduxjs/toolkit": "^2.8.2",
     "@stripe/react-stripe-js": "^5.4.1",
-    "@stripe/stripe-js": "^8.5.3",
+    "@stripe/stripe-js": "^8.6.0",
     "@supabase/supabase-js": "^2.57.2",
     "dayjs": "^1.11.13",
     "lucide-react": "^0.539.0",

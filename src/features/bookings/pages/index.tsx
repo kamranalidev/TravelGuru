@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import {
   ButtonComponent,
   Header,
@@ -15,6 +15,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  CircularProgress,
 } from "@mui/material";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
@@ -28,6 +29,35 @@ import { useAuth } from "../../../hooks/useAuth";
 import "./index.css";
 
 import dayjs from "dayjs";
+
+const SubscriptionBox = styled(Box)(({ theme }) => ({
+  borderRadius: "28px",
+  background:
+    "linear-gradient(135deg, rgba(255, 112, 67, 1) 0%, rgba(255, 152, 0, 1) 100%)",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  padding: "28px 24px",
+  gap: "16px",
+  color: "#ffffff",
+  boxShadow: "0 18px 36px rgba(255, 130, 70, 0.25)",
+  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+  cursor: "pointer",
+  position: "relative",
+  border: "1px solid rgba(255, 255, 255, 0.35)",
+  "&:hover": {
+    transform: "translateY(-6px)",
+    boxShadow: "0 22px 44px rgba(255, 130, 70, 0.3)",
+  },
+  "&.selected": {
+    boxShadow: "0 24px 50px rgba(255, 130, 70, 0.35)",
+    borderColor: "#ffffff",
+  },
+  [theme.breakpoints.down("md")]: {
+    width: "100%",
+  },
+}));
+
 function StandardImageList(props: any) {
   const images =
     props?.Images?.map((imgUrl: string, index: number, arr: string[]) => ({
@@ -78,35 +108,11 @@ function StandardImageList(props: any) {
     </ImageList>
   );
 }
-const SubscriptionBox = styled(Box)(({ theme }) => ({
-  borderRadius: "28px",
-  background:
-    "linear-gradient(135deg, rgba(255, 112, 67, 1) 0%, rgba(255, 152, 0, 1) 100%)",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-start",
-  padding: "28px 24px",
-  gap: "16px",
-  color: "#ffffff",
-  boxShadow: "0 18px 36px rgba(255, 130, 70, 0.25)",
-  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-  cursor: "pointer",
-  position: "relative",
-  border: "1px solid rgba(255, 255, 255, 0.35)",
-  "&:hover": {
-    transform: "translateY(-6px)",
-    boxShadow: "0 22px 44px rgba(255, 130, 70, 0.3)",
-  },
-  "&.selected": {
-    boxShadow: "0 24px 50px rgba(255, 130, 70, 0.35)",
-    borderColor: "#ffffff",
-  },
-  [theme.breakpoints.down("md")]: {
-    width: "100%",
-  },
-}));
 
 export const BookingPage = () => {
+  const params = useParams();
+  const serviceIdFromRoute = params.id ? Number(params.id) : null;
+
   const [open, setOpen] = useState(false);
   const [selectedImg, setSelectedImg] = useState("");
   const [expanded, setExpanded] = useState(false);
@@ -135,6 +141,86 @@ export const BookingPage = () => {
   });
 
   const { state } = useLocation();
+
+  const [serviceLoading, setServiceLoading] = useState(false);
+  const [serviceError, setServiceError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!serviceIdFromRoute || Number.isNaN(serviceIdFromRoute)) return;
+    if (state) return;
+
+    const loadService = async () => {
+      setServiceLoading(true);
+      setServiceError(null);
+
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .eq("id", serviceIdFromRoute)
+        .maybeSingle();
+
+      if (error) {
+        setServiceError(error.message);
+        setServiceLoading(false);
+        return;
+      }
+
+      if (!data) {
+        setServiceError("Service not found.");
+        setServiceLoading(false);
+        return;
+      }
+
+      const fallbackImage = "/assets/desertSafari.jpg";
+      const serviceRecord = data as any;
+
+      let serviceImages: string[] = [];
+      try {
+        if (serviceRecord?.service_image) {
+          if (typeof serviceRecord.service_image === "string") {
+            const parsedImages = JSON.parse(serviceRecord.service_image);
+            if (Array.isArray(parsedImages)) {
+              serviceImages = parsedImages.filter(
+                (img: any) => typeof img === "string" && img.trim() !== ""
+              );
+            }
+          } else if (Array.isArray(serviceRecord.service_image?.url)) {
+            serviceImages = serviceRecord.service_image.url.filter(
+              (img: any) => typeof img === "string" && img.trim() !== ""
+            );
+          } else if (Array.isArray(serviceRecord.service_image)) {
+            serviceImages = serviceRecord.service_image.filter(
+              (img: any) => typeof img === "string" && img.trim() !== ""
+            );
+          }
+        }
+      } catch {
+        serviceImages = [];
+      }
+
+      const imageUrls =
+        serviceImages.length > 0 ? serviceImages : [fallbackImage];
+
+      setPageData({
+        Image: imageUrls,
+        description:
+          serviceRecord?.service_description ||
+          serviceRecord?.description ||
+          "Experience Dubai like never before.",
+        id: serviceRecord?.id ?? 0,
+        location: serviceRecord?.location || "Dubai",
+        service_name: serviceRecord?.service_name || "Dubai Experience",
+        updated_at: serviceRecord?.updated_at || "",
+        default_price: Number(serviceRecord?.default_price ?? 0),
+      });
+
+      setSelectedId(0);
+      setSelectedPackage(null);
+      setServiceLoading(false);
+    };
+
+    void loadService();
+  }, [serviceIdFromRoute, state]);
 
   useEffect(() => {
     if (!!state) {
@@ -190,7 +276,8 @@ export const BookingPage = () => {
       setSelectedPackage(null);
     }
     const fetchPackages = async () => {
-      if (!state?.id) {
+      const idToUse = state?.id ?? serviceIdFromRoute;
+      if (!idToUse) {
         console.warn("No service ID provided for fetching packages");
         return;
       }
@@ -199,7 +286,7 @@ export const BookingPage = () => {
         const { data, error } = await supabase
           .from("packages")
           .select("*")
-          .eq("service_id", state.id)
+          .eq("service_id", idToUse)
           .order("price", { ascending: true });
 
         if (error) {
@@ -221,9 +308,8 @@ export const BookingPage = () => {
       }
     };
 
-    fetchPackages();
-    // edge case if user directly lands on this page without navigation via refresh
-  }, []);
+    void fetchPackages();
+  }, [state, serviceIdFromRoute]);
 
   const handleClick = (imgSrc: string) => {
     setSelectedImg(imgSrc);
@@ -371,9 +457,31 @@ export const BookingPage = () => {
     // Navigate to checkout for payment
     navigate("/checkout", { state: bookingData });
   };
-  const MAX_CHARS = 500; // adjust this based on how many lines you want
-
+  const MAX_CHARS = 500;
   const isLong = pageData.description?.length > MAX_CHARS;
+
+  if (serviceLoading) {
+    return (
+      <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+        <Header />
+        <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <CircularProgress />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (serviceError) {
+    return (
+      <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+        <Header />
+        <Box sx={{ maxWidth: 900, mx: "auto", px: 2, py: 4 }}>
+          <Alert severity="error">{serviceError}</Alert>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <div>
       <Header />

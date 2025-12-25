@@ -1,11 +1,14 @@
+import * as React from "react";
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth.tsx";
+import { Elements } from "@stripe/react-stripe-js";
+import { stripePromise } from "../features/stripe/stripe.ts";
 
 type ProtectedRouteProps = {
-  children: React.ReactElement;
+  children: React.ReactNode;
 };
 function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { session, loading } = useAuth();
@@ -26,7 +29,10 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
   const isAuthenticated = !!session;
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
-export function PublicRoute({ children }: any) {
+type PublicRouteProps = {
+  children: React.ReactElement;
+};
+export function PublicRoute({ children }: PublicRouteProps) {
   const { loading } = useAuth();
 
   if (loading) {
@@ -54,64 +60,77 @@ export function PublicRoute({ children }: any) {
   return children;
 }
 const LoginPage = lazy(() =>
-  import("../features/auth/pages/LoginPage").then((module) => ({
+  import("../features/auth/pages/LoginPage/index.tsx").then((module) => ({
     default: module.LoginPage,
   }))
 );
 const SignupPage = lazy(() =>
-  import("../features/auth/pages/SignupPage").then((module) => ({
+  import("../features/auth/pages/SignupPage/index.tsx").then((module) => ({
     default: module.SignupPage,
   }))
 );
 const PasswordResetPage = lazy(() =>
-  import("../features/auth/pages/PasswordResetPage").then((module) => ({
-    default: module.PasswordResetPage,
-  }))
+  import("../features/auth/pages/PasswordResetPage/index.tsx").then(
+    (module) => ({
+      default: module.PasswordResetPage,
+    })
+  )
 );
 const UpdatePasswordPage = lazy(() =>
-  import("../features/auth/pages/UpdatePasswordPage").then((module) => ({
-    default: module.UpdatePasswordPage,
-  }))
+  import("../features/auth/pages/UpdatePasswordPage/index.tsx").then(
+    (module) => ({
+      default: module.UpdatePasswordPage,
+    })
+  )
 );
 const Homepage = lazy(() =>
-  import("../features/Home/pages").then((module) => ({
+  import("../features/Home/pages/index.tsx").then((module) => ({
     default: module.Homepage,
   }))
 );
 const BookingPage = lazy(() =>
-  import("../features/bookings/pages").then((module) => ({
+  import("../features/bookings/pages/index.tsx").then((module) => ({
     default: module.BookingPage,
   }))
 );
-const PaymentConfirmation = lazy(() =>
-  import("../features/bookings/pages/PaymentConfirmation").then((module) => ({
-    default: module.PaymentConfirmation,
-  }))
-);
 const Checkout = lazy(() =>
-  import("../features/bookings/pages/Checkout").then((module) => ({
+  import("../features/bookings/pages/Checkout/index.tsx").then((module) => ({
     default: module.Checkout,
   }))
 );
 const ProfilePage = lazy(() =>
-  import("../features/account/pages").then((module) => ({
+  import("../features/account/pages/index.tsx").then((module) => ({
     default: module.ProfilePage,
   }))
 );
 const FAQPage = lazy(() =>
-  import("../features/FAQ").then((module) => ({
-    default: module.FAQPage,
+  import("../features/FAQ/pages/index.tsx").then((module) => ({
+    // FAQ page exports a default component, not a named export
+    default: module.default,
   }))
 );
 const ContactPage = lazy(() =>
-  import("../features/Contact").then((module) => ({
-    default: module.ContactPage,
+  import("../features/Contact/pages/index.ts").then((module) => ({
+    // Contact pages barrel exports default
+    default: module.default,
   }))
 );
 const SearchPage = lazy(() =>
-  import("../features/Search/pages").then((module) => ({
+  import("../features/Search/pages/index.tsx").then((module) => ({
     default: module.SearchPage,
   }))
+);
+const ServicesPage = lazy(() =>
+  import("../features/Services/pages/index.tsx").then((module) => ({
+    default: module.ServicesPage,
+  }))
+);
+const UserBookingsPage = lazy(() =>
+  import("../features/bookings/pages/UserBookings/index.tsx").then(
+    (module) => ({
+      default: module.UserBookingsPage,
+    })
+  )
 );
 export default function AppRouter() {
   return (
@@ -167,21 +186,16 @@ export default function AppRouter() {
             }
           />
           <Route
-            path="/payment-confirmation"
-            element={
-              <ProtectedRoute>
-                <PaymentConfirmation />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/checkout"
             element={
               <ProtectedRoute>
-                <Checkout />
+                <Elements stripe={stripePromise}>
+                  <Checkout />
+                </Elements>
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/profile"
             element={
@@ -218,8 +232,16 @@ export default function AppRouter() {
             path="/services"
             element={
               <PublicRoute>
-                <SearchPage />
+                <ServicesPage />
               </PublicRoute>
+            }
+          />
+          <Route
+            path="/bookings"
+            element={
+              <ProtectedRoute>
+                <UserBookingsPage />
+              </ProtectedRoute>
             }
           />
 
