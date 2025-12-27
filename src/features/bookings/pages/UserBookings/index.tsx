@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -9,6 +8,11 @@ import {
   Typography,
   Chip,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
 import { supabase } from "../../../../supabaseClient.ts";
 import { Header } from "../../../../components/index.tsx";
@@ -21,6 +25,26 @@ type BookingRow = {
   currency: string | null;
   service_id: number | null;
   package_id: number | null;
+  services?:
+    | { service_name?: string | null; location?: string | null }
+    | { service_name?: string | null; location?: string | null }[]
+    | null;
+  packages?: { name?: string | null } | { name?: string | null }[] | null;
+};
+
+type BookingDetailsRow = {
+  id: number;
+  created_at?: string | null;
+  booking_date: string;
+  payment_status: string | null;
+  amount: number | null;
+  currency: string | null;
+  service_id: number | null;
+  package_id: number | null;
+  payment_intent_id?: string | null;
+  departure_arrival_time?: string | null;
+  type?: string | null;
+  address?: string | null;
   services?:
     | { service_name?: string | null; location?: string | null }
     | { service_name?: string | null; location?: string | null }[]
@@ -51,10 +75,15 @@ const formatAmount = (
 };
 
 export const UserBookingsPage = () => {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
+
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailsError, setDetailsError] = useState<string | null>(null);
+  const [selectedBooking, setSelectedBooking] =
+    useState<BookingDetailsRow | null>(null);
 
   const statusCounts = useMemo(() => {
     return bookings.reduce<Record<string, number>>((acc, b) => {
@@ -107,9 +136,149 @@ export const UserBookingsPage = () => {
     void load();
   }, []);
 
+  const openBookingDetails = async (bookingId: number) => {
+    try {
+      setDetailsOpen(true);
+      setDetailsLoading(true);
+      setDetailsError(null);
+      setSelectedBooking(null);
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) throw new Error(userError.message);
+      if (!user) throw new Error("You must be logged in.");
+
+      // Fetch booking details strictly from `bookings` (no user profile info)
+      const { data, error: fetchError } = await supabase
+        .from("bookings")
+        .select(
+          "id, created_at, booking_date, payment_status, amount, currency, service_id, package_id, payment_intent_id, departure_arrival_time, type, address, services(service_name, location), packages(name)"
+        )
+        .eq("id", bookingId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (fetchError) throw new Error(fetchError.message);
+      if (!data) throw new Error("Booking not found.");
+
+      setSelectedBooking(data as BookingDetailsRow);
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : "Failed to load booking.";
+      setDetailsError(message);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const closeBookingDetails = () => {
+    setDetailsOpen(false);
+    setDetailsError(null);
+    setSelectedBooking(null);
+    setDetailsLoading(false);
+  };
+
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Header />
+
+      <Dialog
+        open={detailsOpen}
+        onClose={closeBookingDetails}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Booking details</DialogTitle>
+        <DialogContent dividers>
+          {detailsLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : detailsError ? (
+            <Alert severity="error">{detailsError}</Alert>
+          ) : selectedBooking ? (
+            (() => {
+              const service = normalizeFirst(selectedBooking.services);
+              const pack = normalizeFirst(selectedBooking.packages);
+              return (
+                <Stack spacing={1.25}>
+                  <Typography sx={{ fontWeight: 800 }}>
+                    {service?.service_name ??
+                      `Service #${selectedBooking.service_id ?? "-"}`}
+                  </Typography>
+
+                  {service?.location ? (
+                    <Typography color="text.secondary">
+                      Location: {service.location}
+                    </Typography>
+                  ) : null}
+
+                  <Divider />
+
+                  <Typography>
+                    <strong>Booking ID:</strong> {selectedBooking.id}
+                  </Typography>
+                  <Typography>
+                    <strong>Date:</strong> {selectedBooking.booking_date}
+                  </Typography>
+                  {selectedBooking.departure_arrival_time ? (
+                    <Typography>
+                      <strong>Time:</strong>{" "}
+                      {selectedBooking.departure_arrival_time}
+                    </Typography>
+                  ) : null}
+                  {selectedBooking.type ? (
+                    <Typography>
+                      <strong>Type:</strong> {selectedBooking.type}
+                    </Typography>
+                  ) : null}
+                  {selectedBooking.type === "dropoff" &&
+                  selectedBooking.address ? (
+                    <Typography>
+                      <strong>Address:</strong> {selectedBooking.address}
+                    </Typography>
+                  ) : null}
+                  {pack?.name ? (
+                    <Typography>
+                      <strong>Package:</strong> {pack.name}
+                    </Typography>
+                  ) : null}
+                  <Typography>
+                    <strong>Status:</strong>{" "}
+                    {selectedBooking.payment_status ?? "unknown"}
+                  </Typography>
+                  <Typography>
+                    <strong>Amount:</strong>{" "}
+                    {formatAmount(
+                      selectedBooking.amount,
+                      selectedBooking.currency
+                    )}
+                  </Typography>
+                  {selectedBooking.payment_intent_id ? (
+                    <Typography sx={{ wordBreak: "break-all" }}>
+                      <strong>Payment Intent:</strong>{" "}
+                      {selectedBooking.payment_intent_id}
+                    </Typography>
+                  ) : null}
+                  {selectedBooking.created_at ? (
+                    <Typography color="text.secondary">
+                      Created: {selectedBooking.created_at}
+                    </Typography>
+                  ) : null}
+                </Stack>
+              );
+            })()
+          ) : (
+            <Alert severity="info">Select a booking to view details.</Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeBookingDetails}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       <Box sx={{ maxWidth: 1000, mx: "auto", px: { xs: 2, md: 4 }, py: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
@@ -150,13 +319,13 @@ export const UserBookingsPage = () => {
                     },
                   }}
                   elevation={0}
-                  onClick={() => navigate(`/bookings/${b.id}`)}
+                  onClick={() => void openBookingDetails(b.id)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      navigate(`/bookings/${b.id}`);
+                      void openBookingDetails(b.id);
                     }
                   }}
                 >

@@ -12,27 +12,51 @@ import { StepperComponent, Header } from "../../../../components/index.tsx";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { useState } from "react";
 import { supabase } from "../../../../supabaseClient.ts";
+import { useDispatch } from "react-redux";
+import { clearCart } from "../../../../store/features/cart/cartSlice";
+
+const normalizeTime = (value: unknown): string | null => {
+  if (value == null) return null;
+  if (typeof value !== "string") return null;
+  const t = value.trim();
+  if (!t) return null;
+  if (t.toLowerCase() === "null") return null;
+  return t;
+};
+
+const sanitizeNullableTime = (value: unknown): string | null => {
+  const t = normalizeTime(value);
+  // Guard against callers accidentally passing the literal string "null".
+  if (t == null) return null;
+  return t.toLowerCase() === "null" ? null : t;
+};
 
 export const Checkout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const bookingData = location.state;
+  const bookingData = location.state as any;
 
   const stripe = useStripe();
   const elements = useElements();
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useDispatch();
+
   const [confirmationOpen, setConfirmationOpen] = useState(false);
-  const [createdBookingId, setCreatedBookingId] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [createdBookingIds, setCreatedBookingIds] = useState<number[]>([]);
 
   if (!bookingData) {
     navigate("/");
     return null;
   }
 
-  const { trip, bookingDate, selectedPackage, finalPrice, packageName } =
-    bookingData;
+  // All bookings must go through cart checkout.
+  // (cart-only flow)
+
+  // Cart payload
+  const cartItems = (bookingData?.cartItems as any[]) ?? [];
+  const cartFinalPrice = Number(bookingData?.finalPrice ?? 0);
 
   const handlePay = async () => {
     if (!stripe || !elements || loading) return;
@@ -43,6 +67,16 @@ export const Checkout = () => {
     try {
       const session = (await supabase.auth.getSession()).data.session;
 
+      console.log("[Checkout] mode:", "cart");
+      console.log("[Checkout] bookingData (raw state):", {
+        ...bookingData,
+        clientSecret: undefined,
+      });
+
+      if (!Array.isArray(cartItems) || cartItems.length === 0) {
+        throw new Error("Cart is empty.");
+      }
+
       const supabaseUrl = import.meta.env.VITE_REACT_APP_SUPABASE_URL as
         | string
         | undefined;
@@ -52,7 +86,11 @@ export const Checkout = () => {
         );
       }
 
-      const amountInFils = Math.round(finalPrice * 100); // AED → fils
+      const amountMajor = cartFinalPrice;
+      if (!Number.isFinite(amountMajor) || amountMajor <= 0) {
+        throw new Error("Invalid amount.");
+      }
+      const amountInFils = Math.round(amountMajor * 100); // AED → fils
 
       const res = await fetch(
         `${supabaseUrl}/functions/v1/create-payment-intent`,
@@ -66,9 +104,6 @@ export const Checkout = () => {
           },
           body: JSON.stringify({
             amount: amountInFils,
-            service_id: trip?.id,
-            package_id: selectedPackage?.id ?? null,
-            booking_date: bookingDate,
           }),
         }
       );
@@ -106,7 +141,7 @@ export const Checkout = () => {
         );
       }
 
-      // Create booking immediately after successful payment
+      // Create booking(s) immediately after successful payment
       const {
         data: { user },
         error: userError,
@@ -115,24 +150,97 @@ export const Checkout = () => {
       if (userError) throw new Error(userError.message);
       if (!user) throw new Error("You must be logged in to complete booking.");
 
-      const { data: created, error: insertError } = await supabase
-        .from("bookings")
-        .insert({
+      const createdIds: number[] = [];
+
+      for (const it of cartItems) {
+        const serviceId = Number(it.serviceId);
+        const bDate = String(it.bookingDate);
+
+        // IMPORTANT: never allow the literal string "null" through to Postgres time
+        const safeTime = sanitizeNullableTime(it.bookingTime);
+
+        console.log("[Checkout] cart item time normalize:", {
+          raw: it.bookingTime,
+          sanitized: safeTime,
+          typeOfRaw: typeof it.bookingTime,
+          isRawStringNull:
+            typeof it.bookingTime === "string" &&
+            it.bookingTime.trim().toLowerCase() === "null",
+        });
+
+        const packageId = it.packageId ?? null;
+        const unitPriceMajor = Number(it.unitPrice ?? 0);
+        const unitAmountInFils = Math.round(unitPriceMajor * 100);
+
+        console.log("[Checkout] cart item (raw):", it);
+
+        // Prevent duplicates: same user + same service + same date + same time
+        console.log("[Checkout] duplicate-check query params:", {
           user_id: user.id,
-          service_id: trip.id,
-          booking_date: bookingDate,
-          package_id: selectedPackage?.id ?? null,
+          service_id: serviceId,
+          booking_date: bDate,
+          departure_arrival_time: safeTime,
+        });
+
+        let existingQuery = supabase
+          .from("bookings")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("service_id", serviceId)
+          .eq("booking_date", bDate);
+
+        // Supabase needs `.is(column, null)` for NULL filters; `.eq(column, null)` becomes `eq.null`
+        existingQuery =
+          safeTime == null
+            ? existingQuery.is("departure_arrival_time", null)
+            : existingQuery.eq("departure_arrival_time", safeTime);
+
+        const { data: existing, error: existsError } =
+          await existingQuery.limit(1);
+
+        if (existsError) throw new Error(existsError.message);
+        if (existing && existing.length > 0) {
+          throw new Error(
+            `Duplicate booking detected: service ${serviceId} on ${bDate} ${
+              safeTime ?? ""
+            }`.trim()
+          );
+        }
+
+        const airportType = it.airportType ?? null;
+        const address = it.address ?? null;
+
+        const insertPayload = {
+          user_id: user.id,
+          service_id: serviceId,
+          booking_date: bDate,
+          package_id: packageId,
           payment_intent_id: paymentIntentId,
           payment_status: paymentStatus,
-          amount: amountInFils,
+          amount: unitAmountInFils,
           currency: "aed",
-        })
-        .select("id")
-        .single();
+          departure_arrival_time: safeTime,
+          ...(airportType ? { type: airportType } : {}),
+          ...(airportType === "dropoff" && address ? { address } : {}),
+        };
 
-      if (insertError) throw new Error(insertError.message);
+        console.log(
+          "[Checkout] bookings.insert payload (cart item):",
+          insertPayload
+        );
 
-      setCreatedBookingId(created.id);
+        const { data: created, error: insertError } = await supabase
+          .from("bookings")
+          .insert(insertPayload)
+          .select("id")
+          .single();
+
+        if (insertError) throw new Error(insertError.message);
+        createdIds.push(created.id);
+      }
+
+      setCreatedBookingIds(createdIds);
+      dispatch(clearCart());
       setConfirmationOpen(true);
       setLoading(false);
       return;
@@ -165,9 +273,9 @@ export const Checkout = () => {
             Your payment was processed successfully and your booking is
             confirmed.
           </Typography>
-          {createdBookingId ? (
+          {createdBookingIds.length > 0 ? (
             <Typography color="text.secondary">
-              Booking ID: <strong>{createdBookingId}</strong>
+              Booking IDs: <strong>{createdBookingIds.join(", ")}</strong>
             </Typography>
           ) : null}
           <Typography sx={{ mt: 2 }}>
@@ -235,7 +343,9 @@ export const Checkout = () => {
               disabled={!stripe || loading}
               onClick={handlePay}
             >
-              {loading ? "Processing..." : `Pay AED ${finalPrice.toFixed(2)}`}
+              {loading
+                ? "Processing..."
+                : `Pay AED ${cartFinalPrice.toFixed(2)}`}
             </Button>
 
             <Typography
@@ -274,17 +384,29 @@ export const Checkout = () => {
 
           <Box sx={{ borderTop: "1px solid #e6e6e6", padding: "20px" }}>
             <Typography sx={{ fontWeight: "bold", marginBottom: "10px" }}>
-              {trip.name}
+              {cartItems.length} item(s)
             </Typography>
-            <Typography sx={{ marginBottom: "5px" }}>
-              📍 {trip.location}
-            </Typography>
-            <Typography sx={{ marginBottom: "10px" }}>
-              📅 {bookingDate}
-            </Typography>
-            <Typography sx={{ marginBottom: "10px" }}>
-              📦 {packageName}
-            </Typography>
+            {cartItems.map((it) => (
+              <Box
+                key={`${it.serviceId}-${it.bookingDate}-${
+                  it.bookingTime ?? ""
+                }`}
+                sx={{ mb: 1.25 }}
+              >
+                <Typography sx={{ fontWeight: 700 }}>
+                  {it.serviceName ?? `Service #${it.serviceId}`}
+                </Typography>
+                <Typography sx={{ marginBottom: "5px" }}>
+                  📅 {it.bookingDate}
+                  {it.bookingTime ? ` • 🕒 ${it.bookingTime}` : ""}
+                </Typography>
+                {it.packageName ? (
+                  <Typography sx={{ marginBottom: "5px" }}>
+                    📦 {it.packageName}
+                  </Typography>
+                ) : null}
+              </Box>
+            ))}
 
             <Box
               sx={{
@@ -297,46 +419,14 @@ export const Checkout = () => {
                 sx={{
                   display: "flex",
                   justifyContent: "space-between",
-                  marginBottom: "5px",
-                }}
-              >
-                <Typography>Base Price:</Typography>
-                <Typography>AED {trip.default_price}</Typography>
-              </Box>
-
-              {selectedPackage && (
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginBottom: "5px",
-                  }}
-                >
-                  <Typography>Package Upgrade:</Typography>
-                  <Typography>AED {selectedPackage.price}</Typography>
-                </Box>
-              )}
-
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
                   marginTop: "15px",
                   paddingTop: "15px",
                   borderTop: "2px solid #e6e6e6",
                 }}
               >
-                <Typography sx={{ fontWeight: "bold", fontSize: "18px" }}>
-                  Total:
-                </Typography>
-                <Typography
-                  sx={{
-                    fontWeight: "bold",
-                    fontSize: "20px",
-                    color: theme.palette.secondary.main,
-                  }}
-                >
-                  AED {finalPrice.toFixed(2)}
+                <Typography sx={{ fontWeight: "bold" }}>Total:</Typography>
+                <Typography sx={{ fontWeight: "bold" }}>
+                  AED {cartFinalPrice.toFixed(2)}
                 </Typography>
               </Box>
             </Box>

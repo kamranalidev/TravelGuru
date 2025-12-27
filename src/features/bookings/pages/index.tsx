@@ -16,6 +16,11 @@ import {
   DialogContent,
   DialogTitle,
   CircularProgress,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
@@ -27,6 +32,10 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../supabaseClient";
 import { useAuth } from "../../../hooks/useAuth";
 import "./index.css";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "../../../store/store";
+import { addItem } from "../../../store/features/cart/cartSlice";
+import { addServerCartItem } from "../../../store/features/serverCart/serverCartSlice";
 
 import dayjs from "dayjs";
 
@@ -122,6 +131,7 @@ export const BookingPage = () => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
   const { session, profile, refreshProfile } = useAuth();
   const [bookingFeedback, setBookingFeedback] = useState<{
     type: "success" | "error";
@@ -139,6 +149,16 @@ export const BookingPage = () => {
     updated_at: "",
     default_price: 0,
   });
+
+  // Airport Pickup / Dropoff extras
+  const isAirportPickup =
+    (pageData?.service_name ?? "").trim().toLowerCase() ===
+    "airport pickup/drop";
+  const [airportTime, setAirportTime] = useState<string>("");
+  const [airportTransferType, setAirportTransferType] = useState<
+    "pickup" | "dropoff"
+  >("pickup");
+  const [dropoffAddress, setDropoffAddress] = useState<string>("");
 
   const { state } = useLocation();
 
@@ -429,7 +449,7 @@ export const BookingPage = () => {
     setShowConfirmationDialog(false);
     setBookingFeedback(null);
 
-    // Validate required data before proceeding to checkout
+    // Validate required data before proceeding to cart
     if (!pageData.id || !session?.user?.id || !date) {
       setBookingFeedback({
         type: "error",
@@ -439,24 +459,152 @@ export const BookingPage = () => {
       return;
     }
 
-    const bookingData = {
-      trip: {
-        id: pageData.id,
-        name: pageData.service_name,
-        location: pageData.location,
-        description: pageData.description,
-        default_price: pageData.default_price,
-        images: pageData.Image, // Include all images
-      },
-      bookingDate: date.format("YYYY-MM-DD"), // Format date as string
-      selectedPackage: selectedPackage || null,
-      finalPrice: finalPrice,
-      packageName: selectedPackage?.name || "Standard Experience",
-    };
+    // Airport Pickup validation
+    if (isAirportPickup) {
+      if (!airportTime.trim()) {
+        setBookingFeedback({
+          type: "error",
+          message: "Please select a time for your airport transfer.",
+        });
+        return;
+      }
+      if (airportTransferType === "dropoff" && !dropoffAddress.trim()) {
+        setBookingFeedback({
+          type: "error",
+          message: "Please enter the dropoff address.",
+        });
+        return;
+      }
+    }
 
-    // Navigate to checkout for payment
-    navigate("/checkout", { state: bookingData });
+    // All bookings go through cart (single service booking = 1 cart item)
+    const normalizedAirportTime = (() => {
+      if (!isAirportPickup) return null;
+      const t = (airportTime ?? "").trim();
+      if (!t) return null;
+      if (t.toLowerCase() === "null") return null;
+      return t;
+    })();
+
+    dispatch(
+      addItem({
+        serviceId: pageData.id,
+        serviceName: pageData.service_name,
+        location: pageData.location,
+        packageId: selectedPackage?.id ?? null,
+        packageName: selectedPackage?.name ?? "Standard Experience",
+        bookingDate: date.format("YYYY-MM-DD"),
+        bookingTime: normalizedAirportTime,
+        airportType: isAirportPickup ? airportTransferType : null,
+        address:
+          isAirportPickup && airportTransferType === "dropoff"
+            ? dropoffAddress.trim()
+            : null,
+        unitPrice: finalPrice,
+      })
+    );
+
+    // Persist to server-side cart when authenticated
+    if (session?.user?.id) {
+      void dispatch(
+        addServerCartItem({
+          userId: session.user.id,
+          item: {
+            serviceId: pageData.id,
+            serviceName: pageData.service_name,
+            location: pageData.location,
+            packageId: selectedPackage?.id ?? null,
+            packageName: selectedPackage?.name ?? "Standard Experience",
+            bookingDate: date.format("YYYY-MM-DD"),
+            bookingTime: normalizedAirportTime,
+            airportType: isAirportPickup ? airportTransferType : null,
+            address:
+              isAirportPickup && airportTransferType === "dropoff"
+                ? dropoffAddress.trim()
+                : null,
+            unitPrice: finalPrice,
+          },
+        })
+      );
+    }
+
+    navigate("/cart");
   };
+
+  const addToCart = () => {
+    if (!pageData.id || !date) return;
+
+    // Airport transfer validation
+    if (isAirportPickup) {
+      if (!airportTime.trim()) {
+        setBookingFeedback({
+          type: "error",
+          message: "Please select a time for your airport transfer.",
+        });
+        return;
+      }
+      if (airportTransferType === "dropoff" && !dropoffAddress.trim()) {
+        setBookingFeedback({
+          type: "error",
+          message: "Please enter the dropoff address.",
+        });
+        return;
+      }
+    }
+
+    const normalizedAirportTime = (() => {
+      if (!isAirportPickup) return null;
+      const t = (airportTime ?? "").trim();
+      if (!t) return null;
+      if (t.toLowerCase() === "null") return null;
+      return t;
+    })();
+
+    dispatch(
+      addItem({
+        serviceId: pageData.id,
+        serviceName: pageData.service_name,
+        location: pageData.location,
+        packageId: selectedPackage?.id ?? null,
+        packageName: selectedPackage?.name ?? "Standard Experience",
+        bookingDate: date.format("YYYY-MM-DD"),
+        bookingTime: normalizedAirportTime,
+        airportType: isAirportPickup ? airportTransferType : null,
+        address:
+          isAirportPickup && airportTransferType === "dropoff"
+            ? dropoffAddress.trim()
+            : null,
+        unitPrice: finalPrice,
+      })
+    );
+
+    // Persist to server-side cart when authenticated
+    if (session?.user?.id) {
+      void dispatch(
+        addServerCartItem({
+          userId: session.user.id,
+          item: {
+            serviceId: pageData.id,
+            serviceName: pageData.service_name,
+            location: pageData.location,
+            packageId: selectedPackage?.id ?? null,
+            packageName: selectedPackage?.name ?? "Standard Experience",
+            bookingDate: date.format("YYYY-MM-DD"),
+            bookingTime: normalizedAirportTime,
+            airportType: isAirportPickup ? airportTransferType : null,
+            address:
+              isAirportPickup && airportTransferType === "dropoff"
+                ? dropoffAddress.trim()
+                : null,
+            unitPrice: finalPrice,
+          },
+        })
+      );
+    }
+
+    setBookingFeedback({ type: "success", message: "Added to cart." });
+  };
+
   const MAX_CHARS = 500;
   const isLong = pageData.description?.length > MAX_CHARS;
 
@@ -619,6 +767,64 @@ export const BookingPage = () => {
               {formatCurrency(finalPrice)}
             </Typography>
 
+            {/* Airport Pickup / Dropoff extra fields */}
+            {isAirportPickup ? (
+              <Box sx={{ mt: 2, display: "grid", gap: 1.5 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  Airport transfer details
+                </Typography>
+
+                <TextField
+                  label="Time"
+                  type="time"
+                  value={airportTime}
+                  onChange={(e) => setAirportTime(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{ step: 300 }}
+                  fullWidth
+                />
+
+                <FormControl fullWidth>
+                  <InputLabel id="airport-transfer-type-label">Type</InputLabel>
+                  <Select
+                    labelId="airport-transfer-type-label"
+                    value={airportTransferType}
+                    label="Type"
+                    onChange={(e) =>
+                      setAirportTransferType(e.target.value as any)
+                    }
+                  >
+                    <MenuItem value="pickup">Airport Pickup</MenuItem>
+                    <MenuItem value="dropoff">Airport Dropoff</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {airportTransferType === "dropoff" ? (
+                  <TextField
+                    label="Dropoff address"
+                    value={dropoffAddress}
+                    onChange={(e) => setDropoffAddress(e.target.value)}
+                    fullWidth
+                  />
+                ) : null}
+              </Box>
+            ) : null}
+
+            <Box sx={{ mt: 2, display: "grid", gap: 1 }}>
+              <Button
+                variant="outlined"
+                onClick={addToCart}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: "#d0d5dd",
+                }}
+              >
+                Add to cart
+              </Button>
+            </Box>
+
             <Typography
               variant="h6"
               sx={{ fontWeight: 600, marginTop: "8px", marginBottom: "12px" }}
@@ -750,7 +956,7 @@ export const BookingPage = () => {
           }}
         >
           <Typography variant="h5" fontWeight="600">
-            Confirm Your Booking
+            Add to Cart
           </Typography>
         </DialogTitle>
         <DialogContent sx={{ p: 3, textAlign: "center" }}>
@@ -770,10 +976,10 @@ export const BookingPage = () => {
             variant="h6"
             sx={{ mt: 2, fontWeight: 700, color: "#FF621F" }}
           >
-            Total: {formatCurrency(finalPrice)}
+            Price: {formatCurrency(finalPrice)}
           </Typography>
           <Typography variant="body2" sx={{ mt: 2, color: "text.secondary" }}>
-            Are you sure you want to proceed with this booking?
+            This will be added to your cart. You can review and pay at checkout.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 3, gap: 2, justifyContent: "center" }}>
@@ -805,7 +1011,7 @@ export const BookingPage = () => {
               },
             }}
           >
-            {isBooking ? "Processing..." : "Yes, Book Now"}
+            {isBooking ? "Processing..." : "Add & Go to Cart"}
           </Button>
         </DialogActions>
       </Dialog>

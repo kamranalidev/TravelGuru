@@ -636,7 +636,7 @@ export const ServicesPage = () => {
                                   "&:hover": { bgcolor: "#374151" },
                                 }}
                               >
-                                Book now
+                                View details
                               </Button>
                             </Box>
                           </CardContent>

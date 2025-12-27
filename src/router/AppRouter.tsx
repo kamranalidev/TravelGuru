@@ -132,6 +132,12 @@ const UserBookingsPage = lazy(() =>
     })
   )
 );
+const CartPage = lazy(() =>
+  import("../features/bookings/pages/Cart/index.tsx").then((module) => ({
+    default: module.CartPage,
+  }))
+);
+
 export default function AppRouter() {
   return (
     <>
@@ -241,6 +247,15 @@ export default function AppRouter() {
             element={
               <ProtectedRoute>
                 <UserBookingsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute>
+                <CartPage />
               </ProtectedRoute>
             }
           />

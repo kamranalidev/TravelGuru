@@ -10,6 +10,9 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import Badge from "@mui/material/Badge";
+import IconButton from "@mui/material/IconButton";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import Logout from "@mui/icons-material/Logout";
 import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
 import ManageAccountsRoundedIcon from "@mui/icons-material/ManageAccountsRounded";
@@ -18,6 +21,12 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../supabaseClient";
 import { ProfileModal } from "../ProfileModal";
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState, AppDispatch } from "../../store/store";
+import { logout as logoutAction } from "../../store/features/auth/authSlice";
+import { clearProfile } from "../../store/features/profile/profileSlice";
+import { clearCart } from "../../store/features/cart/cartSlice";
+import { clearServerCartState } from "../../store/features/serverCart/serverCartSlice";
 
 interface PageItem {
   label: string;
@@ -35,6 +44,8 @@ const pages: PageItem[] = [
 export const Header = (props: { hidePages?: boolean }) => {
   const navigate = useNavigate();
   const { session, profile } = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
+  const cartCount = useSelector((s: RootState) => s.cart.items.length);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const isMenuOpen = Boolean(menuAnchor);
@@ -85,6 +96,12 @@ export const Header = (props: { hidePages?: boolean }) => {
     } catch (error) {
       console.error("Error during logout:", error);
     } finally {
+      // Ensure all local app state is cleared even if signOut fails.
+      dispatch(logoutAction());
+      dispatch(clearProfile());
+      dispatch(clearCart());
+      dispatch(clearServerCartState());
+
       localStorage.removeItem("supabase_session");
       navigate("/");
     }
@@ -151,7 +168,7 @@ export const Header = (props: { hidePages?: boolean }) => {
           disableGutters
           sx={{
             width: "100%",
-            maxWidth: "1400px", 
+            maxWidth: "1400px",
             margin: "0 auto",
             px: { xs: 2, md: 4 },
           }}
@@ -182,7 +199,7 @@ export const Header = (props: { hidePages?: boolean }) => {
               <img
                 src="/assets/Logo-02.png"
                 alt="TravelGuru Logo"
-                style={{ width: "120px", height: "auto" }} 
+                style={{ width: "120px", height: "auto" }}
               />
             </Box>
             {!props.hidePages && (
@@ -200,7 +217,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                       onClick={() => handleNavigate(page.route, page.isScroll)}
                       sx={{
                         color: theme.palette.secondary.main,
-                        fontWeight: 600, 
+                        fontWeight: 600,
                         textTransform: "none",
                         fontSize: "1rem",
                         px: 2,
@@ -222,8 +239,34 @@ export const Header = (props: { hidePages?: boolean }) => {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    gap: 1,
                   }}
                 >
+                  {/* Cart entry point (authenticated only) */}
+                  {isAuthenticated ? (
+                    <IconButton
+                      aria-label="cart"
+                      onClick={() => navigate("/cart")}
+                      sx={{
+                        borderRadius: "999px",
+                        border: "1px solid rgba(0,0,0,0.08)",
+                        bgcolor: "rgba(255,255,255,0.6)",
+                        "&:hover": { bgcolor: "rgba(255,255,255,0.9)" },
+                      }}
+                    >
+                      <Badge
+                        badgeContent={cartCount}
+                        color="warning"
+                        overlap="circular"
+                        max={99}
+                      >
+                        <ShoppingCartOutlinedIcon
+                          sx={{ color: theme.palette.secondary.main }}
+                        />
+                      </Badge>
+                    </IconButton>
+                  ) : null}
+
                   <Button
                     disableRipple
                     onClick={

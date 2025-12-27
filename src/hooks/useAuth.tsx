@@ -1,5 +1,17 @@
 import { useEffect, useState, useContext, createContext } from "react";
 import { supabase } from "../supabaseClient";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "../store/store";
+import {
+  login as loginAction,
+  logout as logoutAction,
+} from "../store/features/auth/authSlice";
+import {
+  fetchUserProfile,
+  clearProfile,
+} from "../store/features/profile/profileSlice";
+import { clearCart } from "../store/features/cart/cartSlice";
+import { clearServerCartState } from "../store/features/serverCart/serverCartSlice";
 
 type Session = {
   access_token: string;
@@ -49,6 +61,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const dispatch = useDispatch<AppDispatch>();
+
   // Force stop loading after 10 seconds
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -90,7 +104,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setSession(session as Session);
           console.log("Session found:", session.user?.email);
 
+          dispatch(
+            loginAction({
+              user: session.user,
+              token: session.access_token,
+            })
+          );
+
           // Try to get user profile (optional, don't block on this)
+          dispatch(fetchUserProfile(session.user.id));
+
+          // Keep local context profile too (existing behavior)
           const fetchProfile = async () => {
             try {
               const { data: profileData } = await supabase
@@ -102,8 +126,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               if (mounted && profileData) {
                 setProfile(profileData as UserProfile);
               }
-            } catch (profileError) {
-              // Silently handle profile fetch errors
+            } catch {
               console.warn("Could not load user profile");
             }
           };
@@ -114,12 +137,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           localStorage.removeItem("supabase_session");
           setSession(null);
           setProfile(null);
+          dispatch(logoutAction());
+          dispatch(clearProfile());
+          dispatch(clearCart());
+          dispatch(clearServerCartState());
         }
       } catch (error) {
         console.error("Error checking session:", error);
         if (mounted) {
           setSession(null);
           setProfile(null);
+          dispatch(logoutAction());
+          dispatch(clearProfile());
+          dispatch(clearCart());
+          dispatch(clearServerCartState());
         }
       } finally {
         if (mounted) {
@@ -143,6 +174,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session as Session);
         setError(null);
 
+        dispatch(
+          loginAction({
+            user: session.user,
+            token: session.access_token,
+          })
+        );
+        dispatch(fetchUserProfile(session.user.id));
+
         // Try to get user profile (optional)
         const fetchProfile = async () => {
           try {
@@ -155,8 +194,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (mounted && profileData) {
               setProfile(profileData as UserProfile);
             }
-          } catch (profileError) {
-            // Silently handle profile fetch errors
+          } catch {
             console.warn("Could not load user profile in auth change");
           }
         };
@@ -165,6 +203,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setSession(null);
         setProfile(null);
+        dispatch(logoutAction());
+        dispatch(clearProfile());
+        dispatch(clearCart());
+        dispatch(clearServerCartState());
       }
 
       if (mounted) {
@@ -176,33 +218,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [dispatch]);
 
   const refreshProfile = async () => {
     if (!session?.user?.id) return;
 
     try {
-      const { data: profileData } = await supabase
+      // Keep Redux profile in sync
+      await dispatch(fetchUserProfile(session.user.id)).unwrap();
+
+      // Keep AuthContext profile in sync (existing behavior)
+      const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
         .select("*")
         .eq("user_id", session.user.id)
         .single();
 
-      if (profileData) {
-        setProfile(profileData as UserProfile);
-      }
-    } catch (error) {
-      console.warn("Could not refresh user profile:", error);
+      if (profileError) throw profileError;
+      setProfile((profileData ?? null) as UserProfile);
+      setError(null);
+    } catch (e: any) {
+      console.error("Failed to refresh profile:", e);
+      setError(e?.message ?? "Failed to refresh profile");
     }
   };
 
   return (
     <AuthContext.Provider
-      value={{ session, loading, profile, error, refreshProfile }}
+      value={{
+        session,
+        loading,
+        profile,
+        error,
+        refreshProfile,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+};
