@@ -3,8 +3,6 @@ import Box from "@mui/material/Box";
 import { Typography } from "@mui/material";
 import { Header, StepperComponent } from "../../../../components/index.tsx";
 
-type _React = typeof React;
-
 export const PaymentConfirmation = () => {
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>

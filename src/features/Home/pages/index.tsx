@@ -10,7 +10,6 @@ import { Box, Typography, Card, CardContent } from "@mui/material";
 import "./index.css";
 import { supabase } from "../../../supabaseClient";
 import StarIcon from "@mui/icons-material/Star";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
@@ -98,16 +97,14 @@ const getServiceImages = (service: any): string[] => {
           (img: any) => typeof img === "string" && img.trim() !== ""
         );
       }
-    }
-    else if (
+    } else if (
       service?.service_image &&
       Array.isArray(service.service_image.url)
     ) {
       images = service.service_image.url.filter(
         (img: any) => typeof img === "string" && img.trim() !== ""
       );
-    }
-    else if (Array.isArray(service?.service_image)) {
+    } else if (Array.isArray(service?.service_image)) {
       images = service.service_image.filter(
         (img: any) => typeof img === "string" && img.trim() !== ""
       );
@@ -129,9 +126,10 @@ export const Homepage = () => {
   const navigate = useNavigate();
 
   const dubaiImages = [
-    "/assets/burjKhalifa.jpg",
-    "/assets/IMG_0458.JPG",
-    "/assets/IMG_0459.JPG",
+    "/assets/DhowCruise.jpg",
+    "/assets/AbuDhabi.jpg",
+    "/assets/Safari.avif",
+    "/assets/AirPort.avif",
   ];
 
   useEffect(() => {

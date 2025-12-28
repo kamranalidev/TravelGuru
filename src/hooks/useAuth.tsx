@@ -83,6 +83,37 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
+    const clearSupabaseAuthStorage = () => {
+      try {
+        // App-specific cached session
+        localStorage.removeItem("supabase_session");
+
+        // Supabase-js persists sessions under sb-<project-ref>-auth-token
+        // Clear all possible supabase auth keys for this origin.
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          if (key.startsWith("sb-") && key.endsWith("-auth-token")) {
+            localStorage.removeItem(key);
+          }
+        }
+
+        // Also clear any legacy supabase keys if present
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          if (
+            key.toLowerCase().includes("supabase") &&
+            key.toLowerCase().includes("auth")
+          ) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch {
+        // ignore storage errors (private mode, etc.)
+      }
+    };
+
     const checkSession = async () => {
       try {
         console.log("Checking session...");
@@ -134,7 +165,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           fetchProfile();
         } else {
           console.log("No valid session found");
-          localStorage.removeItem("supabase_session");
+          clearSupabaseAuthStorage();
           setSession(null);
           setProfile(null);
           dispatch(logoutAction());
@@ -145,6 +176,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } catch (error) {
         console.error("Error checking session:", error);
         if (mounted) {
+          clearSupabaseAuthStorage();
           setSession(null);
           setProfile(null);
           dispatch(logoutAction());
@@ -201,6 +233,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         fetchProfile();
       } else {
+        clearSupabaseAuthStorage();
         setSession(null);
         setProfile(null);
         dispatch(logoutAction());

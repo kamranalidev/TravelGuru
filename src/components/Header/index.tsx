@@ -16,7 +16,6 @@ import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import Logout from "@mui/icons-material/Logout";
 import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
 import ManageAccountsRoundedIcon from "@mui/icons-material/ManageAccountsRounded";
-import theme from "../../theme";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../supabaseClient";
@@ -102,7 +101,18 @@ export const Header = (props: { hidePages?: boolean }) => {
       dispatch(clearCart());
       dispatch(clearServerCartState());
 
+      // Clear app-specific cached session
       localStorage.removeItem("supabase_session");
+
+      // Clear supabase-js persisted session keys (sb-<project-ref>-auth-token)
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        if (key.startsWith("sb-") && key.endsWith("-auth-token")) {
+          localStorage.removeItem(key);
+        }
+      }
+
       navigate("/");
     }
   };
@@ -153,15 +163,15 @@ export const Header = (props: { hidePages?: boolean }) => {
   return (
     <Box
       component="header"
-      sx={{ width: "100%", position: "relative", zIndex: 1000 }}
+      sx={{ width: "100%", position: "sticky", top: 0, zIndex: 1200 }}
     >
       <AppBar
-        position="static"
+        position="sticky"
         sx={{
-          backgroundColor: "transparent",
-          boxShadow: "none",
+          backgroundColor: "#ffffff",
+          boxShadow: "0 1px 0 0 rgba(0, 0, 0, 0.08)",
           color: "inherit",
-          py: { xs: 1.5, md: 2 },
+          py: 0,
         }}
       >
         <Toolbar
@@ -171,6 +181,7 @@ export const Header = (props: { hidePages?: boolean }) => {
             maxWidth: "1400px",
             margin: "0 auto",
             px: { xs: 2, md: 4 },
+            minHeight: { xs: 60, md: 70 },
           }}
         >
           <Box
@@ -180,12 +191,6 @@ export const Header = (props: { hidePages?: boolean }) => {
               alignItems: "center",
               justifyContent: "space-between",
               gap: { xs: 2, md: 4 },
-              background: "#ffffff",
-              borderRadius: "16px",
-              border: "1px solid #e5e7eb",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.08)",
-              px: { xs: 3, md: 6 },
-              py: { xs: 1.25, md: 1.5 },
             }}
           >
             <Box
@@ -199,7 +204,7 @@ export const Header = (props: { hidePages?: boolean }) => {
               <img
                 src="/assets/Logo-02.png"
                 alt="TravelGuru Logo"
-                style={{ width: "120px", height: "auto" }}
+                style={{ width: "96px", height: "auto" }}
               />
             </Box>
             {!props.hidePages && (
@@ -208,7 +213,9 @@ export const Header = (props: { hidePages?: boolean }) => {
                   sx={{
                     display: { xs: "none", md: "flex" },
                     alignItems: "center",
-                    gap: 3,
+                    gap: 1,
+                    flex: 1,
+                    justifyContent: "center",
                   }}
                 >
                   {pages.map((page) => (
@@ -216,16 +223,16 @@ export const Header = (props: { hidePages?: boolean }) => {
                       key={page.label}
                       onClick={() => handleNavigate(page.route, page.isScroll)}
                       sx={{
-                        color: theme.palette.secondary.main,
-                        fontWeight: 600,
+                        color: "#333",
+                        fontWeight: 500,
                         textTransform: "none",
-                        fontSize: "1rem",
+                        fontSize: "0.95rem",
                         px: 2,
-                        py: 0.75,
-                        borderRadius: "12px",
+                        py: 1,
+                        borderRadius: "8px",
                         transition: "all 0.2s ease",
                         "&:hover": {
-                          backgroundColor: "rgba(255, 255, 255, 0.2)",
+                          backgroundColor: "#f5f5f5",
                           color: "#FF621F",
                         },
                       }}
@@ -238,8 +245,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                   sx={{
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    gap: 1,
+                    gap: 1.5,
                   }}
                 >
                   {/* Cart entry point (authenticated only) */}
@@ -248,10 +254,10 @@ export const Header = (props: { hidePages?: boolean }) => {
                       aria-label="cart"
                       onClick={() => navigate("/cart")}
                       sx={{
-                        borderRadius: "999px",
-                        border: "1px solid rgba(0,0,0,0.08)",
-                        bgcolor: "rgba(255,255,255,0.6)",
-                        "&:hover": { bgcolor: "rgba(255,255,255,0.9)" },
+                        color: "#333",
+                        "&:hover": {
+                          bgcolor: "#f5f5f5",
+                        },
                       }}
                     >
                       <Badge
@@ -260,9 +266,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                         overlap="circular"
                         max={99}
                       >
-                        <ShoppingCartOutlinedIcon
-                          sx={{ color: theme.palette.secondary.main }}
-                        />
+                        <ShoppingCartOutlinedIcon />
                       </Badge>
                     </IconButton>
                   ) : null}
@@ -277,23 +281,19 @@ export const Header = (props: { hidePages?: boolean }) => {
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 1.5,
-                      borderRadius: "999px",
-                      background: "rgba(255, 255, 255, 0.3)",
-                      backdropFilter: "blur(10px)",
-                      WebkitBackdropFilter: "blur(10px)",
-                      border: "1px solid rgba(255, 255, 255, 0.4)",
+                      gap: 1,
+                      borderRadius: "8px",
+                      border: "1px solid #e0e0e0",
                       px: { xs: 1.5, sm: 2 },
                       py: 0.75,
-                      color: theme.palette.secondary.main,
+                      color: "#333",
                       textTransform: "none",
-                      fontWeight: 600,
-                      boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+                      fontWeight: 500,
                       transition: "all 0.2s ease",
+                      minWidth: "auto",
                       "&:hover": {
-                        background: "rgba(255, 255, 255, 0.4)",
-                        transform: "translateY(-1px)",
-                        boxShadow: "0 6px 25px rgba(0, 0, 0, 0.15)",
+                        backgroundColor: "#f5f5f5",
+                        borderColor: "#d0d0d0",
                       },
                     }}
                   >
@@ -301,15 +301,12 @@ export const Header = (props: { hidePages?: boolean }) => {
                       src={avatarUrl || undefined}
                       alt={displayName}
                       sx={{
-                        width: 34,
-                        height: 34,
-                        bgcolor: avatarUrl
-                          ? "transparent"
-                          : "rgba(255, 98, 31, 0.15)",
-                        color: avatarUrl ? "inherit" : "#FF621F",
-                        fontSize: "0.95rem",
-                        fontWeight: 700,
-                        border: "1px solid rgba(255, 255, 255, 0.3)",
+                        width: 32,
+                        height: 32,
+                        bgcolor: avatarUrl ? "transparent" : "#FF621F",
+                        color: "#ffffff",
+                        fontSize: "0.9rem",
+                        fontWeight: 600,
                       }}
                     >
                       {!avatarUrl ? userInitials : null}
@@ -318,6 +315,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                       sx={{
                         fontSize: { xs: "0.85rem", sm: "0.95rem" },
                         whiteSpace: "nowrap",
+                        display: { xs: "none", sm: "block" },
                       }}
                     >
                       {displayName}
@@ -333,27 +331,29 @@ export const Header = (props: { hidePages?: boolean }) => {
                     PaperProps={{
                       elevation: 0,
                       sx: {
-                        mt: 1,
-                        borderRadius: "20px",
-                        minWidth: 200,
-                        px: 0.5,
-                        background: "rgba(255, 255, 255, 0.9)",
-                        backdropFilter: "blur(20px)",
-                        WebkitBackdropFilter: "blur(20px)",
-                        border: "1px solid rgba(255, 255, 255, 0.3)",
-                        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.12)",
+                        mt: 1.5,
+                        borderRadius: "12px",
+                        minWidth: 220,
+                        border: "1px solid #e0e0e0",
+                        boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
                       },
                     }}
                   >
                     <Box sx={{ px: 2, py: 1.5 }}>
-                      <Typography sx={{ fontWeight: 600, fontSize: "0.95rem" }}>
+                      <Typography
+                        sx={{
+                          fontWeight: 600,
+                          fontSize: "0.95rem",
+                          color: "#333",
+                        }}
+                      >
                         {displayName}
                       </Typography>
                       {userEmail && (
                         <Typography
                           sx={{
                             fontSize: "0.8rem",
-                            color: "text.secondary",
+                            color: "#666",
                             mt: 0.25,
                             wordBreak: "break-word",
                           }}
@@ -363,19 +363,28 @@ export const Header = (props: { hidePages?: boolean }) => {
                       )}
                     </Box>
                     <Divider />
-                    <MenuItem onClick={handleProfileNavigate}>
+                    <MenuItem
+                      onClick={handleProfileNavigate}
+                      sx={{ py: 1.5, "&:hover": { bgcolor: "#f5f5f5" } }}
+                    >
                       <ListItemIcon>
                         <ManageAccountsRoundedIcon fontSize="small" />
                       </ListItemIcon>
                       Profile
                     </MenuItem>
-                    <MenuItem onClick={handleBookingsNavigate}>
+                    <MenuItem
+                      onClick={handleBookingsNavigate}
+                      sx={{ py: 1.5, "&:hover": { bgcolor: "#f5f5f5" } }}
+                    >
                       <ListItemIcon>
                         <EventNoteRoundedIcon fontSize="small" />
                       </ListItemIcon>
                       Bookings
                     </MenuItem>
-                    <MenuItem onClick={handleLogout}>
+                    <MenuItem
+                      onClick={handleLogout}
+                      sx={{ py: 1.5, "&:hover": { bgcolor: "#f5f5f5" } }}
+                    >
                       <ListItemIcon>
                         <Logout fontSize="small" />
                       </ListItemIcon>
