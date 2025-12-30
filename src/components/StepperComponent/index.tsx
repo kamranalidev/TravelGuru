@@ -1,4 +1,3 @@
-import React from "react";
 import Box from "@mui/material/Box";
 import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
@@ -8,16 +7,18 @@ import StepConnector, {
   stepConnectorClasses,
 } from "@mui/material/StepConnector";
 import { Check } from "@mui/icons-material";
+import "./index.css";
+
 const steps = ["Select package", "Checkout", "Confirmation"];
 // Orange background container
-const OrangeContainer = styled(Box)(({ theme }) => ({
+const OrangeContainer = styled(Box)(() => ({
   // background: 'linear-gradient(135deg, #ff6f00 0%, #ff8f00 100%)',
-  padding: theme.spacing(4),
+  padding: "32px",
   minHeight: "150px",
 }));
 
 // Custom connector for orange theme
-const OrangeConnector = styled(StepConnector)(({ theme }) => ({
+const OrangeConnector = styled(StepConnector)(() => ({
   [`&.${stepConnectorClasses.alternativeLabel}`]: {
     top: 22,
   },
@@ -39,7 +40,7 @@ const OrangeConnector = styled(StepConnector)(({ theme }) => ({
   },
 }));
 // Custom step icon
-const OrangeStepIconRoot = styled("div")(({ theme }) => ({
+const OrangeStepIconRoot = styled("div")(() => ({
   zIndex: 1,
   width: 50,
   height: 50,
@@ -103,7 +104,7 @@ export const StepperComponent = (props: { activeStep: number }) => {
             },
           }}
         >
-          {steps.map((label, index) => (
+          {steps.map((label) => (
             <Step key={label}>
               <StepLabel StepIconComponent={OrangeStepIcon}>{label}</StepLabel>
             </Step>

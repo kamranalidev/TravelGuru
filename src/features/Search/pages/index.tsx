@@ -20,7 +20,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { LocationOn, AccessTime } from "@mui/icons-material";
-import "../pages/";
+import "./styles.css";
 
 interface Service {
   id: string;

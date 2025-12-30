@@ -25,6 +25,7 @@ import {
   removeServerCartItem,
   clearServerCart,
 } from "../../../../store/features/serverCart/serverCartSlice";
+import "./index.css";
 
 const formatAED = (amount: number) =>
   `AED ${amount.toLocaleString(undefined, {

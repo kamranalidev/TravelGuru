@@ -209,3 +209,78 @@
     font-size: 1rem;
   }
 }
+
+/* Additional responsive improvements */
+@media (max-width: 360px) {
+  .faq-title {
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+
+  .faq-accordion-summary {
+    padding: 14px 16px;
+  }
+
+  .faq-question {
+    font-size: 0.9rem;
+  }
+
+  .faq-accordion-details {
+    padding: 16px;
+  }
+
+  .contact-link {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+  }
+}
+
+/* Touch device adjustments */
+@media (hover: none) and (pointer: coarse) {
+  .contact-link:hover {
+    transform: none;
+  }
+
+  .contact-link:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Safe area insets */
+@supports (padding: max(0px)) {
+  .faq-hero {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+
+  .faq-content {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Focus states */
+.faq-accordion:focus-within {
+  box-shadow: 0 0 0 2px #FF621F;
+}
+
+.contact-link:focus-visible {
+  outline: 3px solid #FF621F;
+  outline-offset: 2px;
+}
+
+/* Accordion touch targets */
+.faq-accordion-summary {
+  min-height: 56px !important;
+}
+
+/* Improved accordion animation */
+.faq-accordion {
+  transition: margin 200ms ease, box-shadow 200ms ease;
+}
+
+.faq-accordion.Mui-expanded {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}

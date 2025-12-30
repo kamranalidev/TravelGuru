@@ -16,91 +16,121 @@ const faqData = [
     id: 1,
     question: "What services does Travel Guroo offer?",
     answer:
-      "Travel Guroo offers a comprehensive range of Dubai travel services including desert safaris, city tours, yacht charters, skydiving experiences, cultural tours, luxury hotel bookings, and customized travel packages. We specialize in creating unforgettable Dubai experiences for all types of travelers.",
+      "Travel Guroo specializes in the 'Big Four' experiences that define a visit to the Emirates: Desert Safari with dune bashing and Bedouin dinners, Dhow Cruise on Dubai Marina or Creek, Abu Dhabi City Tour featuring Sheikh Zayed Grand Mosque, and Airport Pickup & Drop-off services for stress-free transfers.",
   },
   {
     id: 2,
     question: "How do I make a booking?",
     answer:
-      "Making a booking is simple! Browse our services on the homepage, select your preferred package, choose your dates, and click 'Book Now'. You'll need to create an account or log in, provide your details, and complete the payment process. You'll receive instant confirmation via email.",
+      "Making a booking is simple! Browse our services, select your preferred experience and package, choose your dates, and click 'Book Now'. You'll need to create an account or log in, provide your details, and complete the secure payment process. You'll receive instant confirmation via email.",
   },
   {
     id: 3,
     question: "What payment methods do you accept?",
     answer:
-      "We accept all major credit cards (Visa, MasterCard, American Express), PayPal, and bank transfers. All payments are processed securely through our encrypted payment gateway to ensure your financial information is protected.",
+      "We currently accept secure payments through Stripe, which supports all major credit and debit cards including Visa, MasterCard, and American Express. All transactions are encrypted and processed securely to protect your financial information.",
   },
   {
     id: 4,
-    question: "Can I cancel or modify my booking?",
+    question: "What makes Travel Guroo different from other tour operators?",
     answer:
-      "Yes, you can cancel or modify your booking depending on our cancellation policy. Free cancellation is available up to 24-48 hours before your experience (varies by service). Modifications are subject to availability and may incur additional charges.",
+      "At Travel Guroo, we treat every guest like family and every tour like a once-in-a-lifetime event. Our guides are local storytellers who know the hidden gems of the UAE. We offer transparent pricing with no hidden fees, modern fully-insured vehicles with certified drivers, and tailored experiences from private VIP tours to group adventures.",
   },
   {
     id: 5,
-    question: "Are your tours suitable for children?",
+    question: "Are your guides experienced and knowledgeable?",
     answer:
-      "Many of our tours are family-friendly and suitable for children. However, some activities like skydiving or extreme desert adventures have age restrictions. Each service listing includes age requirements and family suitability information.",
+      "Absolutely! Our guides are passionate local experts and storytellers who bring the UAE's history, culture, and hidden gems to life. They are certified professionals with deep knowledge of Arabian heritage and modern attractions, ensuring you get an authentic and enriching experience.",
   },
   {
     id: 6,
-    question: "Do you provide hotel pickup?",
+    question: "Do you provide hotel pickup for tours?",
     answer:
-      "Yes, most of our tours include complimentary hotel pickup and drop-off from major Dubai hotels and locations. Pickup times vary depending on your location and the selected tour. We'll confirm your pickup time 24 hours before your experience.",
+      "Yes! Most of our tours include complimentary hotel pickup and drop-off from major Dubai hotels and locations. Our punctual, professional chauffeurs will pick you up from your hotel and return you safely after your experience. Pickup times will be confirmed 24 hours before your tour.",
   },
   {
     id: 7,
-    question: "What should I wear for desert safaris?",
+    question: "What should I wear for a Desert Safari?",
     answer:
-      "For desert safaris, we recommend comfortable, loose-fitting clothes, closed shoes, sunglasses, and a hat. Avoid white clothing as it shows sand easily. We provide traditional Arabian costumes for photos at the desert camp.",
+      "For desert safaris, we recommend comfortable, loose-fitting clothes suitable for the desert climate, closed shoes, sunglasses, and a hat or scarf. Avoid white clothing as sand shows easily. We provide traditional Arabian costumes for photos at the desert camp to enhance your Bedouin experience.",
   },
   {
     id: 8,
-    question: "Are your guides licensed and experienced?",
+    question: "Is the Desert Safari safe?",
     answer:
-      "Absolutely! All our guides are licensed professionals with extensive knowledge of Dubai's history, culture, and attractions. They speak multiple languages and are trained to provide safe, informative, and entertaining experiences.",
+      "Safety is our top priority. All our vehicles are modern, fully insured, and maintained to the highest standards. They are driven by certified professional drivers with extensive dune bashing experience. We follow strict safety protocols and provide all necessary safety equipment.",
   },
   {
     id: 9,
-    question: "What happens in case of bad weather?",
+    question: "What is included in the Dhow Cruise?",
     answer:
-      "Dubai has excellent weather year-round, but in rare cases of extreme weather, we may need to reschedule or modify activities for safety reasons. We'll contact you immediately and offer alternative dates or full refunds if needed.",
+      "Our Dhow Cruise includes a scenic cruise on a traditional wooden Dhow boat, a delicious 5-star international buffet dinner, live entertainment (music and traditional dance performances), unlimited soft drinks, and stunning views of Dubai Marina or the historic Creek skyline under the stars.",
   },
   {
     id: 10,
-    question: "Do you offer group discounts?",
+    question: "How long does the Abu Dhabi City Tour take?",
     answer:
-      "Yes, we offer attractive group discounts for bookings of 6 or more people. Corporate packages and special rates for large groups are also available. Contact our team for customized group pricing and packages.",
+      "The Abu Dhabi City Tour typically lasts 8-9 hours, including travel time from Dubai. You'll visit iconic landmarks including the magnificent Sheikh Zayed Grand Mosque, the Heritage Village, Corniche, Emirates Palace, and the futuristic Yas Island. Lunch and breaks are included.",
   },
   {
     id: 11,
-    question: "Is travel insurance included?",
+    question: "Can I customize my tour experience?",
     answer:
-      "Basic travel insurance is included in most of our premium packages. However, we recommend purchasing comprehensive travel insurance for additional coverage including medical expenses, trip cancellation, and personal belongings.",
+      "Yes! We specialize in tailored experiences. Whether you want a private VIP tour, specific stops added to your itinerary, or special arrangements for celebrations, we adapt to your pace and preferences. Contact us to discuss your requirements and we'll create a personalized experience.",
   },
   {
     id: 12,
-    question: "Can you help with visa requirements?",
+    question: "Do you offer group discounts?",
     answer:
-      "While we don't process visas directly, our team can provide guidance on Dubai visa requirements and connect you with trusted visa service providers. Many nationalities can obtain visas on arrival or through online applications.",
+      "Yes, we offer attractive discounts for group bookings. The discount varies depending on the group size and selected experience. Contact our team directly for customized group pricing and special packages for corporate events or large families.",
   },
   {
     id: 13,
-    question: "What's included in your packages?",
+    question: "What is your cancellation policy?",
     answer:
-      "Package inclusions vary by service but typically include transportation, professional guide, entrance fees, refreshments, and specified activities. Detailed inclusions and exclusions are listed on each service page.",
+      "Our cancellation policy varies by service. Generally, free cancellation is available up to 24-48 hours before your experience. Cancellations within this period may incur charges. Specific cancellation terms are provided during booking and in your confirmation email.",
   },
   {
     id: 14,
-    question: "What safety measures do you have in place?",
+    question: "Are your prices transparent? Any hidden fees?",
     answer:
-      "Safety is our top priority. All our vehicles are regularly maintained, our guides are trained professionals, and we follow strict safety protocols. We provide safety equipment where needed and maintain comprehensive insurance coverage.",
+      "At Travel Guroo, we believe in transparent pricing with no hidden fees or 'tourist traps'. The price you see is the price you pay. All inclusions, exclusions, and any optional add-ons are clearly listed for each experience. Just honest value for incredible memories.",
   },
   {
     id: 15,
+    question: "What happens in case of bad weather?",
+    answer:
+      "While the UAE enjoys excellent weather year-round, in rare cases of extreme weather conditions affecting safety, we may need to reschedule your experience. We'll contact you immediately and offer alternative dates or a full refund if you cannot reschedule.",
+  },
+  {
+    id: 16,
+    question: "How reliable is your Airport Pickup & Drop-off service?",
+    answer:
+      "Our airport transfer service is 100% reliable. We monitor flight schedules in real-time to adjust for any delays or early arrivals. Our professional chauffeurs are punctual, courteous, and ensure you move between the airport and your destination in total comfort and safety.",
+  },
+  {
+    id: 17,
+    question: "Are meals included in your tours?",
+    answer:
+      "Meal inclusions vary by experience. Desert Safari includes a traditional Bedouin-style dinner, Dhow Cruise includes a 5-star buffet, and Abu Dhabi City Tour includes lunch. Specific meal details and any dietary accommodation options are listed on each service page.",
+  },
+  {
+    id: 18,
+    question: "Can you accommodate special dietary requirements?",
+    answer:
+      "Yes! We can accommodate various dietary requirements including vegetarian, vegan, halal, and gluten-free options. Please inform us of any dietary restrictions or allergies at the time of booking, and we'll make the necessary arrangements.",
+  },
+  {
+    id: 19,
+    question: "What languages do your guides speak?",
+    answer:
+      "Our guides are multilingual and typically speak English, Arabic, Hindi, and Urdu. For other language requirements, please let us know in advance and we'll do our best to arrange a guide who speaks your preferred language.",
+  },
+  {
+    id: 20,
     question: "How can I contact customer support?",
     answer:
-      "Our customer support team is available 24/7. You can reach us through the contact form on our website, email us directly, or call our helpline. We're here to assist you before, during, and after your Dubai experience.",
+      "You can reach our customer support team through the contact form on our website, via email, or by phone. We're here to assist you before, during, and after your UAE experience. Our team is dedicated to making your journey seamless and unforgettable.",
   },
 ];
 
@@ -122,7 +152,8 @@ const FAQPage: React.FC = () => {
             Frequently Asked Questions
           </Typography>
           <Typography variant="h6" className="faq-subtitle">
-            Find answers to common questions about our Dubai travel services
+            Find answers to common questions about Travel Guroo's UAE
+            experiences
           </Typography>
         </Container>
       </Box>

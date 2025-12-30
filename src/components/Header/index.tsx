@@ -12,7 +12,14 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Badge from "@mui/material/Badge";
 import IconButton from "@mui/material/IconButton";
+import Drawer from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
+import MenuIcon from "@mui/icons-material/Menu";
+import CloseIcon from "@mui/icons-material/Close";
 import Logout from "@mui/icons-material/Logout";
 import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
 import ManageAccountsRoundedIcon from "@mui/icons-material/ManageAccountsRounded";
@@ -26,6 +33,7 @@ import { logout as logoutAction } from "../../store/features/auth/authSlice";
 import { clearProfile } from "../../store/features/profile/profileSlice";
 import { clearCart } from "../../store/features/cart/cartSlice";
 import { clearServerCartState } from "../../store/features/serverCart/serverCartSlice";
+import "./index.css";
 
 interface PageItem {
   label: string;
@@ -36,6 +44,7 @@ interface PageItem {
 const pages: PageItem[] = [
   { label: "Home", route: "/" },
   { label: "Services", route: "/services" },
+  { label: "About Us", route: "/about" },
   { label: "FAQ", route: "/faq" },
   { label: "Contact Us", route: "/contact" },
 ];
@@ -47,9 +56,11 @@ export const Header = (props: { hidePages?: boolean }) => {
   const cartCount = useSelector((s: RootState) => s.cart.items.length);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const isMenuOpen = Boolean(menuAnchor);
 
   const handleNavigate = (route: string, isScroll?: boolean) => {
+    setMobileDrawerOpen(false); // Close mobile drawer on navigate
     if (isScroll && route.includes("#")) {
       const [path, sectionId] = route.split("#");
 
@@ -209,6 +220,19 @@ export const Header = (props: { hidePages?: boolean }) => {
             </Box>
             {!props.hidePages && (
               <>
+                {/* Mobile hamburger menu */}
+                <IconButton
+                  aria-label="menu"
+                  onClick={() => setMobileDrawerOpen(true)}
+                  sx={{
+                    display: { xs: "flex", md: "none" },
+                    color: "#333",
+                  }}
+                >
+                  <MenuIcon />
+                </IconButton>
+
+                {/* Desktop navigation */}
                 <Box
                   sx={{
                     display: { xs: "none", md: "flex" },
@@ -397,6 +421,215 @@ export const Header = (props: { hidePages?: boolean }) => {
           </Box>
         </Toolbar>
       </AppBar>
+
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        anchor="right"
+        open={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        PaperProps={{
+          sx: {
+            width: "100%",
+            maxWidth: 320,
+            borderRadius: 0,
+          },
+        }}
+      >
+        <Box className="mobile-drawer">
+          <Box className="mobile-drawer-header">
+            <img
+              src="/assets/Logo-02.png"
+              alt="TravelGuru Logo"
+              className="mobile-drawer-logo"
+              onClick={() => {
+                setMobileDrawerOpen(false);
+                navigate("/");
+              }}
+              style={{ cursor: "pointer" }}
+            />
+            <IconButton
+              onClick={() => setMobileDrawerOpen(false)}
+              className="mobile-drawer-close"
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          <Box className="mobile-drawer-content">
+            <List disablePadding>
+              {pages.map((page) => (
+                <ListItem key={page.label} disablePadding>
+                  <ListItemButton
+                    onClick={() => handleNavigate(page.route, page.isScroll)}
+                    sx={{
+                      py: 2,
+                      px: 3,
+                      "&:hover": {
+                        backgroundColor: "#f5f5f5",
+                        "& .MuiListItemText-primary": {
+                          color: "#FF621F",
+                        },
+                      },
+                    }}
+                  >
+                    <ListItemText
+                      primary={page.label}
+                      primaryTypographyProps={{
+                        fontWeight: 500,
+                        fontSize: "1rem",
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+
+            {isAuthenticated && (
+              <>
+                <Divider sx={{ my: 1 }} />
+                <List disablePadding>
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      onClick={() => {
+                        setMobileDrawerOpen(false);
+                        navigate("/cart");
+                      }}
+                      sx={{ py: 2, px: 3 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <Badge badgeContent={cartCount} color="warning">
+                          <ShoppingCartOutlinedIcon />
+                        </Badge>
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Cart"
+                        primaryTypographyProps={{
+                          fontWeight: 500,
+                          fontSize: "1rem",
+                        }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      onClick={() => {
+                        setMobileDrawerOpen(false);
+                        navigate("/bookings");
+                      }}
+                      sx={{ py: 2, px: 3 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <EventNoteRoundedIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="My Bookings"
+                        primaryTypographyProps={{
+                          fontWeight: 500,
+                          fontSize: "1rem",
+                        }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      onClick={() => {
+                        setMobileDrawerOpen(false);
+                        setProfileModalOpen(true);
+                      }}
+                      sx={{ py: 2, px: 3 }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 40 }}>
+                        <ManageAccountsRoundedIcon />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Profile"
+                        primaryTypographyProps={{
+                          fontWeight: 500,
+                          fontSize: "1rem",
+                        }}
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                </List>
+              </>
+            )}
+          </Box>
+
+          <Box className="mobile-drawer-footer">
+            {isAuthenticated ? (
+              <>
+                <Box className="mobile-drawer-user-section">
+                  <Avatar
+                    src={avatarUrl || undefined}
+                    alt={displayName}
+                    sx={{
+                      width: 44,
+                      height: 44,
+                      bgcolor: avatarUrl ? "transparent" : "#FF621F",
+                      color: "#ffffff",
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {!avatarUrl ? userInitials : null}
+                  </Avatar>
+                  <Box className="mobile-drawer-user-info">
+                    <Typography className="mobile-drawer-user-name">
+                      {displayName}
+                    </Typography>
+                    {userEmail && (
+                      <Typography className="mobile-drawer-user-email">
+                        {userEmail}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  startIcon={<Logout />}
+                  onClick={() => {
+                    setMobileDrawerOpen(false);
+                    handleLogout();
+                  }}
+                  sx={{
+                    borderColor: "#dc2626",
+                    color: "#dc2626",
+                    borderRadius: 2,
+                    py: 1.25,
+                    "&:hover": {
+                      borderColor: "#dc2626",
+                      backgroundColor: "rgba(220, 38, 38, 0.08)",
+                    },
+                  }}
+                >
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => {
+                  setMobileDrawerOpen(false);
+                  navigate("/login");
+                }}
+                sx={{
+                  background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+                  borderRadius: 2,
+                  py: 1.5,
+                  fontWeight: 600,
+                  "&:hover": {
+                    background: "linear-gradient(135deg, #e55519, #e67b44)",
+                  },
+                }}
+              >
+                Login / Sign Up
+              </Button>
+            )}
+          </Box>
+        </Box>
+      </Drawer>
 
       <ProfileModal
         open={profileModalOpen}

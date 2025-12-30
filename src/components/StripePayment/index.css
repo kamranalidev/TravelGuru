@@ -4,15 +4,357 @@
 }
 
 .payment-element-wrapper {
-  padding: 20px;
+  padding: 24px;
   background: #f9fafb;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   margin: 16px 0;
 }
 
+.payment-form {
+  width: 100%;
+}
+
+.payment-heading {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.payment-subheading {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 16px;
+}
+
+/* Payment Method Selection */
+.payment-methods {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.payment-method-option {
+  flex: 1;
+  min-width: 100px;
+  padding: 16px 12px;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.payment-method-option:hover {
+  border-color: #ff621f;
+}
+
+.payment-method-option.selected {
+  border-color: #ff621f;
+  background: #fff5f0;
+}
+
+.payment-method-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: #666;
+}
+
+.payment-method-option.selected .payment-method-icon {
+  color: #ff621f;
+}
+
+.payment-method-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* Order Summary */
+.payment-order-summary {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+}
+
+.payment-order-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.payment-order-row.total {
+  border-top: 1px solid #e5e7eb;
+  margin-top: 12px;
+  padding-top: 16px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.payment-order-label {
+  color: #666;
+  font-size: 14px;
+}
+
+.payment-order-value {
+  color: #333;
+  font-size: 14px;
+}
+
+.payment-order-row.total .payment-order-value {
+  color: #ff621f;
+  font-size: 18px;
+}
+
+/* Submit Button */
+.payment-submit-button {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #ff621f 0%, #ff8533 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+}
+
+.payment-submit-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 98, 31, 0.3);
+}
+
+.payment-submit-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Security Badge */
+.payment-security-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 12px;
+  color: #888;
+}
+
+.payment-security-icon {
+  font-size: 16px;
+  color: #22c55e;
+}
+
+/* Error Message */
+.payment-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Loading State */
+.payment-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+.payment-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #ff621f;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================
+   TABLET BREAKPOINT (max-width: 768px)
+   ============================================ */
 @media (max-width: 768px) {
   .payment-element-wrapper {
+    padding: 20px;
+    border-radius: 10px;
+  }
+  
+  .payment-heading {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .payment-methods {
+    gap: 8px;
+  }
+  
+  .payment-method-option {
+    padding: 12px 10px;
+    min-width: 80px;
+  }
+  
+  .payment-method-icon {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+  
+  .payment-method-label {
+    font-size: 12px;
+  }
+  
+  .payment-order-summary {
     padding: 16px;
+  }
+  
+  .payment-submit-button {
+    padding: 14px;
+    font-size: 15px;
+    min-height: 48px;
+  }
+}
+
+/* ============================================
+   MOBILE BREAKPOINT (max-width: 480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .payment-element-wrapper {
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 8px;
+  }
+  
+  .payment-heading {
+    font-size: 15px;
+  }
+  
+  .payment-subheading {
+    font-size: 13px;
+  }
+  
+  .payment-methods {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .payment-method-option {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    text-align: left;
+  }
+  
+  .payment-method-icon {
+    font-size: 24px;
+    margin-bottom: 0;
+  }
+  
+  .payment-method-label {
+    font-size: 14px;
+  }
+  
+  .payment-order-row {
+    padding: 6px 0;
+  }
+  
+  .payment-order-label,
+  .payment-order-value {
+    font-size: 13px;
+  }
+  
+  .payment-order-row.total .payment-order-value {
+    font-size: 16px;
+  }
+  
+  .payment-submit-button {
+    padding: 14px;
+    font-size: 14px;
+    min-height: 48px;
+    border-radius: 8px;
+  }
+  
+  .payment-security-badge {
+    font-size: 11px;
+    gap: 6px;
+  }
+  
+  .payment-error {
+    font-size: 13px;
+    padding: 10px 14px;
+  }
+}
+
+/* ============================================
+   TOUCH DEVICE OPTIMIZATION
+   ============================================ */
+@media (hover: none) and (pointer: coarse) {
+  .payment-method-option:hover {
+    border-color: #e5e7eb;
+  }
+  
+  .payment-method-option:active {
+    border-color: #ff621f;
+    background: #fff5f0;
+  }
+  
+  .payment-submit-button:hover:not(:disabled) {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .payment-submit-button:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+.payment-method-option:focus-visible {
+  outline: 2px solid #ff621f;
+  outline-offset: 2px;
+}
+
+.payment-submit-button:focus-visible {
+  outline: 2px solid #ff621f;
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .payment-method-option,
+  .payment-submit-button {
+    transition: none;
+  }
+  
+  .payment-loading-spinner {
+    animation: none;
+    border-top-color: transparent;
+    border-right-color: #ff621f;
   }
 }

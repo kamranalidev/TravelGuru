@@ -3,6 +3,7 @@ import { TextField, IconButton, InputAdornment } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import type { TextFieldProps } from "@mui/material/TextField";
+import "./index.css";
 
 type PasswordFieldProps = TextFieldProps & {
   labelcolor?: string;
@@ -20,6 +21,7 @@ const StyledTextField = styled(TextField)<PasswordFieldProps>(
     borderhovercolor = "#3f51b5",
     borderfocusedcolor = "#ff5722",
   }) => ({
+    width: "100%",
     "& label": {
       color: labelcolor,
     },
@@ -28,7 +30,7 @@ const StyledTextField = styled(TextField)<PasswordFieldProps>(
     },
     "& .MuiOutlinedInput-root": {
       borderRadius: 8,
-      minWidth: 350,
+      width: "100%",
       "& fieldset": {
         borderColor: bordercolor,
       },

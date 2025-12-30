@@ -1,10 +1,10 @@
-import React, { ReactNode } from 'react';
-import { useScrollAnimation } from '../../hooks/useScrollAnimation';
-import './index.css';
+import { type ReactNode } from "react";
+import { useScrollAnimation } from "../../hooks/useScrollAnimation";
+import "./index.css";
 
 interface ScrollAnimationProps {
   children: ReactNode;
-  animationType?: 'fadeIn' | 'slideUp' | 'slideLeft' | 'slideRight' | 'scale';
+  animationType?: "fadeIn" | "slideUp" | "slideLeft" | "slideRight" | "scale";
   delay?: number;
   className?: string;
   threshold?: number;
@@ -13,11 +13,11 @@ interface ScrollAnimationProps {
 
 export const ScrollAnimation: React.FC<ScrollAnimationProps> = ({
   children,
-  animationType = 'fadeIn',
+  animationType = "fadeIn",
   delay = 0,
-  className = '',
+  className = "",
   threshold = 0.1,
-  rootMargin = '0px',
+  rootMargin = "0px",
 }) => {
   const { ref, isVisible } = useScrollAnimation({
     threshold,
@@ -29,7 +29,7 @@ export const ScrollAnimation: React.FC<ScrollAnimationProps> = ({
     <div
       ref={ref}
       className={`scroll-animation scroll-animation-${animationType} ${
-        isVisible ? 'scroll-animation-visible' : ''
+        isVisible ? "scroll-animation-visible" : ""
       } ${className}`}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -37,8 +37,3 @@ export const ScrollAnimation: React.FC<ScrollAnimationProps> = ({
     </div>
   );
 };
-
-
-
-
-

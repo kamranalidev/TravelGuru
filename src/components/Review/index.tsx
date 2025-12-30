@@ -7,6 +7,7 @@ import {
   Alert,
 } from "@mui/material";
 import { supabase } from "../../supabaseClient";
+import "./index.css";
 
 interface Review {
   id: number;

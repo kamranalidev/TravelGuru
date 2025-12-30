@@ -109,6 +109,11 @@ const FAQPage = lazy(() =>
     default: module.default,
   }))
 );
+const AboutPage = lazy(() =>
+  import("../features/About/pages/index.tsx").then((module) => ({
+    default: module.default,
+  }))
+);
 const ContactPage = lazy(() =>
   import("../features/Contact/pages/index.ts").then((module) => ({
     // Contact pages barrel exports default
@@ -215,6 +220,14 @@ export default function AppRouter() {
             element={
               <PublicRoute>
                 <FAQPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <PublicRoute>
+                <AboutPage />
               </PublicRoute>
             }
           />

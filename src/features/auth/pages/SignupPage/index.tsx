@@ -56,6 +56,11 @@ export const SignupPage = () => {
 
   return (
     <Box className="auth-main">
+      {loading && (
+        <Box className="auth-loader-overlay">
+          <span className="loader"></span>
+        </Box>
+      )}
       <Box className="auth-background">
         <img
           src="/assets/desert1.jpg"

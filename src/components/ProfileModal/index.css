@@ -1,0 +1,330 @@
+/* ProfileModal Component Styles */
+
+/* Dialog Container */
+.profile-modal-dialog {
+  max-width: 600px;
+  width: 100%;
+}
+
+.profile-modal-content {
+  padding: 24px;
+}
+
+/* Header Section */
+.profile-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.profile-modal-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+}
+
+.profile-modal-close {
+  color: #666;
+  transition: color 0.2s ease;
+}
+
+.profile-modal-close:hover {
+  color: #333;
+}
+
+/* Avatar Section */
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.profile-avatar-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border: 4px solid #ff621f;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.05);
+}
+
+.profile-avatar-upload-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #ff621f;
+  color: white;
+  border-radius: 50%;
+  padding: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.profile-avatar-upload-icon:hover {
+  background: #e55a1c;
+}
+
+.profile-avatar-hint {
+  font-size: 13px;
+  color: #888;
+  text-align: center;
+}
+
+/* Form Fields */
+.profile-form-section {
+  margin-bottom: 24px;
+}
+
+.profile-form-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.profile-form-field {
+  width: 100%;
+}
+
+.profile-form-field-full {
+  grid-column: 1 / -1;
+}
+
+/* Action Buttons */
+.profile-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.profile-modal-cancel-btn {
+  color: #666;
+}
+
+.profile-modal-save-btn {
+  background: #ff621f;
+  color: white;
+  min-width: 120px;
+}
+
+.profile-modal-save-btn:hover {
+  background: #e55a1c;
+}
+
+.profile-modal-save-btn:disabled {
+  background: #ccc;
+}
+
+/* Loading States */
+.profile-loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.profile-upload-progress {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 120px;
+}
+
+/* ============================================
+   TABLET BREAKPOINT (max-width: 768px)
+   ============================================ */
+@media (max-width: 768px) {
+  .profile-modal-content {
+    padding: 20px;
+  }
+  
+  .profile-modal-title {
+    font-size: 20px;
+  }
+  
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .profile-form-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  
+  .profile-form-section-title {
+    font-size: 15px;
+  }
+  
+  .profile-modal-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+  
+  .profile-modal-actions button {
+    width: 100%;
+    min-height: 44px;
+  }
+}
+
+/* ============================================
+   MOBILE BREAKPOINT (max-width: 480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .profile-modal-content {
+    padding: 16px;
+  }
+  
+  .profile-modal-header {
+    margin-bottom: 20px;
+  }
+  
+  .profile-modal-title {
+    font-size: 18px;
+  }
+  
+  .profile-avatar-section {
+    margin-bottom: 20px;
+  }
+  
+  .profile-avatar {
+    width: 90px;
+    height: 90px;
+    border-width: 3px;
+  }
+  
+  .profile-avatar-upload-icon {
+    padding: 6px;
+  }
+  
+  .profile-avatar-hint {
+    font-size: 12px;
+  }
+  
+  .profile-form-section {
+    margin-bottom: 20px;
+  }
+  
+  .profile-form-section-title {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  
+  .profile-form-grid {
+    gap: 12px;
+  }
+}
+
+/* ============================================
+   FULL-SCREEN MODAL ON SMALL DEVICES
+   ============================================ */
+@media (max-width: 600px) {
+  .profile-modal-dialog.MuiDialog-paper {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+  
+  .profile-modal-content {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* ============================================
+   TOUCH DEVICE OPTIMIZATION
+   ============================================ */
+@media (hover: none) and (pointer: coarse) {
+  .profile-avatar:hover {
+    transform: none;
+  }
+  
+  .profile-avatar:active {
+    transform: scale(0.98);
+  }
+  
+  .profile-avatar-upload-icon:hover {
+    background: #ff621f;
+  }
+  
+  .profile-avatar-upload-icon:active {
+    background: #e55a1c;
+  }
+}
+
+/* ============================================
+   DRAG & DROP STYLES
+   ============================================ */
+.profile-avatar-dropzone {
+  position: relative;
+}
+
+.profile-avatar-dropzone.drag-over::after {
+  content: 'Drop image here';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 98, 31, 0.9);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px;
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+.profile-modal-close:focus-visible {
+  outline: 2px solid #ff621f;
+  outline-offset: 2px;
+}
+
+.profile-avatar-upload-icon:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.profile-modal-save-btn:focus-visible,
+.profile-modal-cancel-btn:focus-visible {
+  outline: 2px solid #ff621f;
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .profile-avatar,
+  .profile-modal-close,
+  .profile-avatar-upload-icon,
+  .profile-modal-save-btn {
+    transition: none;
+  }
+}

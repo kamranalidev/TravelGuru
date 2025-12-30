@@ -14,6 +14,7 @@ export const LoginPage = () => {
   const location = useLocation();
   const [popupMsg, setPopupMsg] = useState("");
   const [popupType, setPopupType] = useState<"success" | "error">("error");
+  const [isLoading, setIsLoading] = useState(false);
 
   const showPopup = (message: string, type: "success" | "error" = "error") => {
     setPopupMsg(message);
@@ -23,6 +24,7 @@ export const LoginPage = () => {
 
   async function signInWithEmail(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setIsLoading(true);
 
     const formdata = new FormData(e.currentTarget);
     const userData: { email: string; password: string } = {
@@ -39,6 +41,7 @@ export const LoginPage = () => {
       if (error) {
         console.error("Error Signing in:", error.message);
         showPopup("Invalid email or password");
+        setIsLoading(false);
       } else {
         showPopup("Login successful! Redirecting...", "success");
         if (data.session) {
@@ -59,11 +62,17 @@ export const LoginPage = () => {
       }
     } catch (error) {
       showPopup("An unexpected error occurred. Please try again.");
+      setIsLoading(false);
     }
   }
 
   return (
     <Box className="auth-main">
+      {isLoading && (
+        <Box className="auth-loader-overlay">
+          <span className="loader"></span>
+        </Box>
+      )}
       <Box className="auth-background">
         <img
           src="/assets/burjKhalifa.jpg"
@@ -109,7 +118,12 @@ export const LoginPage = () => {
             fullWidth
           />
 
-          <ButtonComponent title="Login" width="100%" type="submit" />
+          <ButtonComponent
+            title={isLoading ? "Logging in..." : "Login"}
+            width="100%"
+            type="submit"
+            disabled={isLoading}
+          />
         </form>
 
         <Box className="auth-links">

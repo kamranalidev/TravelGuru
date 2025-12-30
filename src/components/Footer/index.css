@@ -270,3 +270,107 @@
     height: 16px;
   }
 }
+
+/* ===================================
+   ADDITIONAL FOOTER RESPONSIVE STYLES
+   =================================== */
+
+/* Safe area support for notched devices */
+@supports (padding: max(0px)) {
+  .footer {
+    padding-left: max(24px, env(safe-area-inset-left));
+    padding-right: max(24px, env(safe-area-inset-right));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Touch-friendly link targets */
+.footer-link,
+.contact-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 0;
+}
+
+/* Social icons touch targets */
+.social-icon-link {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+@media (max-width: 480px) {
+  .social-icon-link {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* Footer logo section alignment on mobile */
+@media (max-width: 768px) {
+  .footer-logo-section {
+    align-items: center;
+    text-align: center;
+  }
+  
+  .footer-tagline {
+    text-align: center;
+  }
+}
+
+/* Column title spacing on mobile */
+@media (max-width: 480px) {
+  .footer-column {
+    text-align: center;
+  }
+  
+  .footer-links-column {
+    align-items: center;
+  }
+  
+  .contact-info-item {
+    justify-content: center;
+  }
+  
+  .footer-social-icons {
+    justify-content: center;
+  }
+}
+
+/* Copyright responsive */
+.copyright {
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
+  padding: 0 16px;
+}
+
+/* Footer bottom spacing */
+@media (max-width: 480px) {
+  .footer-bottom {
+    padding-top: 20px;
+  }
+}
+
+/* Focus states for accessibility */
+.footer-link:focus-visible,
+.contact-link:focus-visible,
+.social-icon-link:focus-visible {
+  outline: 2px solid #FF621F;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Hover states disabled on touch */
+@media (hover: none) and (pointer: coarse) {
+  .social-icon-link:hover {
+    transform: none;
+    background: #f5f5f5;
+    color: #555555;
+    border-color: #eeeeee;
+  }
+  
+  .social-icon-link:active {
+    background: #FF621F;
+    color: #ffffff;
+    border-color: #FF621F;
+  }
+}

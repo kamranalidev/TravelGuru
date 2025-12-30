@@ -8,22 +8,19 @@ import {
   CardContent,
   Typography,
   Chip,
-  Grid,
   Stack,
   Button,
-  Rating,
   Paper,
   Divider,
   FormControl,
   MenuItem,
   Select,
   Slider,
-  IconButton,
 } from "@mui/material";
 import { Header, Footer } from "../../../components";
 import { supabase } from "../../../supabaseClient";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import "./index.css";
 
 type Service = {
   id: string;
@@ -444,207 +441,168 @@ export const ServicesPage = () => {
               </Stack>
             </Box>
 
-            <Grid container spacing={3}>
-              {loading
-                ? Array.from(new Array(4)).map((_, index) => (
-                    // @ts-ignore
-                    <Grid item xs={12} sm={6} lg={4} key={index}>
-                      <Card
-                        sx={{
-                          borderRadius: 3,
-                          height: 360,
-                          bgcolor: "white",
-                          border: "1px solid #eee",
-                        }}
-                      />
-                    </Grid>
-                  ))
-                : filteredAndSorted.map((service) => {
-                    const images = getServiceImages(service);
-                    return (
-                      // @ts-ignore
-                      <Grid item xs={12} sm={6} lg={4} key={service.id}>
-                        <Card
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, 1fr)",
+                  md: "repeat(3, 1fr)",
+                },
+                gap: 2.5,
+              }}
+            >
+              {loading ? (
+                <Box
+                  sx={{
+                    gridColumn: "1 / -1",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    py: 8,
+                    gap: 2,
+                  }}
+                >
+                  <Box className="services-loader-container">
+                    <span className="services-loader"></span>
+                    <Typography className="services-loader-text">
+                      Loading experiences...
+                    </Typography>
+                  </Box>
+                </Box>
+              ) : (
+                filteredAndSorted.map((service) => {
+                  const images = getServiceImages(service);
+                  return (
+                    <Card
+                      key={service.id}
+                      sx={{
+                        borderRadius: 3,
+                        overflow: "hidden",
+                        bgcolor: "white",
+                        border: "1px solid #e9ecef",
+                        boxShadow: "0 10px 26px rgba(16, 24, 40, 0.06)",
+                        transition:
+                          "transform 140ms ease, box-shadow 140ms ease",
+                        cursor: "pointer",
+                        "&:hover": {
+                          transform: "translateY(-2px)",
+                          boxShadow: "0 14px 32px rgba(16, 24, 40, 0.12)",
+                        },
+                      }}
+                      onClick={() => handleServiceClick(service)}
+                    >
+                      <Box sx={{ position: "relative" }}>
+                        <CardMedia
+                          component="img"
+                          height="220"
+                          image={images[0]}
+                          alt={service.service_name}
+                          sx={{ objectFit: "cover" }}
+                        />
+                      </Box>
+
+                      <CardContent sx={{ p: 2.5 }}>
+                        <Typography
                           sx={{
-                            borderRadius: 3,
-                            overflow: "hidden",
-                            bgcolor: "white",
-                            border: "1px solid #e9ecef",
-                            boxShadow: "0 10px 26px rgba(16, 24, 40, 0.06)",
-                            transition:
-                              "transform 140ms ease, box-shadow 140ms ease",
-                            cursor: "pointer",
-                            "&:hover": {
-                              transform: "translateY(-2px)",
-                              boxShadow: "0 14px 32px rgba(16, 24, 40, 0.12)",
-                            },
+                            color: "#6b7280",
+                            fontWeight: 600,
+                            fontSize: 14,
+                            mb: 0.5,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
                           }}
-                          onClick={() => handleServiceClick(service)}
                         >
-                          <Box sx={{ position: "relative" }}>
-                            <CardMedia
-                              component="img"
-                              height="220"
-                              image={images[0]}
-                              alt={service.service_name}
-                              sx={{ objectFit: "cover" }}
-                            />
-                            <IconButton
-                              onClick={(e) => e.stopPropagation()}
+                          <LocationOnIcon sx={{ fontSize: 16 }} />
+                          {service.location || "Dubai"}
+                        </Typography>
+
+                        <Typography
+                          sx={{
+                            fontSize: 18,
+                            fontWeight: 800,
+                            color: "#111827",
+                            lineHeight: 1.2,
+                            mb: 2,
+                            minHeight: 44,
+                            overflow: "hidden",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {service.service_name}
+                        </Typography>
+
+                        <Typography
+                          sx={{
+                            color: "#6b7280",
+                            fontSize: 14,
+                            mb: 2,
+                            overflow: "hidden",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {service.service_description || ""}
+                        </Typography>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 2,
+                          }}
+                        >
+                          <Box>
+                            <Typography
                               sx={{
-                                position: "absolute",
-                                top: 10,
-                                right: 10,
-                                bgcolor: "rgba(0,0,0,0.30)",
-                                color: "white",
-                                "&:hover": { bgcolor: "rgba(0,0,0,0.45)" },
+                                color: "#6b7280",
+                                fontSize: 13,
+                                fontWeight: 700,
                               }}
                             >
-                              <FavoriteBorderIcon />
-                            </IconButton>
-                            <Chip
-                              label="Recommended"
-                              size="small"
+                              From
+                            </Typography>
+                            <Typography
                               sx={{
-                                position: "absolute",
-                                top: 12,
-                                left: 12,
-                                bgcolor: "#FF621F",
-                                color: "white",
-                                fontWeight: 800,
-                                borderRadius: 1,
+                                fontWeight: 900,
+                                fontSize: 18,
+                                color: "#111827",
                               }}
-                            />
+                            >
+                              {formatAED(service.default_price)}
+                            </Typography>
                           </Box>
 
-                          <CardContent sx={{ p: 2.5 }}>
-                            <Typography
-                              sx={{
-                                color: "#6b7280",
-                                fontWeight: 600,
-                                fontSize: 14,
-                                mb: 0.5,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <LocationOnIcon sx={{ fontSize: 16 }} />
-                              {service.location || "Dubai"}
-                            </Typography>
-
-                            <Typography
-                              sx={{
-                                fontSize: 18,
-                                fontWeight: 800,
-                                color: "#111827",
-                                lineHeight: 1.2,
-                                mb: 1,
-                                minHeight: 44,
-                                overflow: "hidden",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                              }}
-                            >
-                              {service.service_name}
-                            </Typography>
-
-                            <Stack
-                              direction="row"
-                              spacing={1}
-                              alignItems="center"
-                              sx={{ mb: 1.5 }}
-                            >
-                              <Rating
-                                value={4.2}
-                                readOnly
-                                size="small"
-                                sx={{ color: "#FFB800" }}
-                              />
-                              <Typography
-                                sx={{
-                                  color: "#6b7280",
-                                  fontWeight: 700,
-                                  fontSize: 13,
-                                }}
-                              >
-                                4.2
-                              </Typography>
-                              <Typography
-                                sx={{ color: "#6b7280", fontSize: 13 }}
-                              >
-                                (1k+ booked)
-                              </Typography>
-                            </Stack>
-
-                            <Typography
-                              sx={{
-                                color: "#6b7280",
-                                fontSize: 14,
-                                mb: 2,
-                                overflow: "hidden",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                              }}
-                            >
-                              {service.service_description || ""}
-                            </Typography>
-
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                gap: 2,
-                              }}
-                            >
-                              <Box>
-                                <Typography
-                                  sx={{
-                                    color: "#6b7280",
-                                    fontSize: 13,
-                                    fontWeight: 700,
-                                  }}
-                                >
-                                  From
-                                </Typography>
-                                <Typography
-                                  sx={{
-                                    fontWeight: 900,
-                                    fontSize: 18,
-                                    color: "#111827",
-                                  }}
-                                >
-                                  {formatAED(service.default_price)}
-                                </Typography>
-                              </Box>
-
-                              <Button
-                                variant="contained"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleServiceClick(service);
-                                }}
-                                sx={{
-                                  borderRadius: 2,
-                                  textTransform: "none",
-                                  fontWeight: 900,
-                                  px: 2.5,
-                                  bgcolor: "#111827",
-                                  "&:hover": { bgcolor: "#374151" },
-                                }}
-                              >
-                                View details
-                              </Button>
-                            </Box>
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    );
-                  })}
-            </Grid>
+                          <Button
+                            variant="contained"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleServiceClick(service);
+                            }}
+                            sx={{
+                              borderRadius: 2,
+                              textTransform: "none",
+                              fontWeight: 900,
+                              px: 2.5,
+                              bgcolor: "#111827",
+                              "&:hover": { bgcolor: "#374151" },
+                            }}
+                          >
+                            View details
+                          </Button>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </Box>
           </Box>
         </Box>
       </Container>

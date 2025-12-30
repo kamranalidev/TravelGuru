@@ -1,0 +1,162 @@
+/* StepperComponent Responsive Styles */
+.stepper-container {
+  width: 100%;
+  padding: 24px 16px;
+}
+
+.stepper-wrapper {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Step labels */
+.stepper-step-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #ff6f00;
+}
+
+.stepper-step-label.active {
+  font-weight: 600;
+}
+
+/* Step icons */
+.stepper-step-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.stepper-step-icon.completed {
+  background-color: #ff6f00;
+  color: #ffffff;
+}
+
+.stepper-step-icon.active {
+  background-color: #ff6f00;
+  color: #ffffff;
+}
+
+.stepper-step-icon.inactive {
+  background-color: #ffb74d;
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Connector */
+.stepper-connector {
+  height: 3px;
+  background-color: #ff6f00;
+  border-radius: 1px;
+}
+
+/* ============================================
+   TABLET BREAKPOINT (max-width: 768px)
+   ============================================ */
+@media (max-width: 768px) {
+  .stepper-container {
+    padding: 20px 12px;
+    min-height: 120px;
+  }
+  
+  .stepper-step-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+  
+  .stepper-step-label {
+    font-size: 14px;
+    margin-top: 8px;
+  }
+}
+
+/* ============================================
+   MOBILE BREAKPOINT (max-width: 600px)
+   ============================================ */
+@media (max-width: 600px) {
+  .stepper-container {
+    padding: 16px 8px;
+    min-height: 100px;
+  }
+  
+  .stepper-wrapper {
+    max-width: 100%;
+  }
+  
+  .stepper-step-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+  }
+  
+  .stepper-step-label {
+    font-size: 12px;
+    margin-top: 6px;
+    text-align: center;
+    word-break: break-word;
+  }
+}
+
+/* ============================================
+   SMALL MOBILE (max-width: 480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .stepper-container {
+    padding: 12px 4px;
+  }
+  
+  .stepper-step-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+  
+  .stepper-step-label {
+    font-size: 11px;
+    max-width: 70px;
+    line-height: 1.3;
+  }
+  
+  .stepper-connector {
+    height: 2px;
+  }
+}
+
+/* ============================================
+   VERY SMALL MOBILE (max-width: 360px)
+   ============================================ */
+@media (max-width: 360px) {
+  .stepper-step-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+  
+  .stepper-step-label {
+    font-size: 10px;
+    max-width: 60px;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY & REDUCED MOTION
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .stepper-step-icon {
+    transition: none;
+  }
+}
+
+.stepper-step:focus-visible {
+  outline: 2px solid #ff6f00;
+  outline-offset: 2px;
+  border-radius: 50%;
+}

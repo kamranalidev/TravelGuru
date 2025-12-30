@@ -1,0 +1,296 @@
+/* ImageGallery Component Styles */
+.image-gallery-container {
+  width: 100%;
+  position: relative;
+}
+
+.image-gallery-main {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.image-gallery-main-image {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  display: block;
+}
+
+.image-gallery-thumbnails {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  padding-bottom: 8px;
+}
+
+.image-gallery-thumbnails::-webkit-scrollbar {
+  height: 6px;
+}
+
+.image-gallery-thumbnails::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.image-gallery-thumbnails::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.image-gallery-thumbnail {
+  flex-shrink: 0;
+  width: 80px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.image-gallery-thumbnail:hover {
+  opacity: 1;
+}
+
+.image-gallery-thumbnail.active {
+  border-color: #ff621f;
+  opacity: 1;
+}
+
+.image-gallery-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Navigation arrows */
+.image-gallery-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.image-gallery-nav:hover {
+  background: white;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.image-gallery-nav.prev {
+  left: 12px;
+}
+
+.image-gallery-nav.next {
+  right: 12px;
+}
+
+/* Image counter */
+.image-gallery-counter {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Lightbox overlay */
+.image-gallery-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.image-gallery-lightbox-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.image-gallery-lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.image-gallery-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   TABLET BREAKPOINT (max-width: 768px)
+   ============================================ */
+@media (max-width: 768px) {
+  .image-gallery-main-image {
+    height: 300px;
+  }
+  
+  .image-gallery-thumbnail {
+    width: 70px;
+    height: 52px;
+  }
+  
+  .image-gallery-nav {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .image-gallery-counter {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+}
+
+/* ============================================
+   MOBILE BREAKPOINT (max-width: 480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .image-gallery-main {
+    border-radius: 8px;
+  }
+  
+  .image-gallery-main-image {
+    height: 220px;
+  }
+  
+  .image-gallery-thumbnails {
+    gap: 6px;
+    margin-top: 8px;
+  }
+  
+  .image-gallery-thumbnail {
+    width: 60px;
+    height: 45px;
+    border-radius: 6px;
+  }
+  
+  .image-gallery-nav {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .image-gallery-nav.prev {
+    left: 8px;
+  }
+  
+  .image-gallery-nav.next {
+    right: 8px;
+  }
+  
+  .image-gallery-counter {
+    font-size: 11px;
+    padding: 4px 8px;
+    bottom: 8px;
+    right: 8px;
+  }
+  
+  .image-gallery-lightbox {
+    padding: 10px;
+  }
+  
+  .image-gallery-lightbox-close {
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* ============================================
+   TOUCH DEVICE OPTIMIZATION
+   ============================================ */
+@media (hover: none) and (pointer: coarse) {
+  .image-gallery-nav {
+    /* Make touch targets larger */
+    width: 48px;
+    height: 48px;
+  }
+  
+  .image-gallery-nav:hover {
+    transform: translateY(-50%);
+  }
+  
+  .image-gallery-nav:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+  
+  .image-gallery-thumbnail:hover {
+    opacity: 0.7;
+  }
+  
+  .image-gallery-thumbnail:active {
+    opacity: 1;
+  }
+  
+  /* Hide nav buttons on small touch devices - use swipe instead */
+  @media (max-width: 480px) {
+    .image-gallery-nav {
+      display: none;
+    }
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+.image-gallery-thumbnail:focus-visible {
+  outline: 2px solid #ff621f;
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+.image-gallery-nav:focus-visible {
+  outline: 2px solid #ff621f;
+  outline-offset: 2px;
+}
+
+.image-gallery-lightbox-close:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .image-gallery-thumbnail,
+  .image-gallery-nav,
+  .image-gallery-lightbox-close {
+    transition: none;
+  }
+}

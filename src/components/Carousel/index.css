@@ -7,11 +7,31 @@
     margin-right: auto;
     width: 80%;
 }
+
+/* Responsive carousel width */
+@media (max-width: 1024px) {
+    .myCarouselClass {
+        width: 90%;
+    }
+}
+
+@media (max-width: 768px) {
+    .myCarouselClass {
+        width: 95%;
+    }
+}
+
+@media (max-width: 480px) {
+    .myCarouselClass {
+        width: 100%;
+    }
+}
+
 .custom-right-arrow {
-  position: absolute;
+    position: absolute;
     outline: 0;
-    transition: all .5s;
-    border-radius: 35px;
+    transition: all .3s ease;
+    border-radius: 50%;
     z-index: 1000;
     border: 0;
     background: #17B5A7;
@@ -20,14 +40,17 @@
     opacity: 1;
     cursor: pointer;
     right: calc(0% + 1px);
-    color:white;
-    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
+
 .custom-left-arrow {
-  position: absolute;
+    position: absolute;
     outline: 0;
-    transition: all .5s;
-    border-radius: 35px;
+    transition: all .3s ease;
+    border-radius: 50%;
     z-index: 1000;
     border: 0;
     background: #17B5A7;
@@ -36,6 +59,52 @@
     opacity: 1;
     cursor: pointer;
     left: calc(0% + 1px);
-    color:white;
-    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Arrow hover states */
+.custom-right-arrow:hover,
+.custom-left-arrow:hover {
+    background: #129e92;
+    transform: scale(1.05);
+}
+
+/* Arrow focus states */
+.custom-right-arrow:focus-visible,
+.custom-left-arrow:focus-visible {
+    outline: 3px solid #FF621F;
+    outline-offset: 2px;
+}
+
+/* Responsive arrows */
+@media (max-width: 768px) {
+    .custom-right-arrow,
+    .custom-left-arrow {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom-right-arrow,
+    .custom-left-arrow {
+        min-width: 40px;
+        min-height: 40px;
+    }
+}
+
+/* Touch device adjustments */
+@media (hover: none) and (pointer: coarse) {
+    .custom-right-arrow:hover,
+    .custom-left-arrow:hover {
+        transform: none;
+    }
+
+    .custom-right-arrow:active,
+    .custom-left-arrow:active {
+        transform: scale(0.95);
+    }
 }

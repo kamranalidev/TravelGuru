@@ -1,6 +1,8 @@
-import { TextField} from "@mui/material";
+import { TextField } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import type { TextFieldProps } from "@mui/material/TextField";
+import "./index.css";
+
 type CustomTextFieldProps = TextFieldProps & {
   labelcolor?: string;
   labelfocusedcolor?: string;
@@ -10,7 +12,14 @@ type CustomTextFieldProps = TextFieldProps & {
 };
 
 const StyledTextField = styled(TextField)<CustomTextFieldProps>(
-  ({ labelcolor = "#3f51b5", labelfocusedcolor = "#ff5722", bordercolor = "#ccc", borderhovercolor = "#3f51b5", borderfocusedcolor = "#ff5722" }) => ({
+  ({
+    labelcolor = "#3f51b5",
+    labelfocusedcolor = "#ff5722",
+    bordercolor = "#ccc",
+    borderhovercolor = "#3f51b5",
+    borderfocusedcolor = "#ff5722",
+  }) => ({
+    width: "100%",
     "& label": {
       color: labelcolor,
     },
@@ -19,7 +28,7 @@ const StyledTextField = styled(TextField)<CustomTextFieldProps>(
     },
     "& .MuiOutlinedInput-root": {
       borderRadius: 8,
-      minWidth: 350,
+      width: "100%",
       "& fieldset": {
         borderColor: bordercolor,
       },

@@ -52,6 +52,18 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
+/* Touch device optimization */
+@media (hover: none) and (pointer: coarse) {
+  .serviceCard:hover {
+    transform: none;
+  }
+  
+  .serviceCard:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+}
+
 .serviceCardImage {
   width: 100%;
   height: 200px;
@@ -148,6 +160,22 @@
   transform: scale(1.1);
 }
 
+/* Touch optimization for favorite button */
+@media (hover: none) and (pointer: coarse) {
+  .favoriteButton {
+    width: 44px;
+    height: 44px;
+  }
+  
+  .favoriteButton:hover {
+    transform: none;
+  }
+  
+  .favoriteButton:active {
+    transform: scale(0.95);
+  }
+}
+
 .choiceBadge {
   position: absolute;
   top: 12px;
@@ -161,6 +189,71 @@
   z-index: 1;
 }
 
+/* Mobile Filter Toggle */
+.mobileFilterToggle {
+  display: none;
+  width: 100%;
+  padding: 12px 16px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-bottom: 16px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Search Results Header */
+.searchResultsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.searchResultsCount {
+  font-size: 16px;
+  color: #666;
+}
+
+.sortSelect {
+  min-width: 180px;
+}
+
+/* No Results State */
+.noResults {
+  text-align: center;
+  padding: 60px 24px;
+  background: white;
+  border-radius: 12px;
+}
+
+.noResultsIcon {
+  font-size: 64px;
+  color: #ccc;
+  margin-bottom: 16px;
+}
+
+.noResultsTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.noResultsText {
+  font-size: 14px;
+  color: #666;
+}
+
+/* ============================================
+   TABLET BREAKPOINT (max-width: 960px)
+   ============================================ */
 @media (max-width: 960px) {
   .servicesGrid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -172,10 +265,154 @@
     top: 0;
     margin-bottom: 24px;
   }
+  
+  .mobileFilterToggle {
+    display: flex;
+  }
+  
+  .searchResultsHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .sortSelect {
+    width: 100%;
+  }
+  
+  .serviceCardImage {
+    height: 180px;
+  }
 }
 
+/* ============================================
+   MOBILE BREAKPOINT (max-width: 600px)
+   ============================================ */
 @media (max-width: 600px) {
   .servicesGrid {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .filterSidebar {
+    padding: 16px;
+    border-radius: 8px;
+  }
+  
+  .filterSection {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+  }
+  
+  .filterTitle {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  
+  .serviceCardContent {
+    padding: 14px;
+  }
+  
+  .serviceTitle {
+    font-size: 15px;
+  }
+  
+  .priceAmount {
+    font-size: 16px;
+  }
+  
+  .noResults {
+    padding: 40px 16px;
+  }
+  
+  .noResultsIcon {
+    font-size: 48px;
+  }
+  
+  .noResultsTitle {
+    font-size: 18px;
+  }
+}
+
+/* ============================================
+   SMALL MOBILE (max-width: 480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .serviceCardImage {
+    height: 160px;
+  }
+  
+  .serviceCardContent {
+    padding: 12px;
+  }
+  
+  .serviceTags {
+    gap: 4px;
+  }
+  
+  .serviceTag {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  
+  .choiceBadge {
+    font-size: 11px;
+    padding: 3px 10px;
+  }
+}
+
+/* ============================================
+   LOADING SKELETON STYLES
+   ============================================ */
+.serviceCardSkeleton {
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+
+.serviceCardSkeleton .skeleton-image {
+  height: 200px;
+}
+
+.serviceCardSkeleton .skeleton-content {
+  padding: 16px;
+}
+
+@media (max-width: 600px) {
+  .serviceCardSkeleton .skeleton-image {
+    height: 160px;
+  }
+  
+  .serviceCardSkeleton .skeleton-content {
+    padding: 14px;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+.serviceCard:focus-visible {
+  outline: 2px solid #ff621f;
+  outline-offset: 2px;
+}
+
+.favoriteButton:focus-visible {
+  outline: 2px solid #ff621f;
+  outline-offset: 2px;
+}
+
+.mobileFilterToggle:focus-visible {
+  outline: 2px solid #ff621f;
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .serviceCard,
+  .favoriteButton {
+    transition: none;
+  }
+  
+  .serviceCard:hover {
+    transform: none;
   }
 }

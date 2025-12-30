@@ -17,6 +17,7 @@ import {
 import { Close as CloseIcon, PhotoCamera } from "@mui/icons-material";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../supabaseClient";
+import "./index.css";
 
 interface ProfileModalProps {
   open: boolean;

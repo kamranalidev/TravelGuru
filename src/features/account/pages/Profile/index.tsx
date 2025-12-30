@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { useAuth } from "../../../../hooks/useAuth";
 import { supabase } from "../../../../supabaseClient";
+import "./index.css";
 
 type FormState = {
   fullName: string;
@@ -52,23 +53,17 @@ export const ProfilePage = () => {
 
       setFormState({
         fullName:
-          user.user_metadata?.full_name ||
-          user.user_metadata?.name ||
-          "",
+          user.user_metadata?.full_name || user.user_metadata?.name || "",
         phoneNumber: user.user_metadata?.phone_number || "",
         avatarUrl:
-          user.user_metadata?.avatar_url ||
-          user.user_metadata?.picture ||
-          "",
+          user.user_metadata?.avatar_url || user.user_metadata?.picture || "",
       });
       return;
     }
 
     setFormState({
       fullName: profile.full_name || "",
-      phoneNumber: profile.phone_number
-        ? String(profile.phone_number)
-        : "",
+      phoneNumber: profile.phone_number ? String(profile.phone_number) : "",
       avatarUrl: profile.profile_picture || "",
     });
     setIsInitializing(false);
@@ -114,14 +109,10 @@ export const ProfilePage = () => {
     if (user) {
       setFormState({
         fullName:
-          user.user_metadata?.full_name ||
-          user.user_metadata?.name ||
-          "",
+          user.user_metadata?.full_name || user.user_metadata?.name || "",
         phoneNumber: user.user_metadata?.phone_number || "",
         avatarUrl:
-          user.user_metadata?.avatar_url ||
-          user.user_metadata?.picture ||
-          "",
+          user.user_metadata?.avatar_url || user.user_metadata?.picture || "",
       });
     }
   };
@@ -244,7 +235,7 @@ export const ProfilePage = () => {
         experience.
       </Typography>
       <Grid container spacing={4}>
-        <Grid xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Paper
             elevation={0}
             sx={{
@@ -276,7 +267,7 @@ export const ProfilePage = () => {
             </Stack>
           </Paper>
         </Grid>
-        <Grid xs={12} md={8}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Paper
             elevation={0}
             sx={{

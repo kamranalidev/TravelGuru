@@ -1,0 +1,144 @@
+/* ===================================
+   BUTTON COMPONENT RESPONSIVE STYLES
+   =================================== */
+
+.btn-component {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+/* Touch target minimum */
+.btn-component {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Primary button */
+.btn-primary {
+  background: linear-gradient(135deg, #FF621F, #FF8A4F);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #e55519, #e67b44);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 98, 31, 0.3);
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: #ffffff;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+.btn-secondary:hover {
+  background: #f5f5f5;
+  border-color: #d0d0d0;
+}
+
+/* Outline button */
+.btn-outline {
+  background: transparent;
+  color: #FF621F;
+  border: 2px solid #FF621F;
+}
+
+.btn-outline:hover {
+  background: rgba(255, 98, 31, 0.08);
+}
+
+/* Full width button */
+.btn-full-width {
+  width: 100%;
+}
+
+/* Button sizes */
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  min-height: 36px;
+}
+
+.btn-lg {
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  min-height: 56px;
+}
+
+/* Loading state */
+.btn-loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: btn-spin 0.8s linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Disabled state */
+.btn-disabled,
+.btn-component:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Focus states */
+.btn-component:focus-visible {
+  outline: 3px solid #FF621F;
+  outline-offset: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .btn-component {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+  }
+
+  .btn-lg {
+    padding: 14px 28px;
+    font-size: 1rem;
+  }
+}
+
+/* Touch device adjustments */
+@media (hover: none) and (pointer: coarse) {
+  .btn-primary:hover,
+  .btn-secondary:hover,
+  .btn-outline:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-component:active {
+    transform: scale(0.98);
+  }
+}

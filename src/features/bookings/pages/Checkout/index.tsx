@@ -14,6 +14,7 @@ import { useState } from "react";
 import { supabase } from "../../../../supabaseClient.ts";
 import { useDispatch } from "react-redux";
 import { clearCart } from "../../../../store/features/cart/cartSlice";
+import "./index.css";
 
 const normalizeTime = (value: unknown): string | null => {
   if (value == null) return null;

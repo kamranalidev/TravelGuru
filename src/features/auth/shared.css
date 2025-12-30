@@ -235,3 +235,228 @@
     font-size: 1.75rem !important;
   }
 }
+
+/* Custom Loader */
+.loader-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.loader {
+  transform: rotateZ(45deg);
+  perspective: 1000px;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  color: #fff;
+  position: relative;
+}
+
+.loader:before,
+.loader:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: inherit;
+  height: inherit;
+  border-radius: 50%;
+  transform: rotateX(70deg);
+  animation: 1s spin linear infinite;
+}
+
+.loader:after {
+  color: #FF3D00;
+  transform: rotateY(70deg);
+  animation-delay: .4s;
+}
+
+@keyframes spin {
+  0%,
+  100% {
+    box-shadow: .2em 0px 0 0px currentcolor;
+  }
+  12% {
+    box-shadow: .2em .2em 0 0 currentcolor;
+  }
+  25% {
+    box-shadow: 0 .2em 0 0px currentcolor;
+  }
+  37% {
+    box-shadow: -.2em .2em 0 0 currentcolor;
+  }
+  50% {
+    box-shadow: -.2em 0 0 0 currentcolor;
+  }
+  62% {
+    box-shadow: -.2em -.2em 0 0 currentcolor;
+  }
+  75% {
+    box-shadow: 0px -.2em 0 0 currentcolor;
+  }
+  87% {
+    box-shadow: .2em -.2em 0 0 currentcolor;
+  }
+}
+
+/* Full page loader overlay */
+.auth-loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.auth-loader-overlay .loader {
+  color: #6366f1;
+}
+
+/* ===================================
+   ADDITIONAL AUTH RESPONSIVE STYLES
+   =================================== */
+
+/* Safe area support */
+@supports (padding: max(0px)) {
+  .auth-main {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Auth card shadow adjustments for mobile */
+@media (max-width: 480px) {
+  .auth-card {
+    box-shadow: 
+      0 10px 25px rgba(0, 0, 0, 0.1),
+      0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+}
+
+/* Logo responsive sizing */
+.auth-logo {
+  height: clamp(60px, 15vw, 80px);
+}
+
+/* Form field touch targets */
+.auth-form .MuiOutlinedInput-root {
+  min-height: 52px;
+}
+
+.auth-form .MuiInputLabel-root {
+  font-size: clamp(0.9rem, 2.5vw, 1rem);
+}
+
+/* Button minimum height for touch */
+.auth-form button,
+.auth-form .MuiButton-root {
+  min-height: 48px;
+  font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+}
+
+/* Password field visibility toggle touch target */
+.auth-form .MuiIconButton-root {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Error/Success message responsive */
+.auth-form .MuiAlert-root {
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  padding: 12px 16px;
+  border-radius: 12px;
+}
+
+/* Link styling improvements */
+.auth-link {
+  min-height: 44px;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Focus states */
+.auth-form .MuiOutlinedInput-root:focus-within {
+  z-index: 1;
+}
+
+/* Popup responsive positioning */
+@media (max-width: 480px) {
+  .auth-popup {
+    left: 16px;
+    right: 16px;
+    top: auto;
+    bottom: 20px;
+    text-align: center;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .auth-card {
+    padding: 20px 16px;
+    margin: 0 8px;
+  }
+  
+  .auth-title {
+    font-size: 1.5rem !important;
+  }
+  
+  .auth-subtitle {
+    font-size: 1.1rem !important;
+  }
+  
+  .auth-form {
+    gap: 16px;
+  }
+}
+
+/* Landscape mode on small devices */
+@media (max-height: 600px) and (orientation: landscape) {
+  .auth-main {
+    padding: 16px;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+  
+  .auth-card {
+    margin: 16px auto;
+  }
+  
+  .auth-logo {
+    height: 50px;
+    margin-bottom: 12px;
+  }
+  
+  .auth-header {
+    margin-bottom: 20px;
+  }
+  
+  .auth-form {
+    gap: 16px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .auth-card {
+    animation: none;
+  }
+  
+  .auth-popup {
+    animation: none;
+  }
+  
+  .auth-logo:hover {
+    transform: none;
+  }
+}

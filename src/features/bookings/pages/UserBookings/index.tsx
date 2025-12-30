@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { supabase } from "../../../../supabaseClient.ts";
 import { Header } from "../../../../components/index.tsx";
+import "./index.css";
 
 type BookingRow = {
   id: number;

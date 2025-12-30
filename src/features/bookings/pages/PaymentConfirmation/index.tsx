@@ -1,4 +1,3 @@
-import * as React from "react";
 import Box from "@mui/material/Box";
 import { Typography } from "@mui/material";
 import { Header, StepperComponent } from "../../../../components/index.tsx";

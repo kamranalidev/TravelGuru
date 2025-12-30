@@ -1,27 +1,31 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Box, Typography, TextField, IconButton, Paper } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
-import SendIcon from '@mui/icons-material/Send';
-import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
-import { getChatbotResponse, getQuickQuestions } from '../../services/chatbotService';
-import type { ChatMessage } from '../../services/chatbotService';
-import './index.css';
+import React, { useState, useRef, useEffect } from "react";
+import { Box, Typography, TextField, IconButton, Paper } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import SendIcon from "@mui/icons-material/Send";
+import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
+import {
+  getChatbotResponse,
+  getQuickQuestions,
+} from "../../services/chatbotService";
+import type { ChatMessage } from "../../services/chatbotService";
+import "./index.css";
 
 export const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      role: 'assistant',
-      content: 'Hello! I\'m your Travel Guroo assistant. How can I help you today?'
-    }
+      role: "assistant",
+      content:
+        "Hello! 👋 I'm your Travel Guroo assistant. How can I help you explore the Arabian Dream today?",
+    },
   ]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -41,27 +45,27 @@ export const Chatbot: React.FC = () => {
     if (!userMessage) return;
 
     const newUserMessage: ChatMessage = {
-      role: 'user',
-      content: userMessage
+      role: "user",
+      content: userMessage,
     };
 
-    setMessages(prev => [...prev, newUserMessage]);
-    setInputValue('');
+    setMessages((prev) => [...prev, newUserMessage]);
+    setInputValue("");
     setIsLoading(true);
 
     setTimeout(() => {
       const response = getChatbotResponse(userMessage);
       const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        content: response
+        role: "assistant",
+        content: response,
       };
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
       setIsLoading(false);
     }, 500);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }

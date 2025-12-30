@@ -1,0 +1,139 @@
+/* MiniCard Component Styles */
+.mini-card-container {
+  width: 100%;
+}
+
+.mini-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  max-width: 100%;
+}
+
+.mini-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Touch device optimization */
+@media (hover: none) and (pointer: coarse) {
+  .mini-card:hover {
+    transform: none;
+  }
+  
+  .mini-card:active {
+    transform: scale(0.98);
+  }
+}
+
+.mini-card-image {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  padding: 20px;
+}
+
+.mini-card-content {
+  padding: 16px;
+}
+
+.mini-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.mini-card-description {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.mini-card-button {
+  margin-top: 12px;
+}
+
+/* ============================================
+   TABLET BREAKPOINT (max-width: 768px)
+   ============================================ */
+@media (max-width: 768px) {
+  .mini-card {
+    margin: 12px;
+  }
+  
+  .mini-card-image {
+    width: 40px;
+    height: 40px;
+    padding: 16px;
+  }
+  
+  .mini-card-content {
+    padding: 14px;
+  }
+  
+  .mini-card-title {
+    font-size: 15px;
+  }
+  
+  .mini-card-description {
+    font-size: 13px;
+  }
+}
+
+/* ============================================
+   MOBILE BREAKPOINT (max-width: 480px)
+   ============================================ */
+@media (max-width: 480px) {
+  .mini-card {
+    margin: 8px;
+  }
+  
+  .mini-card-image {
+    width: 36px;
+    height: 36px;
+    padding: 12px;
+  }
+  
+  .mini-card-content {
+    padding: 12px;
+  }
+  
+  .mini-card-title {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  
+  .mini-card-description {
+    font-size: 12px;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+.mini-card:focus-visible {
+  outline: 2px solid #ff621f;
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .mini-card {
+    transition: none;
+  }
+  
+  .mini-card:hover {
+    transform: none;
+  }
+}

@@ -88,6 +88,22 @@ function StandardImageList(props: any) {
         height: 450,
         // Promote the list into its own layer in Chrome. This costs memory, but helps keeping high FPS.
         transform: "translateZ(0)",
+        overflowY: "auto",
+        overflowX: "hidden",
+        "&::-webkit-scrollbar": {
+          width: "8px",
+        },
+        "&::-webkit-scrollbar-track": {
+          backgroundColor: "#f1f1f1",
+          borderRadius: "10px",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          backgroundColor: "#FF621F",
+          borderRadius: "10px",
+          "&:hover": {
+            backgroundColor: "#e55519",
+          },
+        },
       }}
       rowHeight={200}
       gap={1}
@@ -98,6 +114,10 @@ function StandardImageList(props: any) {
           cols={item.cols || 1}
           rows={item.rows || 1}
           onClick={() => props.handleClick(item.src)}
+          sx={{
+            overflow: "hidden",
+            borderRadius: "8px",
+          }}
         >
           <img
             src={item.src}
@@ -110,6 +130,7 @@ function StandardImageList(props: any) {
               objectPosition: "center",
               width: "100%",
               height: "100%",
+              display: "block",
             }}
           />
         </ImageListItem>
@@ -164,6 +185,7 @@ export const BookingPage = () => {
 
   const [serviceLoading, setServiceLoading] = useState(false);
   const [serviceError, setServiceError] = useState<string | null>(null);
+  const [packagesLoading, setPackagesLoading] = useState(false);
 
   useEffect(() => {
     if (!serviceIdFromRoute || Number.isNaN(serviceIdFromRoute)) return;
@@ -303,6 +325,7 @@ export const BookingPage = () => {
       }
 
       try {
+        setPackagesLoading(true);
         const { data, error } = await supabase
           .from("packages")
           .select("*")
@@ -325,6 +348,8 @@ export const BookingPage = () => {
       } catch (error) {
         console.error("Unexpected error fetching packages:", error);
         setPackages([]);
+      } finally {
+        setPackagesLoading(false);
       }
     };
 
@@ -690,7 +715,11 @@ export const BookingPage = () => {
                   ? "Select the package that matches how you like to explore Dubai."
                   : basePackage.description}
               </Typography>
-              {hasAddOnPackages ? (
+              {packagesLoading ? (
+                <Box className="loader-container">
+                  <span className="loader"></span>
+                </Box>
+              ) : hasAddOnPackages ? (
                 <Box className="planGrid">
                   {packagesToDisplay.map((pack: any) => {
                     const packId = pack.isBase ? 0 : pack.id;
@@ -835,6 +864,7 @@ export const BookingPage = () => {
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateCalendar
                   value={date}
+                  minDate={dayjs()}
                   onChange={(newValue: any) => {
                     if (newValue) {
                       setDate(newValue);

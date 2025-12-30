@@ -9,24 +9,27 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
 .serviceTitle {
     font-weight: 700;
-    font-size: 2.6rem;
+    font-size: clamp(1.75rem, 5vw, 2.6rem);
     margin-bottom: 8px;
     color: #1a1a1a;
+    word-break: break-word;
 }
 
 .serviceLocationTag {
     font-weight: 600;
     color: #FF621F;
-    font-size: 1.05rem;
+    font-size: clamp(0.9rem, 2.5vw, 1.05rem);
 }
 
 .serviceGalleryWrapper {
     border-radius: 28px;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 20px 45px rgba(0, 0, 0, 0.08);
     margin-bottom: 40px;
 }
@@ -43,6 +46,7 @@
     display: flex;
     flex-direction: column;
     gap: 32px;
+    min-width: 0; /* Prevents grid blowout */
 }
 
 .serviceDescriptionBox {
@@ -52,6 +56,7 @@
 .sectionHeading {
     font-weight: 700;
     margin-bottom: 16px;
+    font-size: clamp(1.25rem, 3vw, 1.5rem);
 }
 
 .planHeading {
@@ -63,7 +68,7 @@
 }
 
 .serviceDescriptionText {
-    font-size: 1.05rem;
+    font-size: clamp(0.95rem, 2.5vw, 1.05rem);
     line-height: 1.8;
     color: #555;
     display: -webkit-box;
@@ -85,7 +90,7 @@
     gap: 16px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
     position: sticky;
-    top: 20px;
+    top: 90px;
 }
 
 .priceLabel {
@@ -96,7 +101,7 @@
 }
 
 .priceValue {
-    font-size: 2.2rem;
+    font-size: clamp(1.75rem, 4vw, 2.2rem);
     font-weight: 700;
     color: #1a1a1a;
 }
@@ -120,9 +125,10 @@
 
 .planGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 20px;
     margin-top: 16px;
+    width: 100%;
 }
 
 .basePlanSummary {
@@ -132,9 +138,15 @@
     padding: 24px;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05);
     max-width: 520px;
+    width: 100%;
 }
 
+/* Large tablets and small desktops */
 @media (max-width: 1024px) {
+    .servicePageContainer {
+        padding: 32px 20px 60px;
+    }
+
     .serviceDetails {
         grid-template-columns: 1fr;
         gap: 32px;
@@ -142,36 +154,48 @@
 
     .priceBox {
         position: static;
-        max-width: 600px;
-        margin: 0 auto;
+        max-width: 100%;
+        margin: 0;
+        order: -1; /* Move price box above content on tablet */
     }
 
     .planSection {
         margin-top: 32px;
-        align-items: center;
+        align-items: stretch;
     }
 
     .planSubtitle {
-        text-align: center;
-        margin: 0 auto;
+        text-align: left;
+        max-width: 100%;
     }
 
     .basePlanSummary {
-        width: 100%;
-    }
-}
-
-@media (max-width: 768px) {
-    .serviceTitle {
-        font-size: 2.2rem;
+        max-width: 100%;
     }
 
     .serviceGalleryWrapper {
-        border-radius: 20px;
+        margin-bottom: 32px;
+    }
+}
+
+/* Tablets */
+@media (max-width: 768px) {
+    .servicePageContainer {
+        padding: 24px 16px 48px;
+    }
+
+    .serviceTitle {
+        font-size: 1.75rem;
+    }
+
+    .serviceGalleryWrapper {
+        border-radius: 16px;
+        margin-bottom: 24px;
     }
 
     .serviceDescriptionText {
         font-size: 1rem;
+        line-height: 1.7;
     }
 
     .planGrid {
@@ -186,10 +210,304 @@
     .priceBox {
         padding: 20px;
         gap: 14px;
+        border-radius: 20px;
     }
 
     .planSection {
         margin-top: 24px;
         gap: 16px;
     }
+
+    .serviceIntro {
+        margin-bottom: 16px;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+    .servicePageContainer {
+        padding: 16px 12px 40px;
+    }
+
+    .serviceTitle {
+        font-size: 1.5rem;
+    }
+
+    .serviceLocationTag {
+        font-size: 0.9rem;
+    }
+
+    .serviceGalleryWrapper {
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .priceBox {
+        padding: 16px;
+        gap: 12px;
+        border-radius: 16px;
+    }
+
+    .priceValue {
+        font-size: 1.75rem;
+    }
+
+    .sectionHeading {
+        font-size: 1.25rem;
+    }
+
+    .planGrid {
+        gap: 12px;
+    }
+
+    .basePlanSummary {
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    .serviceIntro {
+        margin-bottom: 12px;
+    }
+
+    .serviceDetails {
+        gap: 20px;
+    }
+}
+
+/* Custom Loader */
+.loader {
+  transform: rotateZ(45deg);
+  perspective: 1000px;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  color: #fff;
+  position: relative;
+}
+
+.loader:before,
+.loader:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: inherit;
+  height: inherit;
+  border-radius: 50%;
+  transform: rotateX(70deg);
+  animation: 1s spin linear infinite;
+}
+
+.loader:after {
+  color: #FF3D00;
+  transform: rotateY(70deg);
+  animation-delay: .4s;
+}
+
+@keyframes rotate {
+  0% {
+    transform: translate(-50%, -50%) rotateZ(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotateZ(360deg);
+  }
+}
+
+@keyframes rotateccw {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
+@keyframes spin {
+  0%,
+  100% {
+    box-shadow: .2em 0px 0 0px currentcolor;
+  }
+  12% {
+    box-shadow: .2em .2em 0 0 currentcolor;
+  }
+  25% {
+    box-shadow: 0 .2em 0 0px currentcolor;
+  }
+  37% {
+    box-shadow: -.2em .2em 0 0 currentcolor;
+  }
+  50% {
+    box-shadow: -.2em 0 0 0 currentcolor;
+  }
+  62% {
+    box-shadow: -.2em -.2em 0 0 currentcolor;
+  }
+  75% {
+    box-shadow: 0px -.2em 0 0 currentcolor;
+  }
+  87% {
+    box-shadow: .2em -.2em 0 0 currentcolor;
+  }
+}
+
+.loader-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  min-height: 120px;
+}
+
+.loader-small {
+  width: 20px;
+  height: 20px;
+}
+
+.loader-small:before,
+.loader-small:after {
+  animation-duration: 0.8s;
+}
+
+/* ===================================
+   BOOKING PAGE RESPONSIVE ENHANCEMENTS
+   =================================== */
+
+/* ImageList gallery responsive */
+.imageListContainer {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .imageListContainer {
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .imageListContainer {
+    border-radius: 12px;
+  }
+}
+
+/* Date Calendar responsive */
+.MuiDateCalendar-root {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 480px) {
+  .MuiDateCalendar-root {
+    max-height: 280px !important;
+  }
+  
+  .MuiPickersDay-root {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .MuiPickersCalendarHeader-label {
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Subscription box / package card responsive */
+.subscription-box {
+  padding: 24px;
+  border-radius: 24px;
+}
+
+@media (max-width: 768px) {
+  .subscription-box {
+    padding: 20px;
+    border-radius: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .subscription-box {
+    padding: 16px;
+    border-radius: 16px;
+  }
+}
+
+/* Review section responsive */
+.reviewSection {
+  margin-top: 40px;
+}
+
+@media (max-width: 768px) {
+  .reviewSection {
+    margin-top: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .reviewSection {
+    margin-top: 24px;
+  }
+}
+
+/* Dialog responsive improvements */
+.bookingDialog .MuiDialog-paper {
+  margin: 16px;
+  max-width: calc(100% - 32px);
+  border-radius: 20px;
+}
+
+@media (max-width: 480px) {
+  .bookingDialog .MuiDialog-paper {
+    margin: 8px;
+    max-width: calc(100% - 16px);
+    border-radius: 16px;
+  }
+}
+
+/* Airport pickup form responsive */
+.airportPickupForm {
+  display: grid;
+  gap: 16px;
+}
+
+@media (max-width: 480px) {
+  .airportPickupForm {
+    gap: 12px;
+  }
+  
+  .airportPickupForm .MuiTextField-root,
+  .airportPickupForm .MuiFormControl-root {
+    width: 100%;
+  }
+}
+
+/* Action buttons responsive */
+.bookingActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bookingActions button {
+  min-height: 48px;
+}
+
+@media (max-width: 480px) {
+  .bookingActions button {
+    font-size: 0.95rem;
+    padding: 12px 16px;
+  }
+}
+
+/* Alert responsive */
+.bookingFeedback {
+  margin-top: 12px;
+  border-radius: 12px;
+}
+
+@media (max-width: 480px) {
+  .bookingFeedback .MuiAlert-message {
+    font-size: 0.9rem;
+  }
 }
