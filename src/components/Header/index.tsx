@@ -220,18 +220,6 @@ export const Header = (props: { hidePages?: boolean }) => {
             </Box>
             {!props.hidePages && (
               <>
-                {/* Mobile hamburger menu */}
-                <IconButton
-                  aria-label="menu"
-                  onClick={() => setMobileDrawerOpen(true)}
-                  sx={{
-                    display: { xs: "flex", md: "none" },
-                    color: "#333",
-                  }}
-                >
-                  <MenuIcon />
-                </IconButton>
-
                 {/* Desktop navigation */}
                 <Box
                   sx={{
@@ -265,6 +253,8 @@ export const Header = (props: { hidePages?: boolean }) => {
                     </Button>
                   ))}
                 </Box>
+
+                {/* Mobile and Desktop right section */}
                 <Box
                   sx={{
                     display: "flex",
@@ -295,6 +285,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                     </IconButton>
                   ) : null}
 
+                  {/* Desktop: User button / Login */}
                   <Button
                     disableRipple
                     onClick={
@@ -303,7 +294,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                         : () => handleNavigate("/login")
                     }
                     sx={{
-                      display: "flex",
+                      display: { xs: "none", md: "flex" },
                       alignItems: "center",
                       gap: 1,
                       borderRadius: "8px",
@@ -415,6 +406,19 @@ export const Header = (props: { hidePages?: boolean }) => {
                       Logout
                     </MenuItem>
                   </Menu>
+
+                  {/* Mobile hamburger menu - right side */}
+                  <IconButton
+                    aria-label="open navigation menu"
+                    onClick={() => setMobileDrawerOpen(true)}
+                    sx={{
+                      display: { xs: "flex", md: "none" },
+                      color: "#333",
+                      ml: 0.5,
+                    }}
+                  >
+                    <MenuIcon />
+                  </IconButton>
                 </Box>
               </>
             )}
@@ -432,6 +436,15 @@ export const Header = (props: { hidePages?: boolean }) => {
             width: "100%",
             maxWidth: 320,
             borderRadius: 0,
+            height: "100%",
+            top: 0,
+            bottom: 0,
+          },
+        }}
+        sx={{
+          "& .MuiDrawer-paper": {
+            height: "100vh",
+            top: 0,
           },
         }}
       >
