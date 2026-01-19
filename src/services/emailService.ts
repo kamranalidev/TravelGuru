@@ -1,12 +1,12 @@
 export interface BookingConfirmationEmailParams {
-  to: string;
+  to?: string;
   bookingId: number | string;
   customerName?: string;
-  serviceName: string;
+  serviceName?: string;
   location?: string;
-  bookingDate: string;
+  bookingDate?: string;
   packageName?: string;
-  totalAmount: number;
+  totalAmount?: number;
   paymentIntentId?: string;
 }
 
@@ -20,6 +20,11 @@ export interface EmailResponse {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
 
+/**
+ * Send a booking confirmation email via the backend API.
+ * The backend will fetch all booking details from the database,
+ * so only booking_id is required.
+ */
 export const sendBookingConfirmationEmail = async (
   params: BookingConfirmationEmailParams
 ): Promise<EmailResponse> => {
@@ -29,7 +34,7 @@ export const sendBookingConfirmationEmail = async (
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(params),
+      body: JSON.stringify({ booking_id: params.bookingId }),
     });
 
     if (!response.ok) {
@@ -39,11 +44,22 @@ export const sendBookingConfirmationEmail = async (
 
     const data = await response.json();
     return data;
-  } catch (error: any) {
-    console.error("Error sending booking confirmation email:", error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to send confirmation email";
+    console.error("Error sending booking confirmation email:", message);
     return {
       success: false,
-      error: error.message || "Failed to send confirmation email",
+      error: message,
     };
   }
+};
+
+/**
+ * Manually trigger a booking confirmation email resend.
+ * Useful for resending emails if the original failed.
+ */
+export const resendBookingConfirmation = async (
+  bookingId: number | string
+): Promise<EmailResponse> => {
+  return sendBookingConfirmationEmail({ bookingId });
 };

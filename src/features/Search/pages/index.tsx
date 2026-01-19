@@ -29,6 +29,12 @@ interface Service {
   location: string;
   service_image: any;
   default_price: number;
+  service_type?: string;
+  daily_slots?: number | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  duration?: number | null;
+  days?: any;
 }
 
 export const SearchPage = () => {
@@ -48,8 +54,84 @@ export const SearchPage = () => {
     new Intl.NumberFormat("en-AE", {
       style: "currency",
       currency: "AED",
-      maximumFractionDigits: 2,
-    }).format(value);
+      maximumFractionDigits: 0,
+    }).format(Number(value ?? 0));
+
+  const formatTime = (t: string | null | undefined) => {
+    if (!t) return null;
+    const d = new Date(`1970-01-01T${t}`);
+    if (Number.isNaN(d.getTime())) return t;
+    return d.toLocaleTimeString("en-AE", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const formatDuration = (hours: number | string | null | undefined) => {
+    const v = Number(hours);
+    if (!Number.isFinite(v) || v <= 0) return null;
+    return v === 1 ? "1 hour" : `${v} hours`;
+  };
+
+  const formatDays = (value: any): string | null => {
+    if (!value) return null;
+    try {
+      if (Array.isArray(value)) return value.join(", ");
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!trimmed) return null;
+        if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+          const parsed = JSON.parse(trimmed);
+          return formatDays(parsed);
+        }
+        return trimmed;
+      }
+      if (typeof value === "object") {
+        if (Array.isArray((value as any).days))
+          return (value as any).days.join(", ");
+        const keys = Object.keys(value).filter((k) => (value as any)[k]);
+        return keys.length ? keys.join(", ") : null;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  };
+
+  const getServiceImages = (service: Service): string[] => {
+    try {
+      const imgVal: any = service.service_image;
+
+      if (typeof imgVal === "string") {
+        const parsed = JSON.parse(imgVal);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map((x) => (typeof x === "string" ? x : x?.url))
+            .filter((u) => typeof u === "string" && u.trim() !== "");
+        }
+      }
+
+      if (Array.isArray(imgVal)) {
+        return imgVal
+          .map((x) => (typeof x === "string" ? x : x?.url))
+          .filter((u) => typeof u === "string" && u.trim() !== "");
+      }
+
+      if (Array.isArray((service as any).service_image?.url)) {
+        return (service as any).service_image.url.filter(
+          (u: unknown) => typeof u === "string" && u.trim() !== "",
+        );
+      }
+
+      if (typeof imgVal?.url === "string" && imgVal.url.trim() !== "") {
+        return [imgVal.url];
+      }
+    } catch (e) {
+      console.warn("Error parsing images:", e);
+    }
+
+    return ["/assets/burjKhalifa.jpg"];
+  };
 
   useEffect(() => {
     fetchServices();
@@ -96,14 +178,14 @@ export const SearchPage = () => {
           service.service_description
             ?.toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
-          service.location?.toLowerCase().includes(searchQuery.toLowerCase())
+          service.location?.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
     filtered = filtered.filter(
       (service) =>
         service.default_price >= priceRange[0] &&
-        service.default_price <= priceRange[1]
+        service.default_price <= priceRange[1],
     );
 
     switch (sortBy) {
@@ -118,24 +200,6 @@ export const SearchPage = () => {
     }
 
     setFilteredServices(filtered);
-  };
-
-  const getServiceImages = (service: Service): string[] => {
-    try {
-      if (typeof service.service_image === "string") {
-        const parsed = JSON.parse(service.service_image);
-        if (Array.isArray(parsed)) return parsed.filter((img) => img);
-      }
-      if (Array.isArray((service as any).service_image?.url)) {
-        return (service as any).service_image.url.filter((img: string) => img);
-      }
-      if (Array.isArray(service.service_image)) {
-        return service.service_image.filter((img) => img);
-      }
-    } catch (e) {
-      console.warn("Error parsing images:", e);
-    }
-    return ["/assets/burjKhalifa.jpg"];
   };
 
   const handleServiceClick = (service: Service) => {
@@ -416,48 +480,76 @@ export const SearchPage = () => {
                             color="text.secondary"
                             sx={{
                               mb: 1,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              display: "-webkit-box",
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: "vertical",
-                            }}
-                          >
-                            {service.service_description}
-                          </Typography>
-
-                          <Box
-                            sx={{
                               display: "flex",
                               alignItems: "center",
-                              justifyContent: "space-between",
-                              gap: 1,
                             }}
                           >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <LocationOn
-                                sx={{ fontSize: 16, color: "#9e9e9e" }}
-                              />
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                              >
-                                {service.location || "Dubai"}
-                              </Typography>
-                            </Box>
+                            <LocationOn sx={{ fontSize: 16, mr: 0.5 }} />{" "}
+                            {service.location}
+                            {service.service_type
+                              ? ` • ${service.service_type}`
+                              : ""}
+                          </Typography>
+
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mb: 2, lineHeight: 1.4 }}
+                          >
+                            {service.service_description ||
+                              "Premium experience curated by Travel Guroo."}
+                          </Typography>
+
+                          <Typography
+                            sx={{ fontWeight: 800, fontSize: 18, mb: 1 }}
+                          >
+                            {formatAED(service.default_price)}
+                          </Typography>
+
+                          {(service.start_time || service.end_time) && (
                             <Typography
-                              variant="h6"
-                              sx={{ fontWeight: 700, color: "#FF621F" }}
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
                             >
-                              {formatAED(service.default_price)}
+                              Time: {formatTime(service.start_time) ?? "—"} –{" "}
+                              {formatTime(service.end_time) ?? "—"}
                             </Typography>
-                          </Box>
+                          )}
+
+                          {service.duration != null && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
+                            >
+                              Duration:{" "}
+                              {formatDuration(service.duration) ?? "—"}
+                            </Typography>
+                          )}
+
+                          {service.daily_slots != null && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
+                            >
+                              Daily slots:{" "}
+                              {Number(service.daily_slots).toLocaleString(
+                                "en-AE",
+                              )}
+                            </Typography>
+                          )}
+
+                          {service.days && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
+                            >
+                              Available: {formatDays(service.days) ?? "—"}
+                            </Typography>
+                          )}
                         </CardContent>
                       </Card>
                     );

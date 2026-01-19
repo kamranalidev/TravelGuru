@@ -7,19 +7,18 @@ import {
   CardMedia,
   CardContent,
   Typography,
-  Chip,
   Stack,
   Button,
   Paper,
-  Divider,
   FormControl,
   MenuItem,
   Select,
   Slider,
+  InputBase,
 } from "@mui/material";
 import { Header, Footer } from "../../../components";
 import { supabase } from "../../../supabaseClient";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
+import SearchIcon from "@mui/icons-material/Search";
 import "./index.css";
 
 type Service = {
@@ -29,38 +28,103 @@ type Service = {
   location: string;
   service_image: any;
   default_price: number;
+  service_type?: string;
+  daily_slots?: number | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  duration?: number | null;
+  days?: any;
 };
 
 const getServiceImages = (service: Service): string[] => {
   try {
-    if (typeof service.service_image === "string") {
-      const parsed = JSON.parse(service.service_image);
+    const imgVal: any = service.service_image;
+
+    // service_image may be a JSON string
+    if (typeof imgVal === "string") {
+      const parsed = JSON.parse(imgVal);
       if (Array.isArray(parsed)) {
-        return parsed.filter(
-          (img) => typeof img === "string" && img.trim() !== ""
-        );
+        return parsed
+          .map((x) => (typeof x === "string" ? x : x?.url))
+          .filter((u) => typeof u === "string" && u.trim() !== "");
       }
     }
-    if (Array.isArray(service.service_image?.url)) {
-      return service.service_image.url.filter(
-        (img: string) => typeof img === "string" && img.trim() !== ""
+
+    // service_image may be an array (jsonb) of either strings or { url, path }
+    if (Array.isArray(imgVal)) {
+      return imgVal
+        .map((x) => (typeof x === "string" ? x : x?.url))
+        .filter((u) => typeof u === "string" && u.trim() !== "");
+    }
+
+    // legacy shape: { url: string[] }
+    if (Array.isArray(imgVal?.url)) {
+      return imgVal.url.filter(
+        (u: unknown) => typeof u === "string" && u.trim() !== "",
       );
     }
-    if (Array.isArray(service.service_image)) {
-      return service.service_image.filter(
-        (img: string) => typeof img === "string" && img.trim() !== ""
-      );
+
+    // single object: { url: string }
+    if (typeof imgVal?.url === "string" && imgVal.url.trim() !== "") {
+      return [imgVal.url];
     }
   } catch (_e) {}
+
   return ["/assets/burjKhalifa.jpg"];
 };
 
 const formatAED = (amount: number | null | undefined) => {
   const value = Number(amount ?? 0);
-  return `AED ${value.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
+  return new Intl.NumberFormat("en-AE", {
+    style: "currency",
+    currency: "AED",
     maximumFractionDigits: 0,
-  })}`;
+  }).format(value);
+};
+
+const formatTime = (t: string | null | undefined) => {
+  if (!t) return null;
+  // DB stores time without time zone like "14:30:00".
+  // Convert to a safe ISO string for formatting.
+  const d = new Date(`1970-01-01T${t}`);
+  if (Number.isNaN(d.getTime())) return t;
+  return d.toLocaleTimeString("en-AE", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const formatDuration = (hours: number | string | null | undefined) => {
+  const v = Number(hours);
+  if (!Number.isFinite(v) || v <= 0) return null;
+  return v === 1 ? "1 hour" : `${v} hours`;
+};
+
+const formatDays = (value: any): string | null => {
+  if (!value) return null;
+  try {
+    if (Array.isArray(value)) return value.join(", ");
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      // might be json string
+      if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+        const parsed = JSON.parse(trimmed);
+        return formatDays(parsed);
+      }
+      return trimmed;
+    }
+    if (typeof value === "object") {
+      // common cases: { mon: true, tue: false } or { days: [...] }
+      if (Array.isArray((value as any).days))
+        return (value as any).days.join(", ");
+      const keys = Object.keys(value).filter((k) => (value as any)[k]);
+      return keys.length ? keys.join(", ") : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
 };
 
 const SORT_OPTIONS = [
@@ -73,11 +137,7 @@ export const ServicesPage = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("recommended");
-  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
-  const [datePreset, setDatePreset] = useState<"today" | "tomorrow" | "all">(
-    "all"
-  );
-  const [instantConfirmOnly, setInstantConfirmOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [priceRange, setPriceRange] = useState<number[]>([0, 6000]);
   const navigate = useNavigate();
 
@@ -103,17 +163,10 @@ export const ServicesPage = () => {
     fetchServices();
   }, []);
 
-  const locationOptions = useMemo(() => {
-    const set = new Set(
-      services.map((s) => (s.location ?? "").trim()).filter((v) => v.length > 0)
-    );
-    return Array.from(set).sort();
-  }, [services]);
-
   const derivedMaxPrice = useMemo(() => {
     const max = services.reduce(
       (acc, s) => Math.max(acc, Number(s.default_price ?? 0)),
-      0
+      0,
     );
     return Math.max(1000, Math.ceil(max / 100) * 100);
   }, [services]);
@@ -125,43 +178,37 @@ export const ServicesPage = () => {
   const filteredAndSorted = useMemo(() => {
     let list = [...services];
 
-    if (selectedLocations.length > 0) {
-      list = list.filter((s) => selectedLocations.includes(s.location));
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      list = list.filter(
+        (s) =>
+          s.service_name?.toLowerCase().includes(query) ||
+          s.service_description?.toLowerCase().includes(query) ||
+          s.location?.toLowerCase().includes(query),
+      );
     }
 
+    // Filter by price range
     const [minP, maxP] = priceRange;
     list = list.filter((s) => {
       const p = Number(s.default_price ?? 0);
       return p >= minP && p <= maxP;
     });
 
-    if (instantConfirmOnly) {
-      list = list;
-    }
-
-    if (datePreset) {
-      list = list;
-    }
-
+    // Sort
     if (sortBy === "price_asc") {
       list.sort(
-        (a, b) => Number(a.default_price ?? 0) - Number(b.default_price ?? 0)
+        (a, b) => Number(a.default_price ?? 0) - Number(b.default_price ?? 0),
       );
     } else if (sortBy === "price_desc") {
       list.sort(
-        (a, b) => Number(b.default_price ?? 0) - Number(a.default_price ?? 0)
+        (a, b) => Number(b.default_price ?? 0) - Number(a.default_price ?? 0),
       );
     }
 
     return list;
-  }, [
-    services,
-    selectedLocations,
-    priceRange,
-    instantConfirmOnly,
-    datePreset,
-    sortBy,
-  ]);
+  }, [services, searchQuery, priceRange, sortBy]);
 
   const resultsCount = loading ? 0 : filteredAndSorted.length;
 
@@ -185,16 +232,15 @@ export const ServicesPage = () => {
     navigate(`/bookings/${service.id}`, { state: servicePayload });
   };
 
-  const toggleLocation = (loc: string) => {
-    setSelectedLocations((prev) =>
-      prev.includes(loc) ? prev.filter((x) => x !== loc) : [...prev, loc]
-    );
-  };
-
   type SortChangeEvent = { target: { value: string } };
 
   const handleSortChange = (e: SortChangeEvent) => {
     setSortBy(e.target.value);
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setPriceRange([0, derivedMaxPrice]);
   };
 
   return (
@@ -204,11 +250,12 @@ export const ServicesPage = () => {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "360px 1fr" },
+            gridTemplateColumns: { xs: "1fr", lg: "280px 1fr" },
             gap: 3,
             alignItems: "start",
           }}
         >
+          {/* Sidebar Filters */}
           <Paper
             elevation={0}
             sx={{
@@ -220,113 +267,43 @@ export const ServicesPage = () => {
               top: { lg: 90 },
             }}
           >
+            {/* Search */}
             <Box sx={{ p: 2.5 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 18, mb: 1.5 }}>
-                Location
+              <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 1.5 }}>
+                Search
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-                {locationOptions.length === 0 ? (
-                  <Chip label="Dubai" size="small" variant="outlined" />
-                ) : (
-                  locationOptions.map((loc) => (
-                    <Chip
-                      key={loc}
-                      label={loc}
-                      onClick={() => toggleLocation(loc)}
-                      variant={
-                        selectedLocations.includes(loc) ? "filled" : "outlined"
-                      }
-                      sx={{
-                        borderRadius: 2,
-                        fontWeight: 600,
-                        mb: 1,
-                        bgcolor: selectedLocations.includes(loc)
-                          ? "#111827"
-                          : "transparent",
-                        color: selectedLocations.includes(loc)
-                          ? "white"
-                          : "#111827",
-                        borderColor: "#d0d5dd",
-                        "&:hover": {
-                          bgcolor: selectedLocations.includes(loc)
-                            ? "#111827"
-                            : "#f3f4f6",
-                        },
-                      }}
-                    />
-                  ))
-                )}
-              </Stack>
+              <Paper
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  px: 2,
+                  py: 1,
+                  borderRadius: 2,
+                  border: "1px solid #e5e7eb",
+                  bgcolor: "#f9fafb",
+                }}
+              >
+                <SearchIcon sx={{ color: "#9ca3af", mr: 1, fontSize: 20 }} />
+                <InputBase
+                  placeholder="Search experiences..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  sx={{
+                    flex: 1,
+                    fontSize: 14,
+                    "& input::placeholder": {
+                      color: "#9ca3af",
+                      opacity: 1,
+                    },
+                  }}
+                />
+              </Paper>
             </Box>
 
-            <Divider />
-
-            <Box sx={{ p: 2.5 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 18, mb: 1.5 }}>
-                Dates
-              </Typography>
-              <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-                <Button
-                  variant={datePreset === "today" ? "contained" : "outlined"}
-                  onClick={() => setDatePreset("today")}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: "none",
-                    fontWeight: 700,
-                    bgcolor: datePreset === "today" ? "#111827" : "transparent",
-                    borderColor: "#d0d5dd",
-                    color: datePreset === "today" ? "white" : "#111827",
-                    "&:hover": {
-                      bgcolor: datePreset === "today" ? "#111827" : "#f3f4f6",
-                    },
-                  }}
-                >
-                  Today
-                </Button>
-                <Button
-                  variant={datePreset === "tomorrow" ? "contained" : "outlined"}
-                  onClick={() => setDatePreset("tomorrow")}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: "none",
-                    fontWeight: 700,
-                    bgcolor:
-                      datePreset === "tomorrow" ? "#111827" : "transparent",
-                    borderColor: "#d0d5dd",
-                    color: datePreset === "tomorrow" ? "white" : "#111827",
-                    "&:hover": {
-                      bgcolor:
-                        datePreset === "tomorrow" ? "#111827" : "#f3f4f6",
-                    },
-                  }}
-                >
-                  Tomorrow
-                </Button>
-                <Button
-                  variant={datePreset === "all" ? "contained" : "outlined"}
-                  onClick={() => setDatePreset("all")}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: "none",
-                    fontWeight: 700,
-                    bgcolor: datePreset === "all" ? "#111827" : "transparent",
-                    borderColor: "#d0d5dd",
-                    color: datePreset === "all" ? "white" : "#111827",
-                    "&:hover": {
-                      bgcolor: datePreset === "all" ? "#111827" : "#f3f4f6",
-                    },
-                  }}
-                >
-                  All dates
-                </Button>
-              </Stack>
-            </Box>
-
-            <Divider />
-
-            <Box sx={{ p: 2.5 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 18, mb: 1.5 }}>
-                Price range
+            {/* Price Range */}
+            <Box sx={{ p: 2.5, borderTop: "1px solid #e9ecef" }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 1.5 }}>
+                Price Range
               </Typography>
               <Slider
                 value={priceRange}
@@ -339,10 +316,19 @@ export const ServicesPage = () => {
                   "& .MuiSlider-thumb": {
                     bgcolor: "white",
                     border: "2px solid #FF621F",
+                    width: 18,
+                    height: 18,
+                  },
+                  "& .MuiSlider-track": {
+                    height: 4,
+                  },
+                  "& .MuiSlider-rail": {
+                    height: 4,
+                    bgcolor: "#e5e7eb",
                   },
                 }}
               />
-              <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+              <Stack direction="row" spacing={2} sx={{ mt: 1.5 }}>
                 <Paper
                   variant="outlined"
                   sx={{
@@ -351,9 +337,12 @@ export const ServicesPage = () => {
                     py: 1,
                     borderRadius: 2,
                     borderColor: "#e5e7eb",
+                    textAlign: "center",
                   }}
                 >
-                  <Typography sx={{ fontWeight: 800, fontSize: 14 }}>
+                  <Typography
+                    sx={{ fontWeight: 700, fontSize: 13, color: "#374151" }}
+                  >
                     {formatAED(priceRange[0])}
                   </Typography>
                 </Paper>
@@ -365,57 +354,65 @@ export const ServicesPage = () => {
                     py: 1,
                     borderRadius: 2,
                     borderColor: "#e5e7eb",
+                    textAlign: "center",
                   }}
                 >
-                  <Typography sx={{ fontWeight: 800, fontSize: 14 }}>
+                  <Typography
+                    sx={{ fontWeight: 700, fontSize: 13, color: "#374151" }}
+                  >
                     {formatAED(priceRange[1])}
                   </Typography>
                 </Paper>
               </Stack>
             </Box>
 
-            <Divider />
-
-            <Box sx={{ p: 2.5 }}>
-              <Typography sx={{ fontWeight: 800, fontSize: 18, mb: 1.5 }}>
-                Others
-              </Typography>
+            {/* Clear Filters */}
+            <Box sx={{ p: 2.5, borderTop: "1px solid #e9ecef" }}>
               <Button
-                variant={instantConfirmOnly ? "contained" : "outlined"}
-                onClick={() => setInstantConfirmOnly((p) => !p)}
+                fullWidth
+                variant="outlined"
+                onClick={clearFilters}
                 sx={{
                   borderRadius: 2,
                   textTransform: "none",
-                  fontWeight: 800,
-                  bgcolor: instantConfirmOnly ? "#111827" : "transparent",
+                  fontWeight: 600,
+                  py: 1,
                   borderColor: "#d0d5dd",
-                  color: instantConfirmOnly ? "white" : "#111827",
+                  color: "#374151",
                   "&:hover": {
-                    bgcolor: instantConfirmOnly ? "#111827" : "#f3f4f6",
+                    bgcolor: "#f3f4f6",
+                    borderColor: "#d0d5dd",
                   },
                 }}
               >
-                Instant confirmation
+                Clear Filters
               </Button>
             </Box>
           </Paper>
 
+          {/* Main Content */}
           <Box>
+            {/* Header with results count and sort */}
             <Box
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: { xs: "flex-start", md: "center" },
+                flexDirection: { xs: "column", sm: "row" },
                 gap: 2,
-                mb: 2,
+                mb: 3,
               }}
             >
-              <Typography sx={{ fontWeight: 700, color: "#111827" }}>
-                {loading ? "Loading..." : `${resultsCount} results found`}
+              <Typography
+                sx={{ fontWeight: 700, color: "#111827", fontSize: 15 }}
+              >
+                {loading ? "Loading..." : `${resultsCount} experiences found`}
               </Typography>
 
               <Stack direction="row" spacing={1} alignItems="center">
-                <Typography sx={{ color: "#6b7280", fontWeight: 600 }}>
+                <Typography
+                  sx={{ color: "#6b7280", fontWeight: 500, fontSize: 14 }}
+                >
                   Sort by
                 </Typography>
                 <FormControl size="small">
@@ -425,7 +422,8 @@ export const ServicesPage = () => {
                     sx={{
                       borderRadius: 2,
                       bgcolor: "white",
-                      minWidth: 190,
+                      minWidth: 170,
+                      fontSize: 14,
                       "& .MuiOutlinedInput-notchedOutline": {
                         borderColor: "#e5e7eb",
                       },
@@ -441,13 +439,15 @@ export const ServicesPage = () => {
               </Stack>
             </Box>
 
+            {/* Services Grid - Klook Style */}
             <Box
               sx={{
                 display: "grid",
                 gridTemplateColumns: {
-                  xs: "1fr",
+                  xs: "repeat(2, 1fr)",
                   sm: "repeat(2, 1fr)",
                   md: "repeat(3, 1fr)",
+                  lg: "repeat(4, 1fr)",
                 },
                 gap: 2.5,
               }}
@@ -471,132 +471,175 @@ export const ServicesPage = () => {
                     </Typography>
                   </Box>
                 </Box>
+              ) : filteredAndSorted.length === 0 ? (
+                <Box
+                  sx={{
+                    gridColumn: "1 / -1",
+                    textAlign: "center",
+                    py: 8,
+                  }}
+                >
+                  <Typography sx={{ color: "#6b7280", fontSize: 16 }}>
+                    No experiences found matching your criteria.
+                  </Typography>
+                  <Button
+                    onClick={clearFilters}
+                    sx={{
+                      mt: 2,
+                      textTransform: "none",
+                      fontWeight: 600,
+                      color: "#FF621F",
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                </Box>
               ) : (
                 filteredAndSorted.map((service) => {
                   const images = getServiceImages(service);
+
                   return (
                     <Card
                       key={service.id}
+                      onClick={() => handleServiceClick(service)}
                       sx={{
-                        borderRadius: 3,
+                        borderRadius: "12px",
                         overflow: "hidden",
                         bgcolor: "white",
-                        border: "1px solid #e9ecef",
-                        boxShadow: "0 10px 26px rgba(16, 24, 40, 0.06)",
-                        transition:
-                          "transform 140ms ease, box-shadow 140ms ease",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                        border: "1px solid #e5e7eb",
                         cursor: "pointer",
+                        display: "flex",
+                        flexDirection: "column",
+                        transition: "transform 0.2s ease, box-shadow 0.2s ease",
                         "&:hover": {
-                          transform: "translateY(-2px)",
-                          boxShadow: "0 14px 32px rgba(16, 24, 40, 0.12)",
+                          transform: "translateY(-4px)",
+                          boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
+                        },
+                        "&:hover .service-image": {
+                          transform: "scale(1.05)",
                         },
                       }}
-                      onClick={() => handleServiceClick(service)}
                     >
-                      <Box sx={{ position: "relative" }}>
+                      {/* Image Container */}
+                      <Box
+                        sx={{
+                          position: "relative",
+                          width: "100%",
+                          paddingTop: "75%",
+                          overflow: "hidden",
+                          borderRadius: "12px",
+                          bgcolor: "#f5f5f5",
+                        }}
+                      >
                         <CardMedia
                           component="img"
-                          height="220"
                           image={images[0]}
                           alt={service.service_name}
-                          sx={{ objectFit: "cover" }}
+                          className="service-image"
+                          sx={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                            bgcolor: "#f5f5f5",
+                            transition: "transform 0.3s ease",
+                          }}
                         />
                       </Box>
 
+                      {/* Content */}
                       <CardContent sx={{ p: 2.5 }}>
                         <Typography
-                          sx={{
-                            color: "#6b7280",
-                            fontWeight: 600,
-                            fontSize: 14,
-                            mb: 0.5,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                          }}
-                        >
-                          <LocationOnIcon sx={{ fontSize: 16 }} />
-                          {service.location || "Dubai"}
-                        </Typography>
-
-                        <Typography
-                          sx={{
-                            fontSize: 18,
-                            fontWeight: 800,
-                            color: "#111827",
-                            lineHeight: 1.2,
-                            mb: 2,
-                            minHeight: 44,
-                            overflow: "hidden",
-                            display: "-webkit-box",
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: "vertical",
-                          }}
+                          sx={{ fontWeight: 800, fontSize: 18, mb: 0.75 }}
                         >
                           {service.service_name}
                         </Typography>
 
+                        <Stack direction="row" spacing={1.5} sx={{ mb: 1.5 }}>
+                          <Typography sx={{ color: "#6b7280", fontSize: 13 }}>
+                            {service.location}
+                          </Typography>
+                          {service.service_type ? (
+                            <Typography sx={{ color: "#6b7280", fontSize: 13 }}>
+                              • {service.service_type}
+                            </Typography>
+                          ) : null}
+                        </Stack>
+
                         <Typography
                           sx={{
-                            color: "#6b7280",
+                            color: "#374151",
                             fontSize: 14,
+                            lineHeight: 1.5,
                             mb: 2,
-                            overflow: "hidden",
                             display: "-webkit-box",
                             WebkitLineClamp: 2,
                             WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
                           }}
                         >
-                          {service.service_description || ""}
+                          {service.service_description ||
+                            "Premium experience curated by Travel Guroo."}
                         </Typography>
 
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            gap: 2,
-                          }}
-                        >
-                          <Box>
-                            <Typography
-                              sx={{
-                                color: "#6b7280",
-                                fontSize: 13,
-                                fontWeight: 700,
-                              }}
-                            >
-                              From
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontWeight: 900,
-                                fontSize: 18,
-                                color: "#111827",
-                              }}
-                            >
-                              {formatAED(service.default_price)}
-                            </Typography>
-                          </Box>
-
-                          <Button
-                            variant="contained"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleServiceClick(service);
-                            }}
+                        <Stack spacing={0.5} sx={{ mb: 2 }}>
+                          <Typography
                             sx={{
-                              borderRadius: 2,
-                              textTransform: "none",
-                              fontWeight: 900,
-                              px: 2.5,
-                              bgcolor: "#111827",
-                              "&:hover": { bgcolor: "#374151" },
+                              fontWeight: 800,
+                              fontSize: 18,
+                              color: "#111827",
                             }}
                           >
-                            View details
-                          </Button>
-                        </Box>
+                            {formatAED(service.default_price)}
+                          </Typography>
+
+                          {service.start_time || service.end_time ? (
+                            <Typography sx={{ color: "#6b7280", fontSize: 13 }}>
+                              Time: {formatTime(service.start_time) ?? "—"} –{" "}
+                              {formatTime(service.end_time) ?? "—"}
+                            </Typography>
+                          ) : null}
+
+                          {service.duration != null ? (
+                            <Typography sx={{ color: "#6b7280", fontSize: 13 }}>
+                              Duration:{" "}
+                              {formatDuration(service.duration) ?? "—"}
+                            </Typography>
+                          ) : null}
+
+                          {service.daily_slots != null ? (
+                            <Typography sx={{ color: "#6b7280", fontSize: 13 }}>
+                              Daily slots:{" "}
+                              {Number(service.daily_slots).toLocaleString(
+                                "en-AE",
+                              )}
+                            </Typography>
+                          ) : null}
+
+                          {service.days ? (
+                            <Typography sx={{ color: "#6b7280", fontSize: 13 }}>
+                              Available: {formatDays(service.days) ?? "—"}
+                            </Typography>
+                          ) : null}
+                        </Stack>
+
+                        <Button
+                          variant="contained"
+                          onClick={() => handleServiceClick(service)}
+                          sx={{
+                            textTransform: "none",
+                            bgcolor: "#FF621F",
+                            borderRadius: 2,
+                            fontWeight: 700,
+                            "&:hover": { bgcolor: "#e45417" },
+                          }}
+                          fullWidth
+                        >
+                          View details
+                        </Button>
                       </CardContent>
                     </Card>
                   );

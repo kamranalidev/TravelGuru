@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Header,
@@ -14,6 +14,24 @@ import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import ScheduleIcon from "@mui/icons-material/Schedule";
+
+// Helper functions for formatting service details
+const formatTime = (t: string | null | undefined) => {
+  if (!t) return null;
+  const d = new Date(`1970-01-01T${t}`);
+  if (Number.isNaN(d.getTime())) return t;
+  return d.toLocaleTimeString("en-AE", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const formatDuration = (hours: number | string | null | undefined) => {
+  const v = Number(hours);
+  if (!Number.isFinite(v) || v <= 0) return null;
+  return v === 1 ? "1 hr" : `${v} hrs`;
+};
 
 const ServiceImageGallery = ({ service }: { service: any }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -41,73 +59,80 @@ const ServiceImageGallery = ({ service }: { service: any }) => {
   };
 
   return (
-    <div className="serviceImageWrapper">
-      <div className="imageContainer">
-        <img
-          src={images[currentImageIndex]}
-          alt={service.service_name || "Dubai service"}
-          className="serviceImage"
-          onError={handleImageError}
-        />
-        {images.length > 1 && (
-          <>
-            <button
-              className="imageNavButton prevButton"
-              onClick={prevImage}
-              aria-label="Previous image"
-            >
-              &#8249;
-            </button>
-            <button
-              className="imageNavButton nextButton"
-              onClick={nextImage}
-              aria-label="Next image"
-            >
-              &#8250;
-            </button>
-            <div className="imageIndicators">
-              {images.map((_, index) => (
-                <div
-                  key={index}
-                  className={`indicator ${
-                    index === currentImageIndex ? "active" : ""
-                  }`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentImageIndex(index);
-                  }}
-                />
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    </div>
+    <>
+      <img
+        src={images[currentImageIndex]}
+        alt={service.service_name || "Dubai service"}
+        className="serviceImage"
+        onError={handleImageError}
+      />
+      {images.length > 1 && (
+        <>
+          <button
+            className="imageNavButton prevButton"
+            onClick={prevImage}
+            aria-label="Previous image"
+          >
+            &#8249;
+          </button>
+          <button
+            className="imageNavButton nextButton"
+            onClick={nextImage}
+            aria-label="Next image"
+          >
+            &#8250;
+          </button>
+          <div className="imageIndicators">
+            {images.map((_, index) => (
+              <div
+                key={index}
+                className={`indicator ${
+                  index === currentImageIndex ? "active" : ""
+                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex(index);
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </>
   );
 };
 
 const getServiceImages = (service: any): string[] => {
   try {
     let images: string[] = [];
+    const imgVal = service?.service_image;
 
-    if (service?.service_image && typeof service.service_image === "string") {
-      const parsedImages = JSON.parse(service.service_image);
-      if (Array.isArray(parsedImages)) {
-        images = parsedImages.filter(
-          (img: any) => typeof img === "string" && img.trim() !== ""
+    if (imgVal) {
+      // Handle JSON string format from database
+      if (typeof imgVal === "string") {
+        const parsedImages = JSON.parse(imgVal);
+        if (Array.isArray(parsedImages)) {
+          images = parsedImages
+            .map((x: any) => (typeof x === "string" ? x : x?.url))
+            .filter((u: any) => typeof u === "string" && u.trim() !== "");
+        }
+      }
+      // Handle direct array (may contain strings or { url, path } objects)
+      else if (Array.isArray(imgVal)) {
+        images = imgVal
+          .map((x: any) => (typeof x === "string" ? x : x?.url))
+          .filter((u: any) => typeof u === "string" && u.trim() !== "");
+      }
+      // Handle object with url array
+      else if (Array.isArray(imgVal?.url)) {
+        images = imgVal.url.filter(
+          (img: any) => typeof img === "string" && img.trim() !== "",
         );
       }
-    } else if (
-      service?.service_image &&
-      Array.isArray(service.service_image.url)
-    ) {
-      images = service.service_image.url.filter(
-        (img: any) => typeof img === "string" && img.trim() !== ""
-      );
-    } else if (Array.isArray(service?.service_image)) {
-      images = service.service_image.filter(
-        (img: any) => typeof img === "string" && img.trim() !== ""
-      );
+      // Handle single object: { url: string }
+      else if (typeof imgVal?.url === "string" && imgVal.url.trim() !== "") {
+        images = [imgVal.url];
+      }
     }
 
     return images.length > 0 ? images : ["/assets/desertSafari.jpg"];
@@ -121,9 +146,20 @@ export const Homepage = () => {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [testimonials, setTestimonials] = useState<
+    {
+      id: number;
+      text: string;
+      name: string;
+      location: string;
+    }[]
+  >([]);
+  const [testimonialsError, setTestimonialsError] = useState("");
   const [currentHeroImageIndex, setCurrentHeroImageIndex] = useState(0);
   const [imageLoaded, setImageLoaded] = useState(true);
   const navigate = useNavigate();
+  const servicesCarouselRef = useRef<HTMLDivElement | null>(null);
+  const testimonialsCarouselRef = useRef<HTMLDivElement | null>(null);
 
   const dubaiImages = [
     "/assets/DhowCruise.jpg",
@@ -132,13 +168,15 @@ export const Homepage = () => {
     "/assets/AirPort.avif",
   ];
 
+  const testimonialsCount = testimonials.length;
+
   useEffect(() => {
     const fetchServices = async () => {
       try {
         const { data, error } = await supabase
           .from("services")
           .select(
-            "id, service_name, service_description, location, service_image, default_price"
+            "id, service_name, service_description, location, service_image, default_price, service_type, daily_slots, start_time, end_time, duration, days",
           )
           .order("created_at", { ascending: true });
         console.log("Fetched services data:", data, error);
@@ -167,11 +205,94 @@ export const Homepage = () => {
   }, []);
 
   useEffect(() => {
+    const fetchTestimonials = async () => {
+      if (!services.length) {
+        setTestimonials([]);
+        setTestimonialsError("");
+        return;
+      }
+
+      setTestimonialsError("");
+      const serviceIds = services.map((service) => service.id).filter(Boolean);
+      if (serviceIds.length === 0) {
+        setTestimonials([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("reviews")
+        .select(
+          `
+          id,
+          review,
+          rating,
+          booking_id,
+          user_profiles (
+            full_name
+          ),
+          bookings!inner (
+            service_id,
+            services (
+              service_name,
+              location
+            )
+          )
+        `,
+        )
+        .eq("rating", 5)
+        .in("bookings.service_id", serviceIds)
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (error) {
+        console.error("Error fetching testimonials:", error);
+        setTestimonialsError("Unable to load reviews right now.");
+        setTestimonials([]);
+        return;
+      }
+
+      const mapped = new Map<number, any>();
+      for (const row of data ?? []) {
+        const booking = Array.isArray(row.bookings)
+          ? row.bookings[0]
+          : row.bookings;
+        const serviceId = booking?.service_id
+          ? Number(booking.service_id)
+          : null;
+        if (!serviceId || mapped.has(serviceId)) continue;
+
+        const serviceData =
+          booking?.services && Array.isArray(booking.services)
+            ? booking.services[0]
+            : booking?.services;
+
+        const userProfile = Array.isArray(row.user_profiles)
+          ? row.user_profiles[0]
+          : row.user_profiles;
+
+        mapped.set(serviceId, {
+          id: row.id,
+          text: row.review ? `"${row.review}"` : `"Wonderful experience!"`,
+          name:
+            userProfile?.full_name?.trim() ||
+            (serviceData as any)?.service_name ||
+            "Guest",
+          location: (serviceData as any)?.location || "Traveler",
+        });
+      }
+
+      setTestimonials(Array.from(mapped.values()));
+    };
+
+    void fetchTestimonials();
+  }, [services]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setImageLoaded(false);
       setTimeout(() => {
         setCurrentHeroImageIndex(
-          (prevIndex) => (prevIndex + 1) % dubaiImages.length
+          (prevIndex) => (prevIndex + 1) % dubaiImages.length,
         );
       }, 200);
     }, 5000);
@@ -211,6 +332,20 @@ export const Homepage = () => {
       servicesSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
+
+  const scrollCarousel = (
+    ref: { current: HTMLDivElement | null },
+    direction: "prev" | "next",
+  ) => {
+    const el = ref.current;
+    if (!el) return;
+    const scrollAmount = el.clientWidth * 0.9;
+    const delta = direction === "next" ? scrollAmount : -scrollAmount;
+    el.scrollBy({ left: delta, behavior: "smooth" });
+  };
+
+  const isServicesCarousel = services.length > 3;
+  const isTestimonialsCarousel = testimonialsCount > 3;
 
   return (
     <div>
@@ -308,7 +443,31 @@ export const Homepage = () => {
             </Typography>
           </ScrollAnimation>
 
-          <div className="servicesGrid">
+          {isServicesCarousel && (
+            <div className="carouselControls">
+              <button
+                className="carouselButton"
+                onClick={() => scrollCarousel(servicesCarouselRef, "prev")}
+                aria-label="Previous services"
+              >
+                &#8249;
+              </button>
+              <button
+                className="carouselButton"
+                onClick={() => scrollCarousel(servicesCarouselRef, "next")}
+                aria-label="Next services"
+              >
+                &#8250;
+              </button>
+            </div>
+          )}
+
+          <div
+            className={`servicesGrid ${
+              isServicesCarousel ? "servicesCarousel" : ""
+            }`}
+            ref={servicesCarouselRef}
+          >
             {loading ? (
               <div className="servicesPlaceholder">Loading services...</div>
             ) : error ? (
@@ -328,26 +487,61 @@ export const Homepage = () => {
                     className="serviceCard"
                     onClick={() => handleServiceClick(service)}
                   >
-                    <ServiceImageGallery service={service} />
+                    <div className="serviceImageWrapper">
+                      {service.service_type && (
+                        <span
+                          className={`serviceTypeBadge ${service.service_type}`}
+                        >
+                          {service.service_type}
+                        </span>
+                      )}
+                      <ServiceImageGallery service={service} />
+                    </div>
                     <div className="serviceInfo">
                       <h3 className="serviceTitle">
                         {service.service_name || "Untitled Service"}
                       </h3>
                       <p className="serviceLocation">
-                        {service.location ? `📍 ${service.location}` : "Dubai"}
+                        📍 {service.location || "Dubai"}
                       </p>
                       <p className="serviceDescription">
                         {service.service_description ||
                           "Premium Dubai experience."}
                       </p>
+
+                      {/* Service Details */}
+                      <div className="serviceDetails">
+                        {(service.start_time || service.end_time) && (
+                          <span className="serviceDetailItem">
+                            <ScheduleIcon sx={{ fontSize: 14 }} />
+                            {formatTime(service.start_time) ?? "—"} –{" "}
+                            {formatTime(service.end_time) ?? "—"}
+                          </span>
+                        )}
+                        {service.duration &&
+                          formatDuration(service.duration) && (
+                            <span className="serviceDetailItem">
+                              <AccessTimeIcon sx={{ fontSize: 14 }} />
+                              {formatDuration(service.duration)}
+                            </span>
+                          )}
+                      </div>
+
                       <div className="serviceMeta">
-                        <span className="servicePrice">
-                          {formatPrice(service.default_price)}
-                        </span>
+                        <div className="servicePriceWrapper">
+                          <span className="servicePriceLabel">From</span>
+                          <span
+                            className={`servicePrice ${
+                              !service.default_price ? "contact" : ""
+                            }`}
+                          >
+                            {formatPrice(service.default_price)}
+                          </span>
+                        </div>
                         <ButtonComponent
-                          title="View Details"
+                          title="Book Now"
                           width="auto"
-                          style={{ padding: "10px 20px", fontSize: "0.95rem" }}
+                          style={{ padding: "8px 16px", fontSize: "0.85rem" }}
                         />
                       </div>
                     </div>
@@ -456,114 +650,74 @@ export const Homepage = () => {
               customers
             </Typography>
           </ScrollAnimation>
-          <Box
-            className="testimonialsGrid"
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                md: "repeat(3, minmax(0, 1fr))",
-              },
-              gap: 3,
-            }}
-          >
-            <Box>
-              <ScrollAnimation animationType="slideUp" delay={0}>
-                <Card className="testimonialCard">
-                  <CardContent>
-                    <div className="testimonialRating">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <StarIcon
-                          key={i}
-                          sx={{ color: "#FFD700", fontSize: 20 }}
-                        />
-                      ))}
-                    </div>
-                    <Typography className="testimonialText">
-                      "Amazing experience! The desert safari was absolutely
-                      incredible. The guides were knowledgeable and the whole
-                      trip was well organized."
-                    </Typography>
-                    <div className="testimonialAuthor">
-                      <div className="testimonialAvatar"></div>
-                      <div>
-                        <Typography className="testimonialName">
-                          Sarah Johnson
-                        </Typography>
-                        <Typography className="testimonialLocation">
-                          United States
-                        </Typography>
+          {isTestimonialsCarousel && (
+            <div className="carouselControls">
+              <button
+                className="carouselButton"
+                onClick={() => scrollCarousel(testimonialsCarouselRef, "prev")}
+                aria-label="Previous reviews"
+              >
+                &#8249;
+              </button>
+              <button
+                className="carouselButton"
+                onClick={() => scrollCarousel(testimonialsCarouselRef, "next")}
+                aria-label="Next reviews"
+              >
+                &#8250;
+              </button>
+            </div>
+          )}
+
+          {testimonialsError ? (
+            <div className="servicesPlaceholder">{testimonialsError}</div>
+          ) : testimonials.length === 0 ? (
+            <div className="servicesPlaceholder">
+              No 5-star reviews yet. Be the first to share your experience!
+            </div>
+          ) : (
+            <div
+              className={`testimonialsGrid ${
+                isTestimonialsCarousel ? "testimonialsCarousel" : ""
+              }`}
+              ref={testimonialsCarouselRef}
+            >
+              {testimonials.map((testimonial, index) => (
+                <ScrollAnimation
+                  key={`${testimonial.id}-${index}`}
+                  animationType="slideUp"
+                  delay={index * 100}
+                >
+                  <Card className="testimonialCard">
+                    <CardContent>
+                      <div className="testimonialRating">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <StarIcon
+                            key={i}
+                            sx={{ color: "#FFD700", fontSize: 20 }}
+                          />
+                        ))}
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </ScrollAnimation>
-            </Box>
-            <Box>
-              <ScrollAnimation animationType="slideUp" delay={100}>
-                <Card className="testimonialCard">
-                  <CardContent>
-                    <div className="testimonialRating">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <StarIcon
-                          key={i}
-                          sx={{ color: "#FFD700", fontSize: 20 }}
-                        />
-                      ))}
-                    </div>
-                    <Typography className="testimonialText">
-                      "Best tour company in Dubai! Professional service, great
-                      prices, and unforgettable memories. Highly recommend to
-                      everyone!"
-                    </Typography>
-                    <div className="testimonialAuthor">
-                      <div className="testimonialAvatar"></div>
-                      <div>
-                        <Typography className="testimonialName">
-                          Michael Chen
-                        </Typography>
-                        <Typography className="testimonialLocation">
-                          Singapore
-                        </Typography>
+                      <Typography className="testimonialText">
+                        {testimonial.text}
+                      </Typography>
+                      <div className="testimonialAuthor">
+                        <div className="testimonialAvatar"></div>
+                        <div>
+                          <Typography className="testimonialName">
+                            {testimonial.name}
+                          </Typography>
+                          <Typography className="testimonialLocation">
+                            {testimonial.location}
+                          </Typography>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </ScrollAnimation>
-            </Box>
-            <Box>
-              <ScrollAnimation animationType="slideUp" delay={200}>
-                <Card className="testimonialCard">
-                  <CardContent>
-                    <div className="testimonialRating">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <StarIcon
-                          key={i}
-                          sx={{ color: "#FFD700", fontSize: 20 }}
-                        />
-                      ))}
-                    </div>
-                    <Typography className="testimonialText">
-                      "Exceeded all expectations! The city tour was fantastic
-                      and the booking process was so easy. Will definitely book
-                      again!"
-                    </Typography>
-                    <div className="testimonialAuthor">
-                      <div className="testimonialAvatar"></div>
-                      <div>
-                        <Typography className="testimonialName">
-                          Emma Williams
-                        </Typography>
-                        <Typography className="testimonialLocation">
-                          United Kingdom
-                        </Typography>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </ScrollAnimation>
-            </Box>
-          </Box>
+                    </CardContent>
+                  </Card>
+                </ScrollAnimation>
+              ))}
+            </div>
+          )}
         </div>
       </Box>
       <Box className="subscribe">

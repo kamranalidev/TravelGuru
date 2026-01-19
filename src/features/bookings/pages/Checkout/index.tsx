@@ -12,8 +12,14 @@ import { StepperComponent, Header } from "../../../../components/index.tsx";
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { useState } from "react";
 import { supabase } from "../../../../supabaseClient.ts";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { clearCart } from "../../../../store/features/cart/cartSlice";
+import type { AppDispatch, RootState } from "../../../../store/store";
+import {
+  clearServerCart,
+  ensureActiveServerCart,
+} from "../../../../store/features/serverCart/serverCartSlice";
+import { sendBookingConfirmationEmail } from "../../../../services/emailService";
 import "./index.css";
 
 const normalizeTime = (value: unknown): string | null => {
@@ -40,7 +46,8 @@ export const Checkout = () => {
   const stripe = useStripe();
   const elements = useElements();
 
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+  const serverCartId = useSelector((s: RootState) => s.serverCart.cartId);
 
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +90,7 @@ export const Checkout = () => {
         | undefined;
       if (!supabaseUrl) {
         throw new Error(
-          "Missing VITE_REACT_APP_SUPABASE_URL. Check your .env configuration."
+          "Missing VITE_REACT_APP_SUPABASE_URL. Check your .env configuration.",
         );
       }
 
@@ -106,14 +113,24 @@ export const Checkout = () => {
           body: JSON.stringify({
             amount: amountInFils,
           }),
-        }
+        },
       );
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
-        throw new Error(
-          `Create payment intent failed (${res.status}). ${text || ""}`.trim()
-        );
+        // Parse error message for user-friendly display
+        let errorMessage = "Payment setup failed. Please try again.";
+        if (res.status === 401 || res.status === 403) {
+          errorMessage = "Session expired. Please log in again and retry.";
+        } else if (res.status >= 500) {
+          errorMessage = "Server error. Please try again in a few moments.";
+        } else if (text.includes("Stripe")) {
+          errorMessage =
+            "Payment service temporarily unavailable. Please try again.";
+        } else if (text) {
+          errorMessage = `Payment setup failed: ${text}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const { clientSecret } = (await res.json()) as { clientSecret?: string };
@@ -128,7 +145,35 @@ export const Checkout = () => {
       });
 
       if (result.error) {
-        setError(result.error.message ?? "Payment failed");
+        // Map Stripe error codes to user-friendly messages
+        const errorCode = result.error.code;
+        const errorType = result.error.type;
+        let userFriendlyMessage = result.error.message ?? "Payment failed";
+
+        // Map common Stripe errors to clearer messages
+        if (errorCode === "card_declined") {
+          userFriendlyMessage =
+            "Your card was declined. Please try a different card or contact your bank.";
+        } else if (errorCode === "insufficient_funds") {
+          userFriendlyMessage =
+            "Insufficient funds. Please try a different payment method.";
+        } else if (errorCode === "expired_card") {
+          userFriendlyMessage =
+            "Your card has expired. Please use a different card.";
+        } else if (errorCode === "incorrect_cvc") {
+          userFriendlyMessage =
+            "Incorrect security code (CVC). Please check and try again.";
+        } else if (errorCode === "processing_error") {
+          userFriendlyMessage =
+            "A processing error occurred. Please try again in a moment.";
+        } else if (errorType === "validation_error") {
+          userFriendlyMessage = "Please check your card details and try again.";
+        } else if (errorCode === "payment_intent_authentication_failure") {
+          userFriendlyMessage =
+            "Card authentication failed. Please try again or use a different card.";
+        }
+
+        setError(userFriendlyMessage);
         setLoading(false);
         return;
       }
@@ -138,7 +183,7 @@ export const Checkout = () => {
 
       if (!paymentIntentId) {
         throw new Error(
-          "Payment succeeded but no payment intent id was returned."
+          "Payment succeeded but no payment intent id was returned.",
         );
       }
 
@@ -204,7 +249,7 @@ export const Checkout = () => {
           throw new Error(
             `Duplicate booking detected: service ${serviceId} on ${bDate} ${
               safeTime ?? ""
-            }`.trim()
+            }`.trim(),
           );
         }
 
@@ -227,7 +272,7 @@ export const Checkout = () => {
 
         console.log(
           "[Checkout] bookings.insert payload (cart item):",
-          insertPayload
+          insertPayload,
         );
 
         const { data: created, error: insertError } = await supabase
@@ -242,6 +287,36 @@ export const Checkout = () => {
 
       setCreatedBookingIds(createdIds);
       dispatch(clearCart());
+      if (user?.id) {
+        try {
+          const cartId =
+            serverCartId ??
+            (await dispatch(ensureActiveServerCart(user.id)).unwrap());
+          await dispatch(clearServerCart(cartId)).unwrap();
+        } catch (clearError) {
+          console.warn(
+            "Failed to clear server cart after payment:",
+            clearError,
+          );
+        }
+      }
+
+      // Send confirmation emails for each booking
+      for (const bookingId of createdIds) {
+        try {
+          await sendBookingConfirmationEmail({ bookingId });
+          console.log(
+            `[Checkout] Confirmation email sent for booking #${bookingId}`,
+          );
+        } catch (emailError) {
+          // Log error but don't block the flow
+          console.error(
+            `[Checkout] Failed to send email for booking #${bookingId}:`,
+            emailError,
+          );
+        }
+      }
+
       setConfirmationOpen(true);
       setLoading(false);
       return;
@@ -332,7 +407,12 @@ export const Checkout = () => {
             </Box>
 
             {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert
+                severity="error"
+                sx={{ mb: 2 }}
+                className="payment-error-alert"
+                onClose={() => setError(null)}
+              >
                 {error}
               </Alert>
             )}
@@ -392,20 +472,65 @@ export const Checkout = () => {
                 key={`${it.serviceId}-${it.bookingDate}-${
                   it.bookingTime ?? ""
                 }`}
-                sx={{ mb: 1.25 }}
+                sx={{
+                  mb: 2,
+                  pb: 1.5,
+                  borderBottom: "1px solid #f0f0f0",
+                  "&:last-child": { borderBottom: "none", mb: 0, pb: 0 },
+                }}
               >
-                <Typography sx={{ fontWeight: 700 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: "1rem", mb: 0.5 }}>
                   {it.serviceName ?? `Service #${it.serviceId}`}
                 </Typography>
-                <Typography sx={{ marginBottom: "5px" }}>
+                {it.location && (
+                  <Typography
+                    sx={{ color: "#666", fontSize: "0.9rem", mb: 0.25 }}
+                  >
+                    📍 {it.location}
+                  </Typography>
+                )}
+                <Typography
+                  sx={{ color: "#666", fontSize: "0.9rem", mb: 0.25 }}
+                >
                   📅 {it.bookingDate}
                   {it.bookingTime ? ` • 🕒 ${it.bookingTime}` : ""}
                 </Typography>
-                {it.packageName ? (
-                  <Typography sx={{ marginBottom: "5px" }}>
+                {it.airportType && (
+                  <Typography
+                    sx={{ color: "#666", fontSize: "0.9rem", mb: 0.25 }}
+                  >
+                    🚗{" "}
+                    {it.airportType === "pickup"
+                      ? "Airport Pickup"
+                      : it.airportType === "dropoff"
+                        ? "Airport Drop-off"
+                        : it.airportType}
+                  </Typography>
+                )}
+                {it.airportType === "dropoff" && it.address && (
+                  <Typography
+                    sx={{ color: "#666", fontSize: "0.85rem", mb: 0.25 }}
+                  >
+                    🏠 {it.address}
+                  </Typography>
+                )}
+                {it.packageName && (
+                  <Typography
+                    sx={{ color: "#666", fontSize: "0.9rem", mb: 0.25 }}
+                  >
                     📦 {it.packageName}
                   </Typography>
-                ) : null}
+                )}
+                <Typography
+                  sx={{
+                    fontWeight: 600,
+                    color: "#FF621F",
+                    fontSize: "0.95rem",
+                    mt: 0.5,
+                  }}
+                >
+                  AED {Number(it.unitPrice ?? 0).toFixed(2)}
+                </Typography>
               </Box>
             ))}
 

@@ -44,24 +44,24 @@ export const ReviewSubmission = ({
 
     // Check if user has already submitted a review for this booking
     if (session?.user?.id) {
-      try {
-        const { data, error } = await supabase
-          .from("reviews")
-          .select("id")
-          .eq("booking_id", bookingId)
-          .eq("user_id", session.user.id)
-          .single();
+      const { data, error } = await supabase
+        .from("reviews")
+        .select("id")
+        .eq("booking_id", bookingId)
+        .eq("user_id", session.user.id)
+        .limit(1);
 
-        if (data && !error) {
-          setHasExistingReview(true);
-          setFeedback({
-            type: "error",
-            message: "You have already submitted a review for this booking.",
-          });
-        }
-      } catch (err) {
-        // No existing review found, which is fine
-        console.log("No existing review found");
+      if (error) {
+        console.warn("Failed to check existing review:", error.message);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setHasExistingReview(true);
+        setFeedback({
+          type: "error",
+          message: "You have already submitted a review for this booking.",
+        });
       }
     }
   };
@@ -111,6 +111,23 @@ export const ReviewSubmission = ({
     setFeedback(null);
 
     try {
+      const { data: existing, error: existsError } = await supabase
+        .from("reviews")
+        .select("id")
+        .eq("booking_id", bookingId)
+        .eq("user_id", session.user.id)
+        .limit(1);
+
+      if (existsError) throw existsError;
+      if (existing && existing.length > 0) {
+        setHasExistingReview(true);
+        setFeedback({
+          type: "error",
+          message: "You have already submitted a review for this booking.",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from("reviews")
         .insert({
@@ -122,8 +139,19 @@ export const ReviewSubmission = ({
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (String((error as any).code) === "23505") {
+          setHasExistingReview(true);
+          setFeedback({
+            type: "error",
+            message: "You have already submitted a review for this booking.",
+          });
+          return;
+        }
+        throw error;
+      }
 
+      setHasExistingReview(true);
       setFeedback({
         type: "success",
         message:

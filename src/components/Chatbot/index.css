@@ -280,17 +280,21 @@
 
   .chatbot-container {
     bottom: 20px;
-    right: 90px;
+    right: 20px;
+    width: calc(100vw - 40px);
+    max-width: 360px;
   }
 }
 
 @media (max-width: 480px) {
   .chatbot-container {
-    width: calc(100vw - 20px);
-    height: calc(100vh - 20px);
-    bottom: 16px;
-    right: 80px;
+    width: calc(100vw - 24px);
+    height: calc(100vh - 100px);
+    bottom: 12px;
+    right: 12px;
+    left: 12px;
     border-radius: 16px;
+    max-width: none;
   }
 
   .chatbot-toggle-button {

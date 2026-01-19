@@ -29,6 +29,12 @@ const formatMoney = (amountMinor: number, currency: string) => {
   }).format(major);
 };
 
+const formatList = (value: unknown) => {
+  if (!value) return "";
+  if (Array.isArray(value)) return value.filter(Boolean).join(", ");
+  return String(value);
+};
+
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -101,7 +107,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from("bookings")
       .select(
-        "id, user_id, booking_date, amount, currency, payment_intent_id, payment_status, package_id, service_id, services(name, location), packages(name)"
+        "id, user_id, booking_date, departure_arrival_time, address, type, amount, currency, payment_intent_id, payment_status, package_id, service_id, services(name, location, service_description, service_type), packages(name, duration, includes, excludes, price)"
       )
       .eq("id", body.booking_id)
       .maybeSingle();
@@ -137,8 +143,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    type JoinedService = { name?: string | null; location?: string | null };
-    type JoinedPackage = { name?: string | null };
+    type JoinedService = {
+      name?: string | null;
+      location?: string | null;
+      service_description?: string | null;
+      service_type?: string | null;
+    };
+    type JoinedPackage = {
+      name?: string | null;
+      duration?: string | null;
+      includes?: string[] | null;
+      excludes?: string[] | null;
+      price?: number | null;
+    };
 
     const rawServices = booking.services as JoinedService | JoinedService[] | null | undefined;
     const rawPackages = (booking as { packages?: JoinedPackage | JoinedPackage[] | null }).packages;
@@ -154,6 +171,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const serviceName = serviceRow?.name ?? "Your booking";
     const location = serviceRow?.location ?? "";
     const packageName = packageRow?.name ?? "";
+    const serviceDescription = serviceRow?.service_description ?? "";
+    const serviceType = serviceRow?.service_type ?? "";
+    const packageDuration = packageRow?.duration ?? "";
+    const packageIncludes = formatList(packageRow?.includes);
+    const packageExcludes = formatList(packageRow?.excludes);
+    const packagePrice =
+      typeof packageRow?.price === "number"
+        ? formatMoney(packageRow.price, booking.currency ?? "aed")
+        : "";
 
     const amountMinor = typeof booking.amount === "number" ? booking.amount : 0;
     const currency = (booking.currency ?? "aed") as string;
@@ -168,10 +194,30 @@ Deno.serve(async (req: Request): Promise<Response> => {
         <p><strong>Booking ID:</strong> ${escapeHtml(String(booking.id))}</p>
         <p><strong>Service:</strong> ${escapeHtml(serviceName)}</p>
         ${location ? `<p><strong>Location:</strong> ${escapeHtml(location)}</p>` : ""}
+        ${serviceType ? `<p><strong>Service Type:</strong> ${escapeHtml(serviceType)}</p>` : ""}
         <p><strong>Date:</strong> ${escapeHtml(String(booking.booking_date))}</p>
+        ${
+          booking.departure_arrival_time
+            ? `<p><strong>Time:</strong> ${escapeHtml(String(booking.departure_arrival_time))}</p>`
+            : ""
+        }
+        ${booking.type ? `<p><strong>Booking Type:</strong> ${escapeHtml(String(booking.type))}</p>` : ""}
+        ${booking.address ? `<p><strong>Address:</strong> ${escapeHtml(String(booking.address))}</p>` : ""}
         ${packageName ? `<p><strong>Package:</strong> ${escapeHtml(packageName)}</p>` : ""}
+        ${packageDuration ? `<p><strong>Package Duration:</strong> ${escapeHtml(packageDuration)}</p>` : ""}
+        ${packagePrice ? `<p><strong>Package Price:</strong> ${escapeHtml(packagePrice)}</p>` : ""}
         <p><strong>Total:</strong> ${escapeHtml(formatMoney(amountMinor, currency))}</p>
         ${booking.payment_intent_id ? `<p><strong>Payment Intent:</strong> ${escapeHtml(String(booking.payment_intent_id))}</p>` : ""}
+        ${
+          serviceDescription || packageIncludes || packageExcludes
+            ? `
+        <hr />
+        ${serviceDescription ? `<p><strong>Service Details:</strong> ${escapeHtml(serviceDescription)}</p>` : ""}
+        ${packageIncludes ? `<p><strong>Includes:</strong> ${escapeHtml(packageIncludes)}</p>` : ""}
+        ${packageExcludes ? `<p><strong>Excludes:</strong> ${escapeHtml(packageExcludes)}</p>` : ""}
+        `
+            : ""
+        }
         <hr />
         <p>If you have questions, reply to this email.</p>
       </div>

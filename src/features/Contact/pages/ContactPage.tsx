@@ -37,8 +37,25 @@ const ContactPage: React.FC = () => {
     setSubmitStatus({ type: null, message: "" });
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
+      const res = await fetch("https://formspree.io/f/mojjeygp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          message: formData.message,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || "Form submission failed.");
+      }
+
       setSubmitStatus({
         type: "success",
         message: "Thank you for contacting us! We'll get back to you soon.",
@@ -176,4 +193,3 @@ const ContactPage: React.FC = () => {
 };
 
 export default ContactPage;
-

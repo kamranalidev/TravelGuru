@@ -11,7 +11,6 @@ import {
   Box,
   Typography,
   Button,
-  styled,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -21,7 +20,13 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Chip,
+  Stack,
 } from "@mui/material";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import GroupIcon from "@mui/icons-material/Group";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
 import { LocalizationProvider } from "@mui/x-date-pickers";
@@ -39,33 +44,47 @@ import { addServerCartItem } from "../../../store/features/serverCart/serverCart
 
 import dayjs from "dayjs";
 
-const SubscriptionBox = styled(Box)(({ theme }) => ({
-  borderRadius: "28px",
-  background:
-    "linear-gradient(135deg, rgba(255, 112, 67, 1) 0%, rgba(255, 152, 0, 1) 100%)",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-start",
-  padding: "28px 24px",
-  gap: "16px",
-  color: "#ffffff",
-  boxShadow: "0 18px 36px rgba(255, 130, 70, 0.25)",
-  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-  cursor: "pointer",
-  position: "relative",
-  border: "1px solid rgba(255, 255, 255, 0.35)",
-  "&:hover": {
-    transform: "translateY(-6px)",
-    boxShadow: "0 22px 44px rgba(255, 130, 70, 0.3)",
-  },
-  "&.selected": {
-    boxShadow: "0 24px 50px rgba(255, 130, 70, 0.35)",
-    borderColor: "#ffffff",
-  },
-  [theme.breakpoints.down("md")]: {
-    width: "100%",
-  },
-}));
+// Helper functions for formatting service details
+const formatTime = (t: string | null | undefined) => {
+  if (!t) return null;
+  const d = new Date(`1970-01-01T${t}`);
+  if (Number.isNaN(d.getTime())) return t;
+  return d.toLocaleTimeString("en-AE", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const formatDuration = (hours: number | string | null | undefined) => {
+  const v = Number(hours);
+  if (!Number.isFinite(v) || v <= 0) return null;
+  return v === 1 ? "1 hour" : `${v} hours`;
+};
+
+const formatDays = (value: any): string | null => {
+  if (!value) return null;
+  try {
+    if (Array.isArray(value)) return value.join(", ");
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+        const parsed = JSON.parse(trimmed);
+        return formatDays(parsed);
+      }
+      return trimmed;
+    }
+    if (typeof value === "object") {
+      if (Array.isArray((value as any).days))
+        return (value as any).days.join(", ");
+      const keys = Object.keys(value).filter((k) => (value as any)[k]);
+      return keys.length ? keys.join(", ") : null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
 
 function StandardImageList(props: any) {
   const images =
@@ -117,6 +136,7 @@ function StandardImageList(props: any) {
           sx={{
             overflow: "hidden",
             borderRadius: "8px",
+            bgcolor: "#f5f5f5",
           }}
         >
           <img
@@ -126,11 +146,12 @@ function StandardImageList(props: any) {
             onError={handleImageError}
             style={{
               cursor: "pointer",
-              objectFit: "cover",
+              objectFit: "contain",
               objectPosition: "center",
               width: "100%",
               height: "100%",
               display: "block",
+              backgroundColor: "#f5f5f5",
             }}
           />
         </ImageListItem>
@@ -169,6 +190,12 @@ export const BookingPage = () => {
     service_name: "",
     updated_at: "",
     default_price: 0,
+    service_type: "" as string | null,
+    daily_slots: null as number | null,
+    start_time: null as string | null,
+    end_time: null as string | null,
+    duration: null as number | null,
+    days: null as any,
   });
 
   // Airport Pickup / Dropoff extras
@@ -219,21 +246,27 @@ export const BookingPage = () => {
       let serviceImages: string[] = [];
       try {
         if (serviceRecord?.service_image) {
-          if (typeof serviceRecord.service_image === "string") {
-            const parsedImages = JSON.parse(serviceRecord.service_image);
+          const imgVal = serviceRecord.service_image;
+          if (typeof imgVal === "string") {
+            const parsedImages = JSON.parse(imgVal);
             if (Array.isArray(parsedImages)) {
-              serviceImages = parsedImages.filter(
-                (img: any) => typeof img === "string" && img.trim() !== ""
-              );
+              serviceImages = parsedImages
+                .map((x: any) => (typeof x === "string" ? x : x?.url))
+                .filter((u: any) => typeof u === "string" && u.trim() !== "");
             }
-          } else if (Array.isArray(serviceRecord.service_image?.url)) {
-            serviceImages = serviceRecord.service_image.url.filter(
-              (img: any) => typeof img === "string" && img.trim() !== ""
+          } else if (Array.isArray(imgVal)) {
+            serviceImages = imgVal
+              .map((x: any) => (typeof x === "string" ? x : x?.url))
+              .filter((u: any) => typeof u === "string" && u.trim() !== "");
+          } else if (Array.isArray(imgVal?.url)) {
+            serviceImages = imgVal.url.filter(
+              (img: any) => typeof img === "string" && img.trim() !== "",
             );
-          } else if (Array.isArray(serviceRecord.service_image)) {
-            serviceImages = serviceRecord.service_image.filter(
-              (img: any) => typeof img === "string" && img.trim() !== ""
-            );
+          } else if (
+            typeof imgVal?.url === "string" &&
+            imgVal.url.trim() !== ""
+          ) {
+            serviceImages = [imgVal.url];
           }
         }
       } catch {
@@ -254,6 +287,18 @@ export const BookingPage = () => {
         service_name: serviceRecord?.service_name || "Dubai Experience",
         updated_at: serviceRecord?.updated_at || "",
         default_price: Number(serviceRecord?.default_price ?? 0),
+        service_type: serviceRecord?.service_type || null,
+        daily_slots:
+          serviceRecord?.daily_slots != null
+            ? Number(serviceRecord.daily_slots)
+            : null,
+        start_time: serviceRecord?.start_time || null,
+        end_time: serviceRecord?.end_time || null,
+        duration:
+          serviceRecord?.duration != null
+            ? Number(serviceRecord.duration)
+            : null,
+        days: serviceRecord?.days || null,
       });
 
       setSelectedId(0);
@@ -271,26 +316,34 @@ export const BookingPage = () => {
 
       try {
         if (state?.service_image) {
+          const imgVal = state.service_image;
           // Handle JSON string format from database
-          if (typeof state.service_image === "string") {
-            const parsedImages = JSON.parse(state.service_image);
+          if (typeof imgVal === "string") {
+            const parsedImages = JSON.parse(imgVal);
             if (Array.isArray(parsedImages)) {
-              serviceImages = parsedImages.filter(
-                (img: any) => typeof img === "string" && img.trim() !== ""
-              );
+              serviceImages = parsedImages
+                .map((x: any) => (typeof x === "string" ? x : x?.url))
+                .filter((u: any) => typeof u === "string" && u.trim() !== "");
             }
           }
+          // Handle direct array (may contain strings or { url, path } objects)
+          else if (Array.isArray(imgVal)) {
+            serviceImages = imgVal
+              .map((x: any) => (typeof x === "string" ? x : x?.url))
+              .filter((u: any) => typeof u === "string" && u.trim() !== "");
+          }
           // Handle object with url array
-          else if (Array.isArray(state.service_image?.url)) {
-            serviceImages = state.service_image.url.filter(
-              (img: any) => typeof img === "string" && img.trim() !== ""
+          else if (Array.isArray(imgVal?.url)) {
+            serviceImages = imgVal.url.filter(
+              (img: any) => typeof img === "string" && img.trim() !== "",
             );
           }
-          // Handle direct array
-          else if (Array.isArray(state.service_image)) {
-            serviceImages = state.service_image.filter(
-              (img: any) => typeof img === "string" && img.trim() !== ""
-            );
+          // Handle single object: { url: string }
+          else if (
+            typeof imgVal?.url === "string" &&
+            imgVal.url.trim() !== ""
+          ) {
+            serviceImages = [imgVal.url];
           }
         }
       } catch (error) {
@@ -313,6 +366,13 @@ export const BookingPage = () => {
         service_name: state?.service_name || "Dubai Experience",
         updated_at: state?.updated_at || "",
         default_price: state?.default_price ?? 0,
+        service_type: state?.service_type || null,
+        daily_slots:
+          state?.daily_slots != null ? Number(state.daily_slots) : null,
+        start_time: state?.start_time || null,
+        end_time: state?.end_time || null,
+        duration: state?.duration != null ? Number(state.duration) : null,
+        days: state?.days || null,
       });
       setSelectedId(0);
       setSelectedPackage(null);
@@ -340,7 +400,7 @@ export const BookingPage = () => {
           const validPackages = data.filter((pkg) => pkg && pkg.id && pkg.name);
           setPackages(validPackages);
           console.log(
-            `Fetched ${validPackages.length} packages for service ${state.id}`
+            `Fetched ${validPackages.length} packages for service ${state.id}`,
           );
         } else {
           setPackages([]);
@@ -406,7 +466,7 @@ export const BookingPage = () => {
     const missingFields = requiredFields
       .filter(
         (field) =>
-          !profile[field.key as keyof typeof profile]?.toString().trim()
+          !profile[field.key as keyof typeof profile]?.toString().trim(),
       )
       .map((field) => field.label);
 
@@ -458,7 +518,7 @@ export const BookingPage = () => {
       setBookingFeedback({
         type: "error",
         message: `Please complete your profile before booking. Missing: ${profileStatus.missingFields.join(
-          ", "
+          ", ",
         )}`,
       });
       setShowProfileModal(true);
@@ -526,7 +586,7 @@ export const BookingPage = () => {
             ? dropoffAddress.trim()
             : null,
         unitPrice: finalPrice,
-      })
+      }),
     );
 
     // Persist to server-side cart when authenticated
@@ -549,7 +609,7 @@ export const BookingPage = () => {
                 : null,
             unitPrice: finalPrice,
           },
-        })
+        }),
       );
     }
 
@@ -600,7 +660,7 @@ export const BookingPage = () => {
             ? dropoffAddress.trim()
             : null,
         unitPrice: finalPrice,
-      })
+      }),
     );
 
     // Persist to server-side cart when authenticated
@@ -623,7 +683,7 @@ export const BookingPage = () => {
                 : null,
             unitPrice: finalPrice,
           },
-        })
+        }),
       );
     }
 
@@ -706,6 +766,95 @@ export const BookingPage = () => {
               )}
             </Box>
 
+            {/* Service Details Section */}
+            {(pageData.service_type ||
+              pageData.start_time ||
+              pageData.end_time ||
+              pageData.duration ||
+              pageData.daily_slots ||
+              pageData.days) && (
+              <Box
+                className="serviceInfoBox"
+                sx={{
+                  mt: 3,
+                  p: 2.5,
+                  bgcolor: "#f9fafb",
+                  borderRadius: 2,
+                  border: "1px solid #e5e7eb",
+                }}
+              >
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: 700, mb: 2, fontSize: "1.1rem" }}
+                >
+                  Experience Details
+                </Typography>
+                <Stack spacing={1.5}>
+                  {pageData.service_type && (
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <Chip
+                        label={pageData.service_type}
+                        size="small"
+                        sx={{
+                          bgcolor: "#FF621F",
+                          color: "white",
+                          fontWeight: 600,
+                          textTransform: "capitalize",
+                        }}
+                      />
+                    </Stack>
+                  )}
+
+                  {(pageData.start_time || pageData.end_time) && (
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <ScheduleIcon sx={{ color: "#6b7280", fontSize: 20 }} />
+                      <Typography sx={{ color: "#374151", fontSize: 14 }}>
+                        <strong>Operating Hours:</strong>{" "}
+                        {formatTime(pageData.start_time) ?? "—"} –{" "}
+                        {formatTime(pageData.end_time) ?? "—"}
+                      </Typography>
+                    </Stack>
+                  )}
+
+                  {pageData.duration != null &&
+                    formatDuration(pageData.duration) && (
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <AccessTimeIcon
+                          sx={{ color: "#6b7280", fontSize: 20 }}
+                        />
+                        <Typography sx={{ color: "#374151", fontSize: 14 }}>
+                          <strong>Duration:</strong>{" "}
+                          {formatDuration(pageData.duration)}
+                        </Typography>
+                      </Stack>
+                    )}
+
+                  {pageData.daily_slots != null && (
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <GroupIcon sx={{ color: "#6b7280", fontSize: 20 }} />
+                      <Typography sx={{ color: "#374151", fontSize: 14 }}>
+                        <strong>Daily Availability:</strong>{" "}
+                        {Number(pageData.daily_slots).toLocaleString("en-AE")}{" "}
+                        slots
+                      </Typography>
+                    </Stack>
+                  )}
+
+                  {pageData.days && formatDays(pageData.days) && (
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <CalendarTodayIcon
+                        sx={{ color: "#6b7280", fontSize: 20 }}
+                      />
+                      <Typography sx={{ color: "#374151", fontSize: 14 }}>
+                        <strong>Available Days:</strong>{" "}
+                        {formatDays(pageData.days)}
+                      </Typography>
+                    </Stack>
+                  )}
+                </Stack>
+              </Box>
+            )}
+
             <Box className="planSection">
               <Typography variant="h4" className="sectionHeading planHeading">
                 {hasAddOnPackages ? "Choose your plan" : "Included experience"}
@@ -720,57 +869,107 @@ export const BookingPage = () => {
                   <span className="loader"></span>
                 </Box>
               ) : hasAddOnPackages ? (
-                <Box className="planGrid">
+                <Box className="packagesGrid">
                   {packagesToDisplay.map((pack: any) => {
                     const packId = pack.isBase ? 0 : pack.id;
                     const isSelected = selectedId === packId;
                     return (
-                      <SubscriptionBox
+                      <Box
                         key={packId}
-                        className={isSelected ? "selected" : ""}
+                        className={`packageCard ${
+                          isSelected ? "selected" : ""
+                        }`}
                         onClick={() => {
                           setSelectedId(packId);
                           setSelectedPackage(pack.isBase ? null : pack);
                         }}
                       >
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                          {pack.isBase ? "Standard Experience" : pack.name}
-                        </Typography>
-                        {pack.duration && (
-                          <Typography sx={{ fontWeight: 500, opacity: 0.9 }}>
-                            {pack.duration}
+                        <Box className="packageHeader">
+                          <Typography className="packageName">
+                            {pack.isBase ? "Standard Experience" : pack.name}
                           </Typography>
-                        )}
-                        <Typography sx={{ opacity: 0.9, lineHeight: 1.6 }}>
+                          {pack.isBase && (
+                            <span className="packageBadge">Included</span>
+                          )}
+                          {!pack.isBase && packId === packages[0]?.id && (
+                            <span className="packageBadge popular">
+                              Popular
+                            </span>
+                          )}
+                        </Box>
+
+                        <Box className="packageMeta">
+                          {pack.duration && (
+                            <Box className="packageMetaItem">
+                              <AccessTimeIcon />
+                              <span>{pack.duration}</span>
+                            </Box>
+                          )}
+                          {pack.max_guests && (
+                            <Box className="packageMetaItem">
+                              <span>👥 Up to {pack.max_guests} guests</span>
+                            </Box>
+                          )}
+                        </Box>
+
+                        <Typography className="packageDescription">
                           {pack.description ||
                             "Immerse yourself in handpicked highlights with a seamless travel schedule."}
                         </Typography>
-                        <Typography
-                          sx={{ fontWeight: 700, fontSize: "1.1rem" }}
-                        >
-                          {formatCurrency(pack.price)}
-                        </Typography>
-                        <ButtonComponent
-                          title={
-                            isSelected
-                              ? "Selected"
-                              : pack.isBase
-                              ? "Included"
-                              : "Choose Plan"
-                          }
-                          width="100%"
-                          bgColor="#FFFFFF"
-                          style={{
-                            color: "#FF621F",
-                            fontWeight: 600,
-                            borderRadius: "14px",
-                          }}
-                          onClick={() => {
-                            setSelectedId(packId);
-                            setSelectedPackage(pack.isBase ? null : pack);
-                          }}
-                        />
-                      </SubscriptionBox>
+
+                        {/* Show includes if available */}
+                        {Array.isArray(pack.includes) &&
+                          pack.includes.length > 0 && (
+                            <Box className="packageIncludes">
+                              <Typography className="packageIncludesTitle">
+                                What's Included
+                              </Typography>
+                              <Box className="packageIncludesList">
+                                {pack.includes
+                                  .slice(0, 3)
+                                  .map((item: string, idx: number) => (
+                                    <Box
+                                      key={idx}
+                                      className="packageIncludeItem included"
+                                    >
+                                      {item}
+                                    </Box>
+                                  ))}
+                                {pack.includes.length > 3 && (
+                                  <Typography
+                                    sx={{
+                                      fontSize: "0.8rem",
+                                      color: "#888",
+                                      mt: 0.5,
+                                    }}
+                                  >
+                                    +{pack.includes.length - 3} more
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Box>
+                          )}
+
+                        <Box className="packageFooter">
+                          <Box className="packagePriceWrapper">
+                            <span className="packagePriceLabel">Price</span>
+                            <Typography className="packagePrice">
+                              <span className="currency">AED </span>
+                              {Number(pack.price || 0).toLocaleString()}
+                            </Typography>
+                          </Box>
+                          <button
+                            className="packageSelectBtn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedId(packId);
+                              setSelectedPackage(pack.isBase ? null : pack);
+                            }}
+                          >
+                            {isSelected ? "Selected" : "Select"}
+                          </button>
+                        </Box>
+                      </Box>
                     );
                   })}
                 </Box>

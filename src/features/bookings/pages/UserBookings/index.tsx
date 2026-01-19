@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   CircularProgress,
+  Pagination,
   Paper,
   Stack,
   Typography,
@@ -15,7 +16,7 @@ import {
   Button,
 } from "@mui/material";
 import { supabase } from "../../../../supabaseClient.ts";
-import { Header } from "../../../../components/index.tsx";
+import { Header, ReviewSubmission } from "../../../../components/index.tsx";
 import "./index.css";
 
 type BookingRow = {
@@ -26,6 +27,10 @@ type BookingRow = {
   currency: string | null;
   service_id: number | null;
   package_id: number | null;
+  departure_arrival_time?: string | null;
+  type?: string | null;
+  address?: string | null;
+  created_at?: string | null;
   services?:
     | { service_name?: string | null; location?: string | null }
     | { service_name?: string | null; location?: string | null }[]
@@ -55,12 +60,12 @@ type BookingDetailsRow = {
 
 const normalizeFirst = <T,>(value: T | T[] | null | undefined): T | null => {
   if (!value) return null;
-  return Array.isArray(value) ? value[0] ?? null : value;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
 };
 
 const formatAmount = (
   amountMinor: number | null | undefined,
-  currency: string | null | undefined
+  currency: string | null | undefined,
 ) => {
   if (typeof amountMinor !== "number") return "-";
   const c = (currency ?? "aed").toUpperCase();
@@ -75,10 +80,18 @@ const formatAmount = (
   }
 };
 
+const PAGE_SIZE = 6;
+
 export const UserBookingsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [reviewedBookingIds, setReviewedBookingIds] = useState<Set<number>>(
+    () => new Set(),
+  );
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -99,6 +112,9 @@ export const UserBookingsPage = () => {
       setLoading(true);
       setError(null);
 
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
       const {
         data: { user },
         error: userError,
@@ -116,13 +132,19 @@ export const UserBookingsPage = () => {
         return;
       }
 
-      const { data, error: bookingsError } = await supabase
+      const {
+        data,
+        error: bookingsError,
+        count,
+      } = await supabase
         .from("bookings")
         .select(
-          "id, booking_date, payment_status, amount, currency, service_id, package_id, services(service_name, location), packages(name)"
+          "id, booking_date, payment_status, amount, currency, service_id, package_id, departure_arrival_time, type, address, created_at, services(service_name, location), packages(name)",
+          { count: "exact" },
         )
         .eq("user_id", user.id)
-        .order("id", { ascending: false });
+        .order("id", { ascending: false })
+        .range(from, to);
 
       if (bookingsError) {
         setError(bookingsError.message);
@@ -130,12 +152,39 @@ export const UserBookingsPage = () => {
         return;
       }
 
-      setBookings((data as BookingRow[]) ?? []);
+      const rows = (data as BookingRow[]) ?? [];
+      setBookings(rows);
+      setTotalCount(count ?? 0);
+
+      if (rows.length > 0) {
+        const bookingIds = rows.map((row) => row.id);
+        const { data: reviewRows, error: reviewsError } = await supabase
+          .from("reviews")
+          .select("booking_id")
+          .eq("user_id", user.id)
+          .in("booking_id", bookingIds);
+
+        if (reviewsError) {
+          console.warn(
+            "Failed to load existing reviews:",
+            reviewsError.message,
+          );
+          setReviewedBookingIds(new Set());
+        } else {
+          const reviewed = new Set<number>(
+            (reviewRows ?? []).map((row: any) => Number(row.booking_id)),
+          );
+          setReviewedBookingIds(reviewed);
+        }
+      } else {
+        setReviewedBookingIds(new Set());
+      }
+
       setLoading(false);
     };
 
     void load();
-  }, []);
+  }, [page, refreshKey]);
 
   const openBookingDetails = async (bookingId: number) => {
     try {
@@ -156,7 +205,7 @@ export const UserBookingsPage = () => {
       const { data, error: fetchError } = await supabase
         .from("bookings")
         .select(
-          "id, created_at, booking_date, payment_status, amount, currency, service_id, package_id, payment_intent_id, departure_arrival_time, type, address, services(service_name, location), packages(name)"
+          "id, created_at, booking_date, payment_status, amount, currency, service_id, package_id, payment_intent_id, departure_arrival_time, type, address, services(service_name, location), packages(name)",
         )
         .eq("id", bookingId)
         .eq("user_id", user.id)
@@ -255,7 +304,7 @@ export const UserBookingsPage = () => {
                     <strong>Amount:</strong>{" "}
                     {formatAmount(
                       selectedBooking.amount,
-                      selectedBooking.currency
+                      selectedBooking.currency,
                     )}
                   </Typography>
                   {selectedBooking.payment_intent_id ? (
@@ -312,23 +361,12 @@ export const UserBookingsPage = () => {
                   sx={{
                     p: 2,
                     borderRadius: 3,
-                    cursor: "pointer",
-                    transition: "transform 120ms ease, box-shadow 120ms ease",
+                    transition: "box-shadow 120ms ease",
                     "&:hover": {
-                      transform: "translateY(-1px)",
                       boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
                     },
                   }}
                   elevation={0}
-                  onClick={() => void openBookingDetails(b.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      void openBookingDetails(b.id);
-                    }
-                  }}
                 >
                   <Stack
                     direction={{ xs: "column", sm: "row" }}
@@ -336,21 +374,57 @@ export const UserBookingsPage = () => {
                     justifyContent="space-between"
                   >
                     <Box>
-                      <Typography sx={{ fontWeight: 700 }}>
+                      <Typography
+                        sx={{ fontWeight: 700, fontSize: "1.05rem", mb: 0.5 }}
+                      >
                         {service?.service_name ??
                           `Service #${b.service_id ?? "-"}`}
                       </Typography>
-                      <Typography color="text.secondary">
-                        {service?.location ? `📍 ${service.location}` : ""}
-                      </Typography>
-                      <Typography color="text.secondary">
+                      {service?.location && (
+                        <Typography
+                          color="text.secondary"
+                          sx={{ fontSize: "0.9rem" }}
+                        >
+                          📍 {service.location}
+                        </Typography>
+                      )}
+                      <Typography
+                        color="text.secondary"
+                        sx={{ fontSize: "0.9rem" }}
+                      >
                         📅 {b.booking_date}
+                        {b.departure_arrival_time &&
+                          ` • 🕒 ${b.departure_arrival_time}`}
                       </Typography>
-                      {pack?.name ? (
-                        <Typography color="text.secondary">
+                      {b.type && (
+                        <Typography
+                          color="text.secondary"
+                          sx={{ fontSize: "0.9rem" }}
+                        >
+                          �{" "}
+                          {b.type === "pickup"
+                            ? "Airport Pickup"
+                            : b.type === "dropoff"
+                              ? "Airport Drop-off"
+                              : b.type}
+                        </Typography>
+                      )}
+                      {b.type === "dropoff" && b.address && (
+                        <Typography
+                          color="text.secondary"
+                          sx={{ fontSize: "0.85rem" }}
+                        >
+                          🏠 {b.address}
+                        </Typography>
+                      )}
+                      {pack?.name && (
+                        <Typography
+                          color="text.secondary"
+                          sx={{ fontSize: "0.9rem" }}
+                        >
                           📦 {pack.name}
                         </Typography>
-                      ) : null}
+                      )}
                     </Box>
 
                     <Stack
@@ -360,7 +434,9 @@ export const UserBookingsPage = () => {
                       <Chip
                         label={b.payment_status ?? "unknown"}
                         color={
-                          b.payment_status === "succeeded"
+                          b.payment_status === "succeeded" ||
+                          b.payment_status === "completed" ||
+                          b.payment_status === "paid"
                             ? "success"
                             : "default"
                         }
@@ -372,12 +448,55 @@ export const UserBookingsPage = () => {
                       <Typography color="text.secondary">
                         Booking ID: {b.id}
                       </Typography>
+
+                      {/* Action buttons */}
+                      <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => void openBookingDetails(b.id)}
+                          sx={{
+                            textTransform: "none",
+                            borderRadius: 2,
+                            fontWeight: 600,
+                          }}
+                        >
+                          View Details
+                        </Button>
+                        {/* Write a Review button for completed bookings */}
+                        {(b.payment_status === "succeeded" ||
+                          b.payment_status === "completed" ||
+                          b.payment_status === "paid") &&
+                          !reviewedBookingIds.has(b.id) && (
+                            <ReviewSubmission
+                              bookingId={b.id}
+                              serviceName={service?.service_name || undefined}
+                              onReviewSubmitted={() => {
+                                setTimeout(() => {
+                                  setRefreshKey((key) => key + 1);
+                                }, 300);
+                              }}
+                            />
+                          )}
+                      </Stack>
                     </Stack>
                   </Stack>
                   <Divider sx={{ mt: 2 }} />
                 </Paper>
               );
             })}
+
+            {totalCount > PAGE_SIZE ? (
+              <Stack alignItems="center" sx={{ pt: 1 }}>
+                <Pagination
+                  count={Math.ceil(totalCount / PAGE_SIZE)}
+                  page={page}
+                  onChange={(_, value) => setPage(value)}
+                  color="primary"
+                  shape="rounded"
+                />
+              </Stack>
+            ) : null}
           </Stack>
         )}
       </Box>
