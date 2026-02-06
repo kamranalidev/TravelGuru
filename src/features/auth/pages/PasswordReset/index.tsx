@@ -40,8 +40,8 @@ export const PasswordResetPage = () => {
         <div className="headlineLogin">
           <img
             style={{ height: "60px", width: "auto" }}
-            src="/assets/Logo-02.png"
-            alt="Travel Guroo Logo"
+            src="/Travel-Guru-Logo-Final.png"
+            alt="Travel Guru Logo"
           />
           <p style={{ color: theme.palette.secondary.main, fontSize: "3rem" }}>
             Reset Password

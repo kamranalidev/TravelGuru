@@ -47,7 +47,7 @@ export const LoginPage = () => {
         if (data.session) {
           localStorage.setItem(
             "supabase_session",
-            JSON.stringify(data.session)
+            JSON.stringify(data.session),
           );
           const redirectState = (location.state as any) || {};
           const redirectTo = redirectState.redirectTo || "/";
@@ -55,7 +55,7 @@ export const LoginPage = () => {
           setTimeout(() => {
             navigate(
               redirectTo,
-              servicePayload ? { state: servicePayload } : undefined
+              servicePayload ? { state: servicePayload } : undefined,
             );
           }, 1000);
         }
@@ -91,12 +91,12 @@ export const LoginPage = () => {
       <Card className="auth-card">
         <Box className="auth-header">
           <img
-            src="/assets/Logo-02.png"
-            alt="Travel Guroo Logo"
+            src="/Travel-Guru-Logo-Final.png"
+            alt="Travel Guru Logo"
             className="auth-logo"
           />
           <Typography variant="h4" className="auth-title">
-            Travel Guroo
+            Travel Guru
           </Typography>
           <Typography variant="h5" className="auth-subtitle">
             Welcome Back

@@ -213,9 +213,9 @@ export const Header = (props: { hidePages?: boolean }) => {
               onClick={() => navigate("/")}
             >
               <img
-                src="/assets/Logo-02.png"
-                alt="TravelGuru Logo"
-                style={{ width: "96px", height: "auto" }}
+                src="/Travel-Guru-Logo-Final.png"
+                alt="Travel Guru"
+                style={{ width: "90px", height: "auto" }}
               />
             </Box>
             {!props.hidePages && (
@@ -285,57 +285,99 @@ export const Header = (props: { hidePages?: boolean }) => {
                     </IconButton>
                   ) : null}
 
-                  {/* Desktop: User button / Login */}
-                  <Button
-                    disableRipple
-                    onClick={
-                      isAuthenticated
-                        ? handleOpenMenu
-                        : () => handleNavigate("/login")
-                    }
-                    sx={{
-                      display: { xs: "none", md: "flex" },
-                      alignItems: "center",
-                      gap: 1,
-                      borderRadius: "8px",
-                      border: "1px solid #e0e0e0",
-                      px: { xs: 1.5, sm: 2 },
-                      py: 0.75,
-                      color: "#333",
-                      textTransform: "none",
-                      fontWeight: 500,
-                      transition: "all 0.2s ease",
-                      minWidth: "auto",
-                      "&:hover": {
-                        backgroundColor: "#f5f5f5",
-                        borderColor: "#d0d0d0",
-                      },
-                    }}
-                  >
-                    <Avatar
-                      src={avatarUrl || undefined}
-                      alt={displayName}
+                  {/* Desktop: User button / Login & Sign Up */}
+                  {isAuthenticated ? (
+                    <Button
+                      disableRipple
+                      onClick={handleOpenMenu}
                       sx={{
-                        width: 32,
-                        height: 32,
-                        bgcolor: avatarUrl ? "transparent" : "#FF621F",
-                        color: "#ffffff",
-                        fontSize: "0.9rem",
-                        fontWeight: 600,
+                        display: { xs: "none", md: "flex" },
+                        alignItems: "center",
+                        gap: 1,
+                        borderRadius: "8px",
+                        border: "1px solid #e0e0e0",
+                        px: { xs: 1.5, sm: 2 },
+                        py: 0.75,
+                        color: "#333",
+                        textTransform: "none",
+                        fontWeight: 500,
+                        transition: "all 0.2s ease",
+                        minWidth: "auto",
+                        "&:hover": {
+                          backgroundColor: "#f5f5f5",
+                          borderColor: "#d0d0d0",
+                        },
                       }}
                     >
-                      {!avatarUrl ? userInitials : null}
-                    </Avatar>
-                    <Typography
-                      sx={{
-                        fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                        whiteSpace: "nowrap",
-                        display: { xs: "none", sm: "block" },
-                      }}
-                    >
-                      {displayName}
-                    </Typography>
-                  </Button>
+                      <Avatar
+                        src={avatarUrl || undefined}
+                        alt={displayName}
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          bgcolor: avatarUrl ? "transparent" : "#FF621F",
+                          color: "#ffffff",
+                          fontSize: "0.9rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {!avatarUrl ? userInitials : null}
+                      </Avatar>
+                      <Typography
+                        sx={{
+                          fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                          whiteSpace: "nowrap",
+                          display: { xs: "none", sm: "block" },
+                        }}
+                      >
+                        {displayName}
+                      </Typography>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        onClick={() => handleNavigate("/login")}
+                        sx={{
+                          display: { xs: "none", md: "flex" },
+                          borderRadius: "8px",
+                          border: "1px solid #e0e0e0",
+                          px: 2.5,
+                          py: 0.75,
+                          color: "#333",
+                          textTransform: "none",
+                          fontWeight: 500,
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            backgroundColor: "#f5f5f5",
+                            borderColor: "#d0d0d0",
+                          },
+                        }}
+                      >
+                        Login
+                      </Button>
+                      <Button
+                        onClick={() => handleNavigate("/signup")}
+                        sx={{
+                          display: { xs: "none", md: "flex" },
+                          borderRadius: "8px",
+                          background:
+                            "linear-gradient(135deg, #FF621F, #FF8A4F)",
+                          px: 2.5,
+                          py: 0.75,
+                          color: "#ffffff",
+                          textTransform: "none",
+                          fontWeight: 600,
+                          transition: "all 0.2s ease",
+                          "&:hover": {
+                            background:
+                              "linear-gradient(135deg, #e55519, #e67b44)",
+                          },
+                        }}
+                      >
+                        Sign Up
+                      </Button>
+                    </>
+                  )}
 
                   <Menu
                     anchorEl={menuAnchor}
@@ -451,8 +493,8 @@ export const Header = (props: { hidePages?: boolean }) => {
         <Box className="mobile-drawer">
           <Box className="mobile-drawer-header">
             <img
-              src="/assets/Logo-02.png"
-              alt="TravelGuru Logo"
+              src="/Travel-Guru-Logo-Final.png"
+              alt="Travel Guru"
               className="mobile-drawer-logo"
               onClick={() => {
                 setMobileDrawerOpen(false);

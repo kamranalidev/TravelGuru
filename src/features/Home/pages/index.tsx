@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Header,
@@ -511,13 +511,16 @@ export const Homepage = () => {
 
                       {/* Service Details */}
                       <div className="serviceDetails">
-                        {(service.start_time || service.end_time) && (
-                          <span className="serviceDetailItem">
-                            <ScheduleIcon sx={{ fontSize: 14 }} />
-                            {formatTime(service.start_time) ?? "—"} –{" "}
-                            {formatTime(service.end_time) ?? "—"}
-                          </span>
-                        )}
+                        {service.start_time &&
+                          service.end_time &&
+                          formatTime(service.start_time) &&
+                          formatTime(service.end_time) && (
+                            <span className="serviceDetailItem">
+                              <ScheduleIcon sx={{ fontSize: 14 }} />
+                              {formatTime(service.start_time)} –{" "}
+                              {formatTime(service.end_time)}
+                            </span>
+                          )}
                         {service.duration &&
                           formatDuration(service.duration) && (
                             <span className="serviceDetailItem">

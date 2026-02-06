@@ -43,7 +43,7 @@ export const SignupPage = () => {
         setError(error.message);
       } else {
         setMessage(
-          "Signup successful! Please check your email to confirm your account."
+          "Signup successful! Please check your email to confirm your account.",
         );
         setTimeout(() => navigate("/login"), 3000);
       }
@@ -77,12 +77,12 @@ export const SignupPage = () => {
       <Card className="auth-card">
         <Box className="auth-header">
           <img
-            src="/assets/Logo-02.png"
-            alt="Travel Guroo Logo"
+            src="/Travel-Guru-Logo-Final.png"
+            alt="Travel Guru Logo"
             className="auth-logo"
           />
           <Typography variant="h4" className="auth-title">
-            Travel Guroo
+            Travel Guru
           </Typography>
           <Typography variant="h5" className="auth-subtitle">
             Create Account

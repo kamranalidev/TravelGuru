@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import {
   ButtonComponent,
   Header,
   ReviewComponent,
   ProfileModal,
-} from "../../../components";
+} from "../../../components/index.tsx";
 import {
   Alert,
   Box,
@@ -22,11 +22,27 @@ import {
   MenuItem,
   Chip,
   Stack,
+  Tabs,
+  Tab,
+  IconButton,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Drawer,
 } from "@mui/material";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import GroupIcon from "@mui/icons-material/Group";
 import ScheduleIcon from "@mui/icons-material/Schedule";
+import CloseIcon from "@mui/icons-material/Close";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import BoltIcon from "@mui/icons-material/Bolt";
+import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import BlockIcon from "@mui/icons-material/Block";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ImageList from "@mui/material/ImageList";
 import ImageListItem from "@mui/material/ImageListItem";
 import { LocalizationProvider } from "@mui/x-date-pickers";
@@ -34,17 +50,97 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import Dialog from "@mui/material/Dialog";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../../supabaseClient";
-import { useAuth } from "../../../hooks/useAuth";
+import { supabase } from "../../../supabaseClient.ts";
+import { useAuth } from "../../../hooks/useAuth.tsx";
 import "./index.css";
 import { useDispatch } from "react-redux";
-import type { AppDispatch } from "../../../store/store";
-import { addItem } from "../../../store/features/cart/cartSlice";
-import { addServerCartItem } from "../../../store/features/serverCart/serverCartSlice";
+import type { AppDispatch } from "../../../store/store.ts";
+import { addItem } from "../../../store/features/cart/cartSlice.ts";
+import { addServerCartItem } from "../../../store/features/serverCart/serverCartSlice.ts";
 
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 
-// Helper functions for formatting service details
+// ============ Type Definitions ============
+interface ServiceImage {
+  url?: string;
+  path?: string;
+}
+
+interface DaysValue {
+  days?: string[];
+  [key: string]: boolean | string[] | undefined;
+}
+
+interface ImageItem {
+  src: string;
+  rows: number;
+  cols: number;
+}
+
+interface ImageListProps {
+  Images?: string[];
+  handleClick: (imgSrc: string) => void;
+}
+
+interface PackageData {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  duration?: string;
+  max_guests?: number;
+  includes?: string[];
+  excludes?: string[];
+  isBase?: boolean;
+  service_id?: number;
+  package_type?: string;
+  combo_packages?: number[]; // IDs of packages included in combo
+  original_price?: number; // For showing savings on combo
+  cancellation_policy?: string | { type?: string; details?: string };
+  confirmation_type?: string;
+  voucher_type?: string;
+  eligibility?: string[];
+  terms?: string[];
+  how_to_use?: string[];
+  opening_hours?: string;
+  address?: string;
+  how_to_get_there?: string;
+}
+
+interface PageDataState {
+  Image: string[];
+  description: string;
+  id: number;
+  location: string;
+  service_name: string;
+  updated_at: string;
+  default_price: number;
+  service_type: string | null;
+  daily_slots: number | null;
+  start_time: string | null;
+  end_time: string | null;
+  duration: number | null;
+  days: DaysValue | string | string[] | null;
+}
+
+interface ServiceRecord {
+  id?: number;
+  service_name?: string;
+  service_description?: string;
+  description?: string;
+  location?: string;
+  default_price?: number;
+  service_type?: string;
+  daily_slots?: number;
+  start_time?: string;
+  end_time?: string;
+  duration?: number;
+  days?: DaysValue | string | string[];
+  updated_at?: string;
+  service_image?: string | ServiceImage[] | ServiceImage;
+}
+
+// ============ Helper Functions ============
 const formatTime = (t: string | null | undefined) => {
   if (!t) return null;
   const d = new Date(`1970-01-01T${t}`);
@@ -61,7 +157,9 @@ const formatDuration = (hours: number | string | null | undefined) => {
   return v === 1 ? "1 hour" : `${v} hours`;
 };
 
-const formatDays = (value: any): string | null => {
+const formatDays = (
+  value: DaysValue | string | string[] | null | undefined,
+): string | null => {
   if (!value) return null;
   try {
     if (Array.isArray(value)) return value.join(", ");
@@ -69,15 +167,15 @@ const formatDays = (value: any): string | null => {
       const trimmed = value.trim();
       if (!trimmed) return null;
       if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
-        const parsed = JSON.parse(trimmed);
+        const parsed = JSON.parse(trimmed) as DaysValue | string[];
         return formatDays(parsed);
       }
       return trimmed;
     }
     if (typeof value === "object") {
-      if (Array.isArray((value as any).days))
-        return (value as any).days.join(", ");
-      const keys = Object.keys(value).filter((k) => (value as any)[k]);
+      const objValue = value as DaysValue;
+      if (Array.isArray(objValue.days)) return objValue.days.join(", ");
+      const keys = Object.keys(value).filter((k) => Boolean(objValue[k]));
       return keys.length ? keys.join(", ") : null;
     }
   } catch {
@@ -86,8 +184,46 @@ const formatDays = (value: any): string | null => {
   return null;
 };
 
-function StandardImageList(props: any) {
-  const images =
+// Helper to extract image URLs from various formats
+const extractImageUrls = (
+  imgVal: string | ServiceImage[] | ServiceImage | undefined,
+): string[] => {
+  if (!imgVal) return [];
+
+  try {
+    // Handle JSON string format from database
+    if (typeof imgVal === "string") {
+      const parsedImages = JSON.parse(imgVal) as (string | ServiceImage)[];
+      if (Array.isArray(parsedImages)) {
+        return parsedImages
+          .map((x) => (typeof x === "string" ? x : x?.url))
+          .filter((u): u is string => typeof u === "string" && u.trim() !== "");
+      }
+      return [];
+    }
+
+    // Handle direct array (may contain strings or { url, path } objects)
+    if (Array.isArray(imgVal)) {
+      return imgVal
+        .map((x) => (typeof x === "string" ? x : x?.url))
+        .filter((u): u is string => typeof u === "string" && u.trim() !== "");
+    }
+
+    // Handle single object: { url: string }
+    // At this point imgVal is ServiceImage
+    const url = (imgVal as ServiceImage).url;
+    if (typeof url === "string" && url.trim() !== "") {
+      return [url];
+    }
+  } catch {
+    // JSON parse or other error
+  }
+  return [];
+};
+
+// ============ StandardImageList Component ============
+function StandardImageList(props: ImageListProps) {
+  const images: ImageItem[] =
     props?.Images?.map((imgUrl: string, index: number, arr: string[]) => ({
       src: imgUrl,
       rows: arr.length % 2 !== 0 && index === arr.length - 1 ? 3 : 2,
@@ -127,7 +263,7 @@ function StandardImageList(props: any) {
       rowHeight={200}
       gap={1}
     >
-      {images.map((item: any, idx: any) => (
+      {images.map((item: ImageItem, idx: number) => (
         <ImageListItem
           key={idx}
           cols={item.cols || 1}
@@ -168,10 +304,19 @@ export const BookingPage = () => {
   const [selectedImg, setSelectedImg] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [isViewDatePicker] = useState(true);
-  const [packages, setPackages] = useState<any[]>([]);
-  const [date, setDate] = useState(dayjs()); // today's date
+  const [packages, setPackages] = useState<PackageData[]>([]);
+  const [date, setDate] = useState<Dayjs>(dayjs()); // today's date
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [selectedPackage, setSelectedPackage] = useState<any>(null);
+  const [selectedPackage, setSelectedPackage] = useState<PackageData | null>(
+    null,
+  );
+  // Klook-style package tabs and details modal
+  const [packageTab, setPackageTab] = useState<"standard" | "combo">(
+    "standard",
+  );
+  const [packageDetailsOpen, setPackageDetailsOpen] = useState(false);
+  const [packageToView, setPackageToView] = useState<PackageData | null>(null);
+
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { session, profile, refreshProfile } = useAuth();
@@ -182,20 +327,20 @@ export const BookingPage = () => {
   const [isBooking] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
-  const [pageData, setPageData] = useState({
-    Image: [] as string[],
+  const [pageData, setPageData] = useState<PageDataState>({
+    Image: [],
     description: "",
     id: 0,
     location: "",
     service_name: "",
     updated_at: "",
     default_price: 0,
-    service_type: "" as string | null,
-    daily_slots: null as number | null,
-    start_time: null as string | null,
-    end_time: null as string | null,
-    duration: null as number | null,
-    days: null as any,
+    service_type: null,
+    daily_slots: null,
+    start_time: null,
+    end_time: null,
+    duration: null,
+    days: null,
   });
 
   // Airport Pickup / Dropoff extras
@@ -241,38 +386,9 @@ export const BookingPage = () => {
       }
 
       const fallbackImage = "/assets/desertSafari.jpg";
-      const serviceRecord = data as any;
+      const serviceRecord = data as ServiceRecord;
 
-      let serviceImages: string[] = [];
-      try {
-        if (serviceRecord?.service_image) {
-          const imgVal = serviceRecord.service_image;
-          if (typeof imgVal === "string") {
-            const parsedImages = JSON.parse(imgVal);
-            if (Array.isArray(parsedImages)) {
-              serviceImages = parsedImages
-                .map((x: any) => (typeof x === "string" ? x : x?.url))
-                .filter((u: any) => typeof u === "string" && u.trim() !== "");
-            }
-          } else if (Array.isArray(imgVal)) {
-            serviceImages = imgVal
-              .map((x: any) => (typeof x === "string" ? x : x?.url))
-              .filter((u: any) => typeof u === "string" && u.trim() !== "");
-          } else if (Array.isArray(imgVal?.url)) {
-            serviceImages = imgVal.url.filter(
-              (img: any) => typeof img === "string" && img.trim() !== "",
-            );
-          } else if (
-            typeof imgVal?.url === "string" &&
-            imgVal.url.trim() !== ""
-          ) {
-            serviceImages = [imgVal.url];
-          }
-        }
-      } catch {
-        serviceImages = [];
-      }
-
+      const serviceImages = extractImageUrls(serviceRecord?.service_image);
       const imageUrls =
         serviceImages.length > 0 ? serviceImages : [fallbackImage];
 
@@ -310,45 +426,10 @@ export const BookingPage = () => {
   }, [serviceIdFromRoute, state]);
 
   useEffect(() => {
-    if (!!state) {
+    if (state) {
       // Parse service images from different possible formats
-      let serviceImages: string[] = [];
-
-      try {
-        if (state?.service_image) {
-          const imgVal = state.service_image;
-          // Handle JSON string format from database
-          if (typeof imgVal === "string") {
-            const parsedImages = JSON.parse(imgVal);
-            if (Array.isArray(parsedImages)) {
-              serviceImages = parsedImages
-                .map((x: any) => (typeof x === "string" ? x : x?.url))
-                .filter((u: any) => typeof u === "string" && u.trim() !== "");
-            }
-          }
-          // Handle direct array (may contain strings or { url, path } objects)
-          else if (Array.isArray(imgVal)) {
-            serviceImages = imgVal
-              .map((x: any) => (typeof x === "string" ? x : x?.url))
-              .filter((u: any) => typeof u === "string" && u.trim() !== "");
-          }
-          // Handle object with url array
-          else if (Array.isArray(imgVal?.url)) {
-            serviceImages = imgVal.url.filter(
-              (img: any) => typeof img === "string" && img.trim() !== "",
-            );
-          }
-          // Handle single object: { url: string }
-          else if (
-            typeof imgVal?.url === "string" &&
-            imgVal.url.trim() !== ""
-          ) {
-            serviceImages = [imgVal.url];
-          }
-        }
-      } catch (error) {
-        console.warn("Error parsing service images:", error);
-      }
+      const stateRecord = state as ServiceRecord;
+      const serviceImages = extractImageUrls(stateRecord?.service_image);
 
       // Fallback to default image if no valid images found
       const fallbackImage = "/assets/desertSafari.jpg";
@@ -358,27 +439,31 @@ export const BookingPage = () => {
       setPageData({
         Image: imageUrls,
         description:
-          state?.service_description ||
-          state?.description ||
+          stateRecord?.service_description ||
+          stateRecord?.description ||
           "Experience Dubai like never before.",
-        id: state?.id ?? 0,
-        location: state?.location || "Dubai",
-        service_name: state?.service_name || "Dubai Experience",
-        updated_at: state?.updated_at || "",
-        default_price: state?.default_price ?? 0,
-        service_type: state?.service_type || null,
+        id: stateRecord?.id ?? 0,
+        location: stateRecord?.location || "Dubai",
+        service_name: stateRecord?.service_name || "Dubai Experience",
+        updated_at: stateRecord?.updated_at || "",
+        default_price: stateRecord?.default_price ?? 0,
+        service_type: stateRecord?.service_type || null,
         daily_slots:
-          state?.daily_slots != null ? Number(state.daily_slots) : null,
-        start_time: state?.start_time || null,
-        end_time: state?.end_time || null,
-        duration: state?.duration != null ? Number(state.duration) : null,
-        days: state?.days || null,
+          stateRecord?.daily_slots != null
+            ? Number(stateRecord.daily_slots)
+            : null,
+        start_time: stateRecord?.start_time || null,
+        end_time: stateRecord?.end_time || null,
+        duration:
+          stateRecord?.duration != null ? Number(stateRecord.duration) : null,
+        days: stateRecord?.days || null,
       });
       setSelectedId(0);
       setSelectedPackage(null);
     }
     const fetchPackages = async () => {
-      const idToUse = state?.id ?? serviceIdFromRoute;
+      const stateRecord = state as ServiceRecord | null;
+      const idToUse = stateRecord?.id ?? serviceIdFromRoute;
       if (!idToUse) {
         console.warn("No service ID provided for fetching packages");
         return;
@@ -397,10 +482,13 @@ export const BookingPage = () => {
           setPackages([]);
         } else if (Array.isArray(data)) {
           // Filter out any invalid packages
-          const validPackages = data.filter((pkg) => pkg && pkg.id && pkg.name);
+          const validPackages = data.filter(
+            (pkg): pkg is PackageData =>
+              pkg && typeof pkg.id === "number" && typeof pkg.name === "string",
+          );
           setPackages(validPackages);
           console.log(
-            `Fetched ${validPackages.length} packages for service ${state.id}`,
+            `Fetched ${validPackages.length} packages for service ${idToUse}`,
           );
         } else {
           setPackages([]);
@@ -440,7 +528,7 @@ export const BookingPage = () => {
 
   const finalPrice = calculatePrice();
 
-  const formatCurrency = (value: any) => {
+  const formatCurrency = (value: number | string | null | undefined) => {
     if (value === null || value === undefined || isNaN(Number(value))) {
       return "Contact for pricing";
     }
@@ -487,12 +575,8 @@ export const BookingPage = () => {
 
   const hasAddOnPackages = Array.isArray(packages) && packages.length > 0;
 
-  const packagesToDisplay = hasAddOnPackages
-    ? [basePackage, ...packages.map((pack) => ({ ...pack, isBase: false }))]
-    : [];
-
   // Handle booking navigation with all data
-  const handleBookNow = async () => {
+  const handleBookNow = () => {
     if (!pageData.id) {
       console.warn("No service ID available for booking");
       return;
@@ -530,7 +614,7 @@ export const BookingPage = () => {
   };
 
   // Proceed to checkout for payment
-  const proceedWithBooking = async () => {
+  const proceedWithBooking = () => {
     setShowConfirmationDialog(false);
     setBookingFeedback(null);
 
@@ -586,6 +670,7 @@ export const BookingPage = () => {
             ? dropoffAddress.trim()
             : null,
         unitPrice: finalPrice,
+        quantity: 1,
       }),
     );
 
@@ -608,6 +693,7 @@ export const BookingPage = () => {
                 ? dropoffAddress.trim()
                 : null,
             unitPrice: finalPrice,
+            quantity: 1,
           },
         }),
       );
@@ -660,6 +746,7 @@ export const BookingPage = () => {
             ? dropoffAddress.trim()
             : null,
         unitPrice: finalPrice,
+        quantity: 1,
       }),
     );
 
@@ -682,6 +769,7 @@ export const BookingPage = () => {
                 ? dropoffAddress.trim()
                 : null,
             unitPrice: finalPrice,
+            quantity: 1,
           },
         }),
       );
@@ -855,124 +943,349 @@ export const BookingPage = () => {
               </Box>
             )}
 
+            {/* Klook-style Package Options Section */}
             <Box className="planSection">
-              <Typography variant="h4" className="sectionHeading planHeading">
-                {hasAddOnPackages ? "Choose your plan" : "Included experience"}
-              </Typography>
-              <Typography className="planSubtitle">
-                {hasAddOnPackages
-                  ? "Select the package that matches how you like to explore Dubai."
-                  : basePackage.description}
-              </Typography>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}
+              >
+                <Box
+                  sx={{
+                    width: 4,
+                    height: 28,
+                    bgcolor: "#FF621F",
+                    borderRadius: 1,
+                  }}
+                />
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: 700, color: "#1a1a1a" }}
+                >
+                  {pageData.service_name} Package Options
+                </Typography>
+              </Box>
+
               {packagesLoading ? (
                 <Box className="loader-container">
                   <span className="loader"></span>
                 </Box>
               ) : hasAddOnPackages ? (
-                <Box className="packagesGrid">
-                  {packagesToDisplay.map((pack: any) => {
-                    const packId = pack.isBase ? 0 : pack.id;
-                    const isSelected = selectedId === packId;
-                    return (
-                      <Box
-                        key={packId}
-                        className={`packageCard ${
-                          isSelected ? "selected" : ""
-                        }`}
-                        onClick={() => {
-                          setSelectedId(packId);
-                          setSelectedPackage(pack.isBase ? null : pack);
-                        }}
-                      >
-                        <Box className="packageHeader">
-                          <Typography className="packageName">
-                            {pack.isBase ? "Standard Experience" : pack.name}
-                          </Typography>
-                          {pack.isBase && (
-                            <span className="packageBadge">Included</span>
-                          )}
-                          {!pack.isBase && packId === packages[0]?.id && (
-                            <span className="packageBadge popular">
-                              Popular
-                            </span>
-                          )}
-                        </Box>
-
-                        <Box className="packageMeta">
-                          {pack.duration && (
-                            <Box className="packageMetaItem">
-                              <AccessTimeIcon />
-                              <span>{pack.duration}</span>
-                            </Box>
-                          )}
-                          {pack.max_guests && (
-                            <Box className="packageMetaItem">
-                              <span>👥 Up to {pack.max_guests} guests</span>
-                            </Box>
-                          )}
-                        </Box>
-
-                        <Typography className="packageDescription">
-                          {pack.description ||
-                            "Immerse yourself in handpicked highlights with a seamless travel schedule."}
-                        </Typography>
-
-                        {/* Show includes if available */}
-                        {Array.isArray(pack.includes) &&
-                          pack.includes.length > 0 && (
-                            <Box className="packageIncludes">
-                              <Typography className="packageIncludesTitle">
-                                What's Included
-                              </Typography>
-                              <Box className="packageIncludesList">
-                                {pack.includes
-                                  .slice(0, 3)
-                                  .map((item: string, idx: number) => (
-                                    <Box
-                                      key={idx}
-                                      className="packageIncludeItem included"
-                                    >
-                                      {item}
-                                    </Box>
-                                  ))}
-                                {pack.includes.length > 3 && (
-                                  <Typography
-                                    sx={{
-                                      fontSize: "0.8rem",
-                                      color: "#888",
-                                      mt: 0.5,
-                                    }}
-                                  >
-                                    +{pack.includes.length - 3} more
-                                  </Typography>
-                                )}
-                              </Box>
-                            </Box>
-                          )}
-
-                        <Box className="packageFooter">
-                          <Box className="packagePriceWrapper">
-                            <span className="packagePriceLabel">Price</span>
-                            <Typography className="packagePrice">
-                              <span className="currency">AED </span>
-                              {Number(pack.price || 0).toLocaleString()}
-                            </Typography>
-                          </Box>
-                          <button
-                            className="packageSelectBtn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedId(packId);
-                              setSelectedPackage(pack.isBase ? null : pack);
+                <>
+                  {/* Klook-style Tabs */}
+                  <Box sx={{ mb: 3 }}>
+                    <Tabs
+                      value={packageTab}
+                      onChange={(_, newValue) => setPackageTab(newValue)}
+                      sx={{
+                        "& .MuiTabs-indicator": {
+                          backgroundColor: "#FF621F",
+                          height: 3,
+                        },
+                        "& .MuiTab-root": {
+                          textTransform: "none",
+                          fontWeight: 600,
+                          fontSize: "1rem",
+                          color: "#666",
+                          "&.Mui-selected": {
+                            color: "#FF621F",
+                          },
+                        },
+                      }}
+                    >
+                      <Tab label="Standard" value="standard" />
+                      <Tab
+                        label={
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
                             }}
                           >
-                            {isSelected ? "Selected" : "Select"}
-                          </button>
+                            <span>Combo deals</span>
+                            {packages.filter((p) => p.package_type === "combo")
+                              .length > 0 && (
+                              <Chip
+                                label={`${Math.round(
+                                  (packages.filter(
+                                    (p) => p.package_type === "combo",
+                                  )[0]?.original_price || 0) > 0
+                                    ? (((packages.filter(
+                                        (p) => p.package_type === "combo",
+                                      )[0]?.original_price || 0) -
+                                        (packages.filter(
+                                          (p) => p.package_type === "combo",
+                                        )[0]?.price || 0)) /
+                                        (packages.filter(
+                                          (p) => p.package_type === "combo",
+                                        )[0]?.original_price || 1)) *
+                                        100
+                                    : 10,
+                                )}% off`}
+                                size="small"
+                                sx={{
+                                  bgcolor: "#fff3e6",
+                                  color: "#FF621F",
+                                  fontWeight: 600,
+                                  fontSize: "0.7rem",
+                                  height: 20,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        }
+                        value="combo"
+                      />
+                    </Tabs>
+                  </Box>
+
+                  {/* Package List - Klook Style */}
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  >
+                    {(packageTab === "standard"
+                      ? [
+                          basePackage,
+                          ...packages.filter((p) => p.package_type !== "combo"),
+                        ]
+                      : packages.filter((p) => p.package_type === "combo")
+                    ).map((pack: PackageData) => {
+                      const packId = pack.isBase ? 0 : pack.id;
+                      const isSelected = selectedId === packId;
+                      const isCombo = pack.package_type === "combo";
+                      const savings =
+                        isCombo && pack.original_price
+                          ? Math.round(
+                              ((pack.original_price - pack.price) /
+                                pack.original_price) *
+                                100,
+                            )
+                          : 0;
+
+                      return (
+                        <Box
+                          key={packId}
+                          sx={{
+                            border: isSelected
+                              ? "2px solid #FF621F"
+                              : "1px solid #e8e8e8",
+                            borderRadius: 2,
+                            p: 2.5,
+                            bgcolor: isSelected ? "#fff9f5" : "#fff",
+                            transition: "all 0.2s ease",
+                            "&:hover": {
+                              borderColor: "#FF621F",
+                              boxShadow: "0 2px 12px rgba(255, 98, 31, 0.1)",
+                            },
+                          }}
+                        >
+                          {/* Package Title */}
+                          <Typography
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: "1.1rem",
+                              mb: 1.5,
+                              color: "#1a1a1a",
+                            }}
+                          >
+                            {pack.isBase ? "Standard Experience" : pack.name}
+                          </Typography>
+
+                          {/* Feature Tags */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 1,
+                              mb: 2,
+                            }}
+                          >
+                            <Chip
+                              label={
+                                typeof pack.cancellation_policy === "object" &&
+                                pack.cancellation_policy !== null
+                                  ? (
+                                      pack.cancellation_policy as {
+                                        type?: string;
+                                        details?: string;
+                                      }
+                                    ).type || "No cancellation"
+                                  : typeof pack.cancellation_policy === "string"
+                                    ? pack.cancellation_policy
+                                    : "No cancellation"
+                              }
+                              size="small"
+                              sx={{
+                                bgcolor: "#f5f5f5",
+                                color: "#666",
+                                fontSize: "0.75rem",
+                              }}
+                            />
+                            <Chip
+                              label="Valid on the selected date"
+                              size="small"
+                              sx={{
+                                bgcolor: "#f5f5f5",
+                                color: "#666",
+                                fontSize: "0.75rem",
+                              }}
+                            />
+                            <Chip
+                              label={pack.voucher_type || "Enter with voucher"}
+                              size="small"
+                              sx={{
+                                bgcolor: "#f5f5f5",
+                                color: "#666",
+                                fontSize: "0.75rem",
+                              }}
+                            />
+                            <Chip
+                              label={
+                                pack.confirmation_type || "Instant confirmation"
+                              }
+                              size="small"
+                              sx={{
+                                bgcolor: "#f5f5f5",
+                                color: "#666",
+                                fontSize: "0.75rem",
+                              }}
+                            />
+                          </Box>
+
+                          {/* Price and Select Row */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            {/* Package Details Link */}
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPackageToView(pack);
+                                setPackageDetailsOpen(true);
+                              }}
+                              sx={{
+                                textTransform: "none",
+                                color: "#1a1a1a",
+                                fontWeight: 600,
+                                p: 0,
+                                "&:hover": {
+                                  bgcolor: "transparent",
+                                  color: "#FF621F",
+                                },
+                              }}
+                              endIcon={<ChevronRightIcon />}
+                            >
+                              Package details
+                            </Button>
+
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 2,
+                              }}
+                            >
+                              {/* Price */}
+                              <Box sx={{ textAlign: "right" }}>
+                                {isCombo && pack.original_price && (
+                                  <Typography
+                                    sx={{
+                                      textDecoration: "line-through",
+                                      color: "#999",
+                                      fontSize: "0.85rem",
+                                    }}
+                                  >
+                                    AED {pack.original_price.toLocaleString()}
+                                  </Typography>
+                                )}
+                                <Typography
+                                  sx={{
+                                    fontWeight: 700,
+                                    fontSize: "1.25rem",
+                                    color: "#1a1a1a",
+                                  }}
+                                >
+                                  AED {Number(pack.price || 0).toLocaleString()}
+                                </Typography>
+                              </Box>
+
+                              {/* Combo Badge */}
+                              {isCombo && savings > 0 && (
+                                <Box
+                                  sx={{
+                                    border: "1px solid #FF621F",
+                                    borderRadius: 1,
+                                    px: 1,
+                                    py: 0.5,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                  }}
+                                >
+                                  <Typography
+                                    sx={{
+                                      color: "#FF621F",
+                                      fontWeight: 600,
+                                      fontSize: "0.75rem",
+                                    }}
+                                  >
+                                    Combo
+                                  </Typography>
+                                  <Typography
+                                    sx={{
+                                      color: "#FF621F",
+                                      fontWeight: 600,
+                                      fontSize: "0.75rem",
+                                    }}
+                                  >
+                                    Save {savings}%
+                                  </Typography>
+                                </Box>
+                              )}
+
+                              {/* Select Button */}
+                              <Button
+                                variant="contained"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedId(packId);
+                                  setSelectedPackage(pack.isBase ? null : pack);
+                                }}
+                                sx={{
+                                  bgcolor: isSelected ? "#e0e0e0" : "#FF621F",
+                                  color: isSelected ? "#666" : "#fff",
+                                  textTransform: "none",
+                                  fontWeight: 600,
+                                  px: 3,
+                                  borderRadius: 1,
+                                  "&:hover": {
+                                    bgcolor: isSelected ? "#d0d0d0" : "#e55519",
+                                  },
+                                }}
+                              >
+                                {isSelected ? "Selected" : "Select"}
+                              </Button>
+                            </Box>
+                          </Box>
                         </Box>
-                      </Box>
-                    );
-                  })}
-                </Box>
+                      );
+                    })}
+
+                    {/* Empty state for combo tab */}
+                    {packageTab === "combo" &&
+                      packages.filter((p) => p.package_type === "combo")
+                        .length === 0 && (
+                        <Box sx={{ textAlign: "center", py: 4, color: "#666" }}>
+                          <Typography>
+                            No combo deals available for this service yet.
+                          </Typography>
+                        </Box>
+                      )}
+                  </Box>
+                </>
               ) : (
                 <Box className="basePlanSummary">
                   <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
@@ -1019,7 +1332,9 @@ export const BookingPage = () => {
                     value={airportTransferType}
                     label="Type"
                     onChange={(e) =>
-                      setAirportTransferType(e.target.value as any)
+                      setAirportTransferType(
+                        e.target.value as "pickup" | "dropoff",
+                      )
                     }
                   >
                     <MenuItem value="pickup">Airport Pickup</MenuItem>
@@ -1059,12 +1374,12 @@ export const BookingPage = () => {
             >
               Select your date
             </Typography>
-            {!!isViewDatePicker && (
+            {isViewDatePicker && (
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DateCalendar
                   value={date}
                   minDate={dayjs()}
-                  onChange={(newValue: any) => {
+                  onChange={(newValue: Dayjs | null) => {
                     if (newValue) {
                       setDate(newValue);
                     }
@@ -1244,6 +1559,438 @@ export const BookingPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Klook-style Package Details Drawer */}
+      <Drawer
+        anchor="right"
+        open={packageDetailsOpen}
+        onClose={() => setPackageDetailsOpen(false)}
+        PaperProps={{
+          sx: {
+            width: { xs: "100%", sm: 450 },
+            maxWidth: "100vw",
+          },
+        }}
+      >
+        <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+          {/* Header */}
+          <Box
+            sx={{
+              p: 2,
+              borderBottom: "1px solid #e8e8e8",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
+              Package details
+            </Typography>
+            <IconButton onClick={() => setPackageDetailsOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          {/* Content */}
+          <Box sx={{ flex: 1, overflowY: "auto", p: 2.5 }}>
+            {packageToView && (
+              <>
+                {/* Package Name */}
+                <Typography
+                  sx={{ fontWeight: 700, fontSize: "1.25rem", mb: 2 }}
+                >
+                  {packageToView.isBase
+                    ? "Standard Experience"
+                    : packageToView.name}
+                </Typography>
+
+                {/* Quick Info Tags */}
+                <Stack spacing={1.5} sx={{ mb: 3 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <BoltIcon sx={{ color: "#666", fontSize: 20 }} />
+                    <Typography sx={{ fontSize: "0.9rem", color: "#444" }}>
+                      {packageToView.confirmation_type ||
+                        "Instant confirmation"}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <ConfirmationNumberIcon
+                      sx={{ color: "#666", fontSize: 20 }}
+                    />
+                    <Typography sx={{ fontSize: "0.9rem", color: "#444" }}>
+                      {packageToView.voucher_type || "Enter with voucher"}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <EventAvailableIcon sx={{ color: "#666", fontSize: 20 }} />
+                    <Typography sx={{ fontSize: "0.9rem", color: "#444" }}>
+                      Valid on the selected date
+                    </Typography>
+                    <Typography
+                      sx={{ fontSize: "0.8rem", color: "#888", ml: 0.5 }}
+                    >
+                      The voucher is valid only on the specified date (and time
+                      if applicable)
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <BlockIcon sx={{ color: "#666", fontSize: 20 }} />
+                    <Typography sx={{ fontSize: "0.9rem", color: "#444" }}>
+                      {typeof packageToView.cancellation_policy === "object" &&
+                      packageToView.cancellation_policy !== null
+                        ? (
+                            packageToView.cancellation_policy as {
+                              type?: string;
+                              details?: string;
+                            }
+                          ).type || "No cancellation"
+                        : typeof packageToView.cancellation_policy === "string"
+                          ? packageToView.cancellation_policy
+                          : "No cancellation"}
+                    </Typography>
+                    <Typography
+                      sx={{ fontSize: "0.8rem", color: "#888", ml: 0.5 }}
+                    >
+                      No cancellations, refunds, or changes can be made
+                    </Typography>
+                  </Box>
+                </Stack>
+
+                {/* About this package */}
+                <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 2 }}>
+                  About this package
+                </Typography>
+
+                {/* What's included */}
+                {Array.isArray(packageToView.includes) &&
+                  packageToView.includes.length > 0 && (
+                    <Box
+                      sx={{
+                        bgcolor: "#f9fafb",
+                        borderRadius: 2,
+                        p: 2,
+                        mb: 2,
+                      }}
+                    >
+                      <Typography
+                        sx={{ fontWeight: 600, mb: 1.5, color: "#1a1a1a" }}
+                      >
+                        What's included
+                      </Typography>
+                      <Stack spacing={1}>
+                        {packageToView.includes.map((item, idx) => (
+                          <Box
+                            key={idx}
+                            sx={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 1,
+                            }}
+                          >
+                            <CheckCircleIcon
+                              sx={{ color: "#2e7d32", fontSize: 18, mt: 0.3 }}
+                            />
+                            <Typography
+                              sx={{ fontSize: "0.9rem", color: "#444" }}
+                            >
+                              {item}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
+
+                {/* What's not included */}
+                {Array.isArray(packageToView.excludes) &&
+                  packageToView.excludes.length > 0 && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography
+                        sx={{ fontWeight: 600, mb: 1.5, color: "#1a1a1a" }}
+                      >
+                        Not included
+                      </Typography>
+                      <Stack spacing={1}>
+                        {packageToView.excludes.map((item, idx) => (
+                          <Box
+                            key={idx}
+                            sx={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 1,
+                            }}
+                          >
+                            <CancelIcon
+                              sx={{ color: "#999", fontSize: 18, mt: 0.3 }}
+                            />
+                            <Typography
+                              sx={{ fontSize: "0.9rem", color: "#666" }}
+                            >
+                              {item}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
+
+                {/* Eligibility */}
+                {Array.isArray(packageToView.eligibility) &&
+                  packageToView.eligibility.length > 0 && (
+                    <Box
+                      sx={{
+                        bgcolor: "#f9fafb",
+                        borderRadius: 2,
+                        p: 2,
+                        mb: 2,
+                      }}
+                    >
+                      <Typography
+                        sx={{ fontWeight: 600, mb: 1.5, color: "#1a1a1a" }}
+                      >
+                        Eligibility
+                      </Typography>
+                      <Stack
+                        spacing={0.5}
+                        component="ul"
+                        sx={{ m: 0, pl: 2.5 }}
+                      >
+                        {packageToView.eligibility.map((item, idx) => (
+                          <Typography
+                            key={idx}
+                            component="li"
+                            sx={{ fontSize: "0.9rem", color: "#444" }}
+                          >
+                            {item}
+                          </Typography>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
+
+                {/* Terms & Conditions */}
+                <Typography sx={{ fontWeight: 700, fontSize: "1.1rem", mb: 2 }}>
+                  Terms & Conditions
+                </Typography>
+
+                <Accordion
+                  elevation={0}
+                  sx={{
+                    border: "1px solid #e8e8e8",
+                    borderRadius: "8px !important",
+                    mb: 1,
+                    "&:before": { display: "none" },
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography sx={{ fontWeight: 600 }}>
+                      Confirmation
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
+                      You will receive confirmation of your booking within 24
+                      hours. A voucher will be sent to your email address which
+                      you can present at the venue.
+                    </Typography>
+                  </AccordionDetails>
+                </Accordion>
+
+                <Accordion
+                  elevation={0}
+                  sx={{
+                    border: "1px solid #e8e8e8",
+                    borderRadius: "8px !important",
+                    mb: 1,
+                    "&:before": { display: "none" },
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography sx={{ fontWeight: 600 }}>
+                      Additional information
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
+                      {packageToView.description ||
+                        "Please arrive at least 15 minutes before your scheduled time. " +
+                          "Remember to bring a valid ID and your booking confirmation."}
+                    </Typography>
+                  </AccordionDetails>
+                </Accordion>
+
+                {/* How to use */}
+                <Typography
+                  sx={{ fontWeight: 700, fontSize: "1.1rem", mt: 3, mb: 2 }}
+                >
+                  How to use
+                </Typography>
+
+                {packageToView.opening_hours && (
+                  <Accordion
+                    elevation={0}
+                    sx={{
+                      border: "1px solid #e8e8e8",
+                      borderRadius: "8px !important",
+                      mb: 1,
+                      "&:before": { display: "none" },
+                    }}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Typography sx={{ fontWeight: 600 }}>
+                        Opening hours
+                      </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
+                        {packageToView.opening_hours}
+                      </Typography>
+                    </AccordionDetails>
+                  </Accordion>
+                )}
+
+                <Accordion
+                  elevation={0}
+                  sx={{
+                    border: "1px solid #e8e8e8",
+                    borderRadius: "8px !important",
+                    mb: 1,
+                    "&:before": { display: "none" },
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography sx={{ fontWeight: 600 }}>
+                      Voucher type
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
+                      {packageToView.voucher_type ||
+                        "Show your mobile voucher to gain entry. No printing required."}
+                    </Typography>
+                  </AccordionDetails>
+                </Accordion>
+
+                <Accordion
+                  elevation={0}
+                  sx={{
+                    border: "1px solid #e8e8e8",
+                    borderRadius: "8px !important",
+                    mb: 1,
+                    "&:before": { display: "none" },
+                  }}
+                >
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography sx={{ fontWeight: 600 }}>
+                      How to redeem
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
+                      Present your voucher at the ticket counter or entrance.
+                      Staff will scan your voucher code to validate your
+                      booking.
+                    </Typography>
+                  </AccordionDetails>
+                </Accordion>
+
+                {packageToView.address && (
+                  <Accordion
+                    elevation={0}
+                    sx={{
+                      border: "1px solid #e8e8e8",
+                      borderRadius: "8px !important",
+                      mb: 1,
+                      "&:before": { display: "none" },
+                    }}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Typography sx={{ fontWeight: 600 }}>Address</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
+                        {packageToView.address}
+                      </Typography>
+                    </AccordionDetails>
+                  </Accordion>
+                )}
+
+                {packageToView.how_to_get_there && (
+                  <Accordion
+                    elevation={0}
+                    sx={{
+                      border: "1px solid #e8e8e8",
+                      borderRadius: "8px !important",
+                      mb: 1,
+                      "&:before": { display: "none" },
+                    }}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Typography sx={{ fontWeight: 600 }}>
+                        How to get there
+                      </Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
+                        {packageToView.how_to_get_there}
+                      </Typography>
+                    </AccordionDetails>
+                  </Accordion>
+                )}
+              </>
+            )}
+          </Box>
+
+          {/* Footer with Select button */}
+          <Box
+            sx={{
+              p: 2,
+              borderTop: "1px solid #e8e8e8",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Box>
+              <Typography sx={{ fontSize: "0.8rem", color: "#888" }}>
+                Price
+              </Typography>
+              <Typography
+                sx={{ fontWeight: 700, fontSize: "1.25rem", color: "#1a1a1a" }}
+              >
+                AED {Number(packageToView?.price || 0).toLocaleString()}
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              onClick={() => {
+                if (packageToView) {
+                  const packId = packageToView.isBase ? 0 : packageToView.id;
+                  setSelectedId(packId);
+                  setSelectedPackage(
+                    packageToView.isBase ? null : packageToView,
+                  );
+                  setPackageDetailsOpen(false);
+                }
+              }}
+              sx={{
+                bgcolor: "#FF621F",
+                color: "#fff",
+                textTransform: "none",
+                fontWeight: 600,
+                px: 4,
+                py: 1.5,
+                borderRadius: 1,
+                "&:hover": {
+                  bgcolor: "#e55519",
+                },
+              }}
+            >
+              Select
+            </Button>
+          </Box>
+        </Box>
+      </Drawer>
     </div>
   );
 };

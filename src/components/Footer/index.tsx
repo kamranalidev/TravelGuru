@@ -33,12 +33,12 @@ export const Footer = () => {
                 onClick={() => navigate("/")}
               >
                 <img
-                  src="/assets/Logo-02.png"
-                  alt="Travel Guroo Logo"
+                  src="/Travel-Guru-Logo-Final.png"
+                  alt="Travel Guru Logo"
                   className="footer-logo"
                 />
                 <Typography className="footer-logo-text">
-                  Travel Guroo
+                  Travel Guru
                 </Typography>
               </Box>
               <Typography className="footer-tagline">

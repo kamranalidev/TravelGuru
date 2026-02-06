@@ -14,7 +14,7 @@
 /* Stable grid for services - prevents scrambling on refresh */
 .servicesGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px;
     max-width: 1400px;
     margin: 0 auto;
@@ -29,6 +29,8 @@
     max-width: 100%;
     height: 100%;
     contain: layout style;
+    display: flex;
+    flex-direction: column;
 }
 
 .heroSection {
@@ -523,7 +525,7 @@
 
 .servicesGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px;
     max-width: 1400px;
     margin: 0 auto;
@@ -535,11 +537,11 @@
 
 .servicesCarousel,
 .testimonialsCarousel {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: calc((100% - 48px) / 3);
+    display: flex;
+    flex-wrap: nowrap;
     gap: 24px;
     overflow-x: auto;
+    overflow-y: hidden; /* Prevent vertical scrolling */
     scroll-snap-type: x mandatory;
     scroll-padding: 12px;
     padding: 4px 2px 12px;
@@ -547,21 +549,21 @@
     -webkit-overflow-scrolling: touch;
     /* Stabilize layout */
     min-height: 0;
-    contain: layout style;
+    /* Ensure no vertical overflow */
+    max-height: fit-content;
 }
 
 /* When grid is used as carousel, override default grid behavior */
 .servicesGrid.servicesCarousel {
+    display: flex;
     grid-template-columns: unset;
-}
-
-.servicesCarousel .serviceCard,
-.testimonialsCarousel .testimonialCard {
-    scroll-snap-align: start;
 }
 
 .servicesCarousel > *,
 .testimonialsCarousel > * {
+    flex: 0 0 calc((100% - 48px) / 3);
+    min-width: 280px;
+    max-width: 400px;
     scroll-snap-align: start;
 }
 
@@ -623,6 +625,8 @@
     /* Enable content-visibility for performance */
     content-visibility: auto;
     contain-intrinsic-size: auto 400px;
+    /* Prevent any overflow */
+    overflow-y: hidden;
 }
 
 .serviceImageWrapper {
@@ -718,6 +722,10 @@
 
 .serviceInfo {
     padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 .serviceHeader {
@@ -817,6 +825,11 @@
     flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 12px;
+    min-height: 28px;
+    align-items: center;
+    /* Prevent scattering - keep items tightly grouped */
+    justify-content: flex-start;
+    max-width: 100%;
 }
 
 .serviceDetailItem {
@@ -828,10 +841,15 @@
     background: #f5f5f5;
     padding: 4px 8px;
     border-radius: 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .serviceDetailItem svg {
     color: #FF621F;
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
 }
 
 .serviceMeta {
