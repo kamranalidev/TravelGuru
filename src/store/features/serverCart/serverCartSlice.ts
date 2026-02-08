@@ -39,7 +39,7 @@ export const ensureActiveServerCart = createAsyncThunk(
 
     if (created.error) throw new Error(created.error.message);
     return created.data.id as string;
-  }
+  },
 );
 
 export const loadServerCartToLocal = createAsyncThunk(
@@ -68,7 +68,7 @@ export const loadServerCartToLocal = createAsyncThunk(
     const { data, error } = await supabase
       .from("cart_items")
       .select(
-        "service_id, package_id, booking_date, departure_arrival_time, airport_type, address, unit_price_micros, currency, services(service_name, location), packages(name)"
+        "service_id, package_id, booking_date, departure_arrival_time, airport_type, address, unit_price_micros, currency, services(service_name, location), packages(name)",
       )
       .eq("cart_id", cartId)
       .order("created_at", { ascending: true });
@@ -80,16 +80,18 @@ export const loadServerCartToLocal = createAsyncThunk(
       serviceName: row.services?.service_name ?? null,
       location: row.services?.location ?? null,
       packageId: row.package_id == null ? null : Number(row.package_id),
-      packageName: row.packages?.name ?? (row.package_id ? null : "Standard Experience"),
+      packageName:
+        row.packages?.name ?? (row.package_id ? null : "Standard Experience"),
       bookingDate: String(row.booking_date),
       bookingTime: row.departure_arrival_time ?? null,
       airportType: row.airport_type ?? null,
       address: row.address ?? null,
       unitPrice: Number(row.unit_price_micros ?? 0) / 1_000_000,
+      quantity: 1, // Default quantity for server cart items
     }));
 
     return { cartId, items };
-  }
+  },
 );
 
 export const addServerCartItem = createAsyncThunk(
@@ -130,14 +132,17 @@ export const addServerCartItem = createAsyncThunk(
     const { error } = await supabase.from("cart_items").insert(row);
     if (error) {
       // ignore duplicates per unique index (cart_id, service_id, booking_date, coalesce(time,'00:00:00'))
-      if (String((error as any).code) === "23505" || (error as any).status === 409) {
+      if (
+        String((error as any).code) === "23505" ||
+        (error as any).status === 409
+      ) {
         return { cartId, inserted: false };
       }
       throw new Error(error.message);
     }
 
     return { cartId, inserted: true };
-  }
+  },
 );
 
 export const removeServerCartItem = createAsyncThunk(
@@ -159,7 +164,9 @@ export const removeServerCartItem = createAsyncThunk(
 
     if (t == null || t === "") {
       // match rows where time is NULL OR time='00:00:00'
-      q = q.or("departure_arrival_time.is.null,departure_arrival_time.eq.00:00:00");
+      q = q.or(
+        "departure_arrival_time.is.null,departure_arrival_time.eq.00:00:00",
+      );
     } else {
       q = q.eq("departure_arrival_time", t);
     }
@@ -168,16 +175,19 @@ export const removeServerCartItem = createAsyncThunk(
     if (error) throw new Error(error.message);
 
     return { removed: true };
-  }
+  },
 );
 
 export const clearServerCart = createAsyncThunk(
   "serverCart/clear",
   async (cartId: string) => {
-    const { error } = await supabase.from("cart_items").delete().eq("cart_id", cartId);
+    const { error } = await supabase
+      .from("cart_items")
+      .delete()
+      .eq("cart_id", cartId);
     if (error) throw new Error(error.message);
     return { cleared: true };
-  }
+  },
 );
 
 /**
@@ -235,7 +245,7 @@ export const syncCartToServer = createAsyncThunk(
     }
 
     return { cartId, inserted };
-  }
+  },
 );
 
 export const serverCartSlice = createSlice({
@@ -284,7 +294,8 @@ export const serverCartSlice = createSlice({
       })
       .addCase(addServerCartItem.rejected, (state, action) => {
         state.syncing = false;
-        state.error = action.error.message ?? "Failed to add item to server cart";
+        state.error =
+          action.error.message ?? "Failed to add item to server cart";
       })
       .addCase(removeServerCartItem.pending, (state) => {
         state.syncing = true;
@@ -295,7 +306,8 @@ export const serverCartSlice = createSlice({
       })
       .addCase(removeServerCartItem.rejected, (state, action) => {
         state.syncing = false;
-        state.error = action.error.message ?? "Failed to remove item from server cart";
+        state.error =
+          action.error.message ?? "Failed to remove item from server cart";
       })
       .addCase(clearServerCart.pending, (state) => {
         state.syncing = true;
