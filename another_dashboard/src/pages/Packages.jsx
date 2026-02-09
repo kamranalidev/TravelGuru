@@ -18,6 +18,8 @@ import {
   Col,
   Alert,
   Tabs,
+  Spin,
+  Tooltip,
 } from "antd";
 import {
   PlusOutlined,
@@ -25,6 +27,8 @@ import {
   DeleteOutlined,
   SearchOutlined,
   MinusCircleOutlined,
+  ExclamationCircleOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { supabase } from "../lib/supabase";
@@ -32,6 +36,26 @@ import { supabase } from "../lib/supabase";
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
+
+// ==================== LOGGING UTILITIES ====================
+const log = {
+  info: (msg, data = null) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ℹ️ [Packages] ${msg}`, data || "");
+  },
+  success: (msg, data = null) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ✅ [Packages] ${msg}`, data || "");
+  },
+  error: (msg, error = null) => {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] ❌ [Packages] ${msg}`, error || "");
+  },
+  warn: (msg, data = null) => {
+    const timestamp = new Date().toISOString();
+    console.warn(`[${timestamp}] ⚠️ [Packages] ${msg}`, data || "");
+  },
+};
 
 const Packages = () => {
   const [loading, setLoading] = useState(false);
@@ -41,14 +65,133 @@ const Packages = () => {
   const [editingPackage, setEditingPackage] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [form] = Form.useForm();
+  const [submitting, setSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState("basic");
+  const [validationErrors, setValidationErrors] = useState({});
   const packageType = Form.useWatch("package_type", form);
 
+  // ==================== VALIDATION FUNCTIONS ====================
+  const validateBasicInfo = () => {
+    const values = form.getFieldsValue();
+    const errors = [];
+    
+    if (!values.name?.trim()) errors.push("Package name is required");
+    if (!values.service_id) errors.push("Service selection is required");
+    if (!values.price || values.price <= 0) errors.push("Valid selling price is required");
+    
+    log.info("Basic info validation", { valid: errors.length === 0, errors });
+    return errors;
+  };
+
+  const validateIncludes = () => {
+    // Includes/Excludes are optional, no strict validation needed
+    log.info("Includes/Excludes validation", { valid: true, errors: [] });
+    return [];
+  };
+
+  const validateDetails = () => {
+    // Details tab has no required fields
+    log.info("Details validation", { valid: true, errors: [] });
+    return [];
+  };
+
+  const validateCombo = () => {
+    const values = form.getFieldsValue();
+    const errors = [];
+    
+    if (values.package_type === "combo") {
+      if (!values.combo_items || values.combo_items.length === 0) {
+        errors.push("At least one combo item is required for combo packages");
+      } else {
+        // Validate each combo item
+        const invalidItems = values.combo_items.filter(item => !item?.name || !item?.price);
+        if (invalidItems.length > 0) {
+          errors.push("All combo items must have a name and price");
+        }
+      }
+    }
+    
+    log.info("Combo validation", { 
+      valid: errors.length === 0, 
+      errors,
+      packageType: values.package_type,
+      comboItemsCount: values.combo_items?.length || 0
+    });
+    return errors;
+  };
+
+  const validateCancellation = () => {
+    // Cancellation policy has defaults, no strict validation needed
+    log.info("Cancellation validation", { valid: true, errors: [] });
+    return [];
+  };
+
+  const validateAllTabs = () => {
+    const basicErrors = validateBasicInfo();
+    const includesErrors = validateIncludes();
+    const detailsErrors = validateDetails();
+    const comboErrors = validateCombo();
+    const cancellationErrors = validateCancellation();
+    
+    const allErrors = {
+      basic: basicErrors,
+      includes: includesErrors,
+      details: detailsErrors,
+      combo: comboErrors,
+      cancellation: cancellationErrors,
+    };
+    
+    setValidationErrors(allErrors);
+    
+    const hasErrors = basicErrors.length > 0 || comboErrors.length > 0;
+    
+    if (hasErrors) {
+      // Find first tab with errors and switch to it
+      if (basicErrors.length > 0) {
+        setActiveTab("basic");
+        message.error("Please fill all required fields in Basic Info tab");
+      } else if (comboErrors.length > 0) {
+        setActiveTab("combo");
+        message.error("Please complete combo package configuration");
+      }
+    }
+    
+    log.info("Full validation result", { allErrors, hasErrors });
+    return !hasErrors;
+  };
+
+  // Get tab label with validation indicator
+  const getTabLabel = (key, label) => {
+    const errors = validationErrors[key] || [];
+    const hasErrors = errors.length > 0;
+    
+    return (
+      <span>
+        {label}
+        {hasErrors && (
+          <Tooltip title={errors.join(", ")}>
+            <ExclamationCircleOutlined 
+              style={{ color: "#ff4d4f", marginLeft: 6 }} 
+            />
+          </Tooltip>
+        )}
+        {!hasErrors && validationErrors[key] !== undefined && (
+          <CheckCircleOutlined 
+            style={{ color: "#52c41a", marginLeft: 6 }} 
+          />
+        )}
+      </span>
+    );
+  };
+
   useEffect(() => {
+    log.info("Component mounted, fetching initial data");
     fetchPackages();
     fetchServices();
   }, []);
 
   const fetchPackages = async () => {
+    log.info("Fetching packages from database");
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -63,27 +206,40 @@ const Packages = () => {
 
       if (error) throw error;
       setPackages(data || []);
+      log.success(`Fetched ${data?.length || 0} packages`);
     } catch (error) {
       message.error("Failed to fetch packages");
-      console.error(error);
+      log.error("Failed to fetch packages", error);
     } finally {
       setLoading(false);
     }
   };
 
   const fetchServices = async () => {
-    const { data } = await supabase.from("services").select("id, service_name");
-    setServices(data || []);
+    log.info("Fetching services for dropdown");
+    const { data, error } = await supabase.from("services").select("id, service_name");
+    if (error) {
+      log.error("Failed to fetch services", error);
+    } else {
+      setServices(data || []);
+      log.success(`Fetched ${data?.length || 0} services for dropdown`);
+    }
   };
 
   const handleCreate = () => {
+    log.info("Opening create package modal");
     setEditingPackage(null);
+    setValidationErrors({});
+    setActiveTab("basic");
     form.resetFields();
     setModalVisible(true);
   };
 
   const handleEdit = (record) => {
+    log.info(`Opening edit modal for package: ${record.name}`, { id: record.id });
     setEditingPackage(record);
+    setValidationErrors({});
+    setActiveTab("basic");
     form.setFieldsValue({
       ...record,
       includes: record.includes || [],
@@ -113,18 +269,33 @@ const Packages = () => {
   };
 
   const handleDelete = async (id) => {
+    log.info(`Deleting package with ID: ${id}`);
     try {
       const { error } = await supabase.from("packages").delete().eq("id", id);
       if (error) throw error;
       message.success("Package deleted successfully");
+      log.success(`Package deleted: ${id}`);
       fetchPackages();
     } catch (error) {
       message.error("Failed to delete package");
-      console.error(error);
+      log.error(`Failed to delete package ${id}`, error);
     }
   };
 
   const handleSubmit = async (values) => {
+    log.info("Form submission started", { 
+      isEdit: !!editingPackage, 
+      packageName: values.name,
+      packageType: values.package_type
+    });
+
+    // Run validation before submission
+    if (!validateAllTabs()) {
+      log.warn("Validation failed, submission blocked");
+      return;
+    }
+
+    setSubmitting(true);
     try {
       // For combo packages, calculate original_price from combo_items if not manually set
       let calculatedOriginalPrice = values.original_price;
@@ -136,6 +307,7 @@ const Packages = () => {
         // Use calculated total if original_price not manually overridden
         if (!calculatedOriginalPrice || calculatedOriginalPrice === 0) {
           calculatedOriginalPrice = itemsTotal;
+          log.info(`Auto-calculated original price from combo items: ${calculatedOriginalPrice} AED`);
         }
       }
 
@@ -173,26 +345,50 @@ const Packages = () => {
         how_to_get_there: values.how_to_get_there || "",
       };
 
+      log.info("Prepared package data for save", {
+        name: packageData.name,
+        price: packageData.price,
+        service_id: packageData.service_id,
+        package_type: packageData.package_type,
+        includesCount: packageData.includes.length,
+        excludesCount: packageData.excludes.length,
+      });
+
       if (editingPackage) {
+        log.info(`Updating package ID: ${editingPackage.id}`);
         const { error } = await supabase
           .from("packages")
           .update(packageData)
           .eq("id", editingPackage.id);
         if (error) throw error;
         message.success("Package updated successfully");
+        log.success(`Package updated: ${editingPackage.id} - ${packageData.name}`);
       } else {
-        const { error } = await supabase.from("packages").insert([packageData]);
+        log.info("Creating new package");
+        const { data, error } = await supabase.from("packages").insert([packageData]).select();
         if (error) throw error;
         message.success("Package created successfully");
+        log.success(`Package created: ${data?.[0]?.id} - ${packageData.name}`);
       }
 
       setModalVisible(false);
       form.resetFields();
+      setValidationErrors({});
       fetchPackages();
     } catch (error) {
       message.error("Failed to save package");
-      console.error(error);
+      log.error("Failed to save package", error);
+    } finally {
+      setSubmitting(false);
     }
+  };
+
+  const handleModalClose = () => {
+    log.info("Closing modal");
+    setModalVisible(false);
+    form.resetFields();
+    setValidationErrors({});
+    setActiveTab("basic");
   };
 
   const filteredPackages = packages.filter((pkg) => {
@@ -379,20 +575,51 @@ const Packages = () => {
       </Card>
 
       <Modal
-        title={editingPackage ? "Edit Package" : "Create Package"}
+        title={
+          <Space>
+            {editingPackage ? "Edit Package" : "Create Package"}
+            {submitting && <Spin size="small" />}
+          </Space>
+        }
         open={modalVisible}
-        onCancel={() => setModalVisible(false)}
+        onCancel={handleModalClose}
         footer={null}
         width={850}
         styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
       >
+        {/* Validation Summary Alert */}
+        {Object.values(validationErrors).some(errors => errors.length > 0) && (
+          <Alert
+            type="warning"
+            showIcon
+            icon={<ExclamationCircleOutlined />}
+            message="Please fix the following issues before saving:"
+            description={
+              <ul style={{ margin: 0, paddingLeft: 20 }}>
+                {Object.entries(validationErrors)
+                  .filter(([_, errors]) => errors.length > 0)
+                  .map(([tab, errors]) => (
+                    <li key={tab}>
+                      <strong>{tab.charAt(0).toUpperCase() + tab.slice(1)}:</strong> {errors.join(", ")}
+                    </li>
+                  ))}
+              </ul>
+            }
+            style={{ marginBottom: 16 }}
+          />
+        )}
+
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Tabs
-            defaultActiveKey="basic"
+            activeKey={activeTab}
+            onChange={(key) => {
+              setActiveTab(key);
+              log.info(`Tab changed to: ${key}`);
+            }}
             items={[
               {
                 key: "basic",
-                label: "Basic Info",
+                label: getTabLabel("basic", "Basic Info"),
                 children: (
                   <>
                     <Form.Item
@@ -483,7 +710,7 @@ const Packages = () => {
               },
               {
                 key: "includes",
-                label: "Includes / Excludes",
+                label: getTabLabel("includes", "Includes / Excludes"),
                 children: (
                   <>
                     <Form.Item label="What's Included">
@@ -566,7 +793,7 @@ const Packages = () => {
               },
               {
                 key: "details",
-                label: "Package Details",
+                label: getTabLabel("details", "Package Details"),
                 children: (
                   <>
                     <Alert
@@ -755,7 +982,7 @@ const Packages = () => {
                 key: "combo",
                 label: (
                   <span>
-                    Combo / Pricing{" "}
+                    {getTabLabel("combo", "Combo / Pricing")}
                     {packageType === "combo" && (
                       <Tag color="orange" style={{ marginLeft: 4 }}>
                         COMBO
@@ -896,7 +1123,7 @@ const Packages = () => {
               },
               {
                 key: "cancellation",
-                label: "Cancellation Policy",
+                label: getTabLabel("cancellation", "Cancellation Policy"),
                 children: (
                   <>
                     <Alert
@@ -947,8 +1174,15 @@ const Packages = () => {
 
           <Form.Item style={{ marginBottom: 0 }}>
             <Space style={{ width: "100%", justifyContent: "flex-end" }}>
-              <Button onClick={() => setModalVisible(false)}>Cancel</Button>
-              <Button type="primary" htmlType="submit">
+              <Button onClick={handleModalClose} disabled={submitting}>
+                Cancel
+              </Button>
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                loading={submitting}
+                disabled={submitting}
+              >
                 {editingPackage ? "Update Package" : "Create Package"}
               </Button>
             </Space>
