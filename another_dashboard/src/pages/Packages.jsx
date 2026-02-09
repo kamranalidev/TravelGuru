@@ -74,11 +74,12 @@ const Packages = () => {
   const validateBasicInfo = () => {
     const values = form.getFieldsValue();
     const errors = [];
-    
+
     if (!values.name?.trim()) errors.push("Package name is required");
     if (!values.service_id) errors.push("Service selection is required");
-    if (!values.price || values.price <= 0) errors.push("Valid selling price is required");
-    
+    if (!values.price || values.price <= 0)
+      errors.push("Valid selling price is required");
+
     log.info("Basic info validation", { valid: errors.length === 0, errors });
     return errors;
   };
@@ -98,24 +99,26 @@ const Packages = () => {
   const validateCombo = () => {
     const values = form.getFieldsValue();
     const errors = [];
-    
+
     if (values.package_type === "combo") {
       if (!values.combo_items || values.combo_items.length === 0) {
         errors.push("At least one combo item is required for combo packages");
       } else {
         // Validate each combo item
-        const invalidItems = values.combo_items.filter(item => !item?.name || !item?.price);
+        const invalidItems = values.combo_items.filter(
+          (item) => !item?.name || !item?.price,
+        );
         if (invalidItems.length > 0) {
           errors.push("All combo items must have a name and price");
         }
       }
     }
-    
-    log.info("Combo validation", { 
-      valid: errors.length === 0, 
+
+    log.info("Combo validation", {
+      valid: errors.length === 0,
       errors,
       packageType: values.package_type,
-      comboItemsCount: values.combo_items?.length || 0
+      comboItemsCount: values.combo_items?.length || 0,
     });
     return errors;
   };
@@ -132,7 +135,7 @@ const Packages = () => {
     const detailsErrors = validateDetails();
     const comboErrors = validateCombo();
     const cancellationErrors = validateCancellation();
-    
+
     const allErrors = {
       basic: basicErrors,
       includes: includesErrors,
@@ -140,11 +143,11 @@ const Packages = () => {
       combo: comboErrors,
       cancellation: cancellationErrors,
     };
-    
+
     setValidationErrors(allErrors);
-    
+
     const hasErrors = basicErrors.length > 0 || comboErrors.length > 0;
-    
+
     if (hasErrors) {
       // Find first tab with errors and switch to it
       if (basicErrors.length > 0) {
@@ -155,7 +158,7 @@ const Packages = () => {
         message.error("Please complete combo package configuration");
       }
     }
-    
+
     log.info("Full validation result", { allErrors, hasErrors });
     return !hasErrors;
   };
@@ -164,21 +167,19 @@ const Packages = () => {
   const getTabLabel = (key, label) => {
     const errors = validationErrors[key] || [];
     const hasErrors = errors.length > 0;
-    
+
     return (
       <span>
         {label}
         {hasErrors && (
           <Tooltip title={errors.join(", ")}>
-            <ExclamationCircleOutlined 
-              style={{ color: "#ff4d4f", marginLeft: 6 }} 
+            <ExclamationCircleOutlined
+              style={{ color: "#ff4d4f", marginLeft: 6 }}
             />
           </Tooltip>
         )}
         {!hasErrors && validationErrors[key] !== undefined && (
-          <CheckCircleOutlined 
-            style={{ color: "#52c41a", marginLeft: 6 }} 
-          />
+          <CheckCircleOutlined style={{ color: "#52c41a", marginLeft: 6 }} />
         )}
       </span>
     );
@@ -217,7 +218,9 @@ const Packages = () => {
 
   const fetchServices = async () => {
     log.info("Fetching services for dropdown");
-    const { data, error } = await supabase.from("services").select("id, service_name");
+    const { data, error } = await supabase
+      .from("services")
+      .select("id, service_name");
     if (error) {
       log.error("Failed to fetch services", error);
     } else {
@@ -236,12 +239,27 @@ const Packages = () => {
   };
 
   const handleEdit = (record) => {
-    log.info(`Opening edit modal for package: ${record.name}`, { id: record.id });
+    log.info(`Opening edit modal for package: ${record.name}`, {
+      id: record.id,
+    });
     setEditingPackage(record);
     setValidationErrors({});
     setActiveTab("basic");
-    form.setFieldsValue({
-      ...record,
+    
+    // Reset form first, then set values
+    form.resetFields();
+    
+    // Prepare the form values
+    const formValues = {
+      name: record.name,
+      description: record.description,
+      service_id: record.service_id,
+      price: record.price,
+      duration: record.duration,
+      pricing_type: record.pricing_type || "fixed",
+      min_duration: record.min_duration,
+      max_duration: record.max_duration,
+      max_guests: record.max_guests,
       includes: record.includes || [],
       excludes: record.excludes || [],
       package_type: record.package_type || "standard",
@@ -264,8 +282,18 @@ const Packages = () => {
       opening_hours: record.opening_hours || "",
       address: record.address || "",
       how_to_get_there: record.how_to_get_there || "",
-    });
+    };
+    
+    log.info("Setting form values for edit", formValues);
+    
+    // Set modal visible first, then set form values after a tick
     setModalVisible(true);
+    
+    // Use setTimeout to ensure form is mounted before setting values
+    setTimeout(() => {
+      form.setFieldsValue(formValues);
+      log.success("Form values set for editing");
+    }, 0);
   };
 
   const handleDelete = async (id) => {
@@ -283,10 +311,10 @@ const Packages = () => {
   };
 
   const handleSubmit = async (values) => {
-    log.info("Form submission started", { 
-      isEdit: !!editingPackage, 
+    log.info("Form submission started", {
+      isEdit: !!editingPackage,
       packageName: values.name,
-      packageType: values.package_type
+      packageType: values.package_type,
     });
 
     // Run validation before submission
@@ -307,7 +335,9 @@ const Packages = () => {
         // Use calculated total if original_price not manually overridden
         if (!calculatedOriginalPrice || calculatedOriginalPrice === 0) {
           calculatedOriginalPrice = itemsTotal;
-          log.info(`Auto-calculated original price from combo items: ${calculatedOriginalPrice} AED`);
+          log.info(
+            `Auto-calculated original price from combo items: ${calculatedOriginalPrice} AED`,
+          );
         }
       }
 
@@ -362,10 +392,15 @@ const Packages = () => {
           .eq("id", editingPackage.id);
         if (error) throw error;
         message.success("Package updated successfully");
-        log.success(`Package updated: ${editingPackage.id} - ${packageData.name}`);
+        log.success(
+          `Package updated: ${editingPackage.id} - ${packageData.name}`,
+        );
       } else {
         log.info("Creating new package");
-        const { data, error } = await supabase.from("packages").insert([packageData]).select();
+        const { data, error } = await supabase
+          .from("packages")
+          .insert([packageData])
+          .select();
         if (error) throw error;
         message.success("Package created successfully");
         log.success(`Package created: ${data?.[0]?.id} - ${packageData.name}`);
@@ -586,9 +621,12 @@ const Packages = () => {
         footer={null}
         width={850}
         styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
+        forceRender
       >
         {/* Validation Summary Alert */}
-        {Object.values(validationErrors).some(errors => errors.length > 0) && (
+        {Object.values(validationErrors).some(
+          (errors) => errors.length > 0,
+        ) && (
           <Alert
             type="warning"
             showIcon
@@ -600,7 +638,10 @@ const Packages = () => {
                   .filter(([_, errors]) => errors.length > 0)
                   .map(([tab, errors]) => (
                     <li key={tab}>
-                      <strong>{tab.charAt(0).toUpperCase() + tab.slice(1)}:</strong> {errors.join(", ")}
+                      <strong>
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}:
+                      </strong>{" "}
+                      {errors.join(", ")}
                     </li>
                   ))}
               </ul>
@@ -1177,9 +1218,9 @@ const Packages = () => {
               <Button onClick={handleModalClose} disabled={submitting}>
                 Cancel
               </Button>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={submitting}
                 disabled={submitting}
               >

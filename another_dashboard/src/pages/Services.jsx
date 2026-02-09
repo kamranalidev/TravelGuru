@@ -23,6 +23,8 @@ import {
   Tabs,
   Typography,
   Tooltip,
+  Alert,
+  Spin,
 } from "antd";
 import {
   PlusOutlined,
@@ -31,6 +33,8 @@ import {
   UploadOutlined,
   MinusCircleOutlined,
   EyeOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import {
@@ -43,6 +47,30 @@ import {
 const { TextArea } = Input;
 const { Option } = Select;
 const { Title, Text } = Typography;
+
+// ==================== LOGGING UTILITIES ====================
+const log = {
+  info: (msg, data = null) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ℹ️ [Services] ${msg}`, data || "");
+  },
+  success: (msg, data = null) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ✅ [Services] ${msg}`, data || "");
+  },
+  error: (msg, error = null) => {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] ❌ [Services] ${msg}`, error || "");
+  },
+  warn: (msg, data = null) => {
+    const timestamp = new Date().toISOString();
+    console.warn(`[${timestamp}] ⚠️ [Services] ${msg}`, data || "");
+  },
+  upload: (msg, data = null) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] 📤 [Services/Upload] ${msg}`, data || "");
+  },
+};
 
 const ALL_DAYS = [
   "Monday",
@@ -105,6 +133,92 @@ function Services() {
   const [serviceImageList, setServiceImageList] = useState([]);
   const [galleryImageList, setGalleryImageList] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState("basic");
+  const [validationErrors, setValidationErrors] = useState({});
+
+  // Validate each tab section
+  const validateBasicInfo = () => {
+    const values = form.getFieldsValue();
+    const errors = [];
+
+    if (!values.service_name?.trim()) errors.push("Service name is required");
+    if (!values.service_type) errors.push("Service type is required");
+    if (!values.service_description?.trim())
+      errors.push("Description is required");
+    if (!values.category) errors.push("Category is required");
+    if (!values.default_price || values.default_price <= 0)
+      errors.push("Valid price is required");
+
+    log.info("Basic info validation", { valid: errors.length === 0, errors });
+    return errors;
+  };
+
+  const validateSchedule = () => {
+    const values = form.getFieldsValue();
+    const errors = [];
+
+    if (!values.duration || values.duration <= 0) {
+      if (!values.start_time || !values.end_time) {
+        errors.push("Either duration or start/end time is required");
+      }
+    }
+
+    log.info("Schedule validation", { valid: errors.length === 0, errors });
+    return errors;
+  };
+
+  const validateMedia = () => {
+    const errors = [];
+
+    if (serviceImageList.length === 0) {
+      errors.push("At least one service image is required");
+    }
+
+    log.info("Media validation", {
+      valid: errors.length === 0,
+      errors,
+      serviceImages: serviceImageList.length,
+      galleryImages: galleryImageList.length,
+    });
+    return errors;
+  };
+
+  const validateAllTabs = () => {
+    const basicErrors = validateBasicInfo();
+    const scheduleErrors = validateSchedule();
+    const mediaErrors = validateMedia();
+
+    const allErrors = {
+      basic: basicErrors,
+      schedule: scheduleErrors,
+      media: mediaErrors,
+      details: [], // Details tab has no required fields
+    };
+
+    setValidationErrors(allErrors);
+
+    const hasErrors =
+      basicErrors.length > 0 ||
+      scheduleErrors.length > 0 ||
+      mediaErrors.length > 0;
+
+    if (hasErrors) {
+      // Find first tab with errors and switch to it
+      if (basicErrors.length > 0) {
+        setActiveTab("basic");
+        message.error("Please fill all required fields in Basic Info tab");
+      } else if (scheduleErrors.length > 0) {
+        setActiveTab("schedule");
+        message.error("Please fill all required fields in Schedule tab");
+      } else if (mediaErrors.length > 0) {
+        setActiveTab("media");
+        message.error("Please upload at least one service image");
+      }
+    }
+
+    log.info("Full validation result", { allErrors, hasErrors });
+    return !hasErrors;
+  };
 
   // Auto-calculate duration when start_time or end_time changes
   const handleTimeChange = () => {
@@ -122,14 +236,48 @@ function Services() {
 
   // Upload a file to Supabase Storage and return its public URL
   const handleImageUpload = async (file, folder = "services") => {
+    log.upload(`Starting upload for file: ${file.name}`, {
+      size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      type: file.type,
+      folder,
+    });
+
     try {
       setUploading(true);
-      const path = await uploadImage(file, folder);
-      const publicUrl = getImageUrl(path);
-      return { url: publicUrl, path };
+
+      // Generate unique filename
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      log.upload(`Uploading to path: ${fileName}`);
+
+      const { data, error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(fileName, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (error) {
+        log.error(`Upload failed for ${file.name}`, error);
+        throw error;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(data.path);
+
+      const publicUrl = urlData?.publicUrl;
+
+      log.success(`Upload successful: ${file.name}`, {
+        path: data.path,
+        publicUrl,
+      });
+
+      return { url: publicUrl, path: data.path };
     } catch (error) {
-      console.error("Upload error:", error);
-      message.error(`Failed to upload ${file.name}`);
+      log.error(`Upload error for ${file.name}`, error);
+      message.error(`Failed to upload ${file.name}: ${error.message}`);
       return null;
     } finally {
       setUploading(false);
@@ -139,18 +287,26 @@ function Services() {
   // Custom upload handler for service images
   const serviceImageUploadProps = {
     beforeUpload: async (file) => {
+      log.upload(`Service image selected: ${file.name}`);
+
       const isImage = file.type.startsWith("image/");
       if (!isImage) {
+        log.warn(`Rejected non-image file: ${file.name}`, { type: file.type });
         message.error("You can only upload image files!");
         return Upload.LIST_IGNORE;
       }
+
       const isLt5M = file.size / 1024 / 1024 < 5;
       if (!isLt5M) {
+        log.warn(`Rejected large file: ${file.name}`, {
+          size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        });
         message.error("Image must be smaller than 5MB!");
         return Upload.LIST_IGNORE;
       }
       const result = await handleImageUpload(file, "services");
       if (result) {
+        log.success(`Service image added to list: ${file.name}`);
         setServiceImageList((prev) => [
           ...prev,
           {
@@ -161,17 +317,21 @@ function Services() {
             storagePath: result.path,
           },
         ]);
+        message.success(`${file.name} uploaded successfully`);
       }
       return false; // prevent default upload
     },
     onRemove: async (file) => {
+      log.info(`Removing service image: ${file.name}`);
       if (file.storagePath) {
         try {
+          log.upload(`Deleting from storage: ${file.storagePath}`);
           await supabase.storage
             .from(STORAGE_BUCKET)
             .remove([file.storagePath]);
+          log.success(`Deleted from storage: ${file.storagePath}`);
         } catch (e) {
-          console.warn("Could not delete from storage:", e);
+          log.warn("Could not delete from storage", e);
         }
       }
       setServiceImageList((prev) => prev.filter((f) => f.uid !== file.uid));
@@ -185,18 +345,25 @@ function Services() {
   // Custom upload handler for gallery images
   const galleryImageUploadProps = {
     beforeUpload: async (file) => {
+      log.upload(`Gallery image selected: ${file.name}`);
+
       const isImage = file.type.startsWith("image/");
       if (!isImage) {
+        log.warn(`Rejected non-image file: ${file.name}`, { type: file.type });
         message.error("You can only upload image files!");
         return Upload.LIST_IGNORE;
       }
       const isLt5M = file.size / 1024 / 1024 < 5;
       if (!isLt5M) {
+        log.warn(`Rejected large file: ${file.name}`, {
+          size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+        });
         message.error("Image must be smaller than 5MB!");
         return Upload.LIST_IGNORE;
       }
       const result = await handleImageUpload(file, "gallery");
       if (result) {
+        log.success(`Gallery image added to list: ${file.name}`);
         setGalleryImageList((prev) => [
           ...prev,
           {
@@ -207,17 +374,21 @@ function Services() {
             storagePath: result.path,
           },
         ]);
+        message.success(`${file.name} uploaded successfully`);
       }
       return false;
     },
     onRemove: async (file) => {
+      log.info(`Removing gallery image: ${file.name}`);
       if (file.storagePath) {
         try {
+          log.upload(`Deleting from storage: ${file.storagePath}`);
           await supabase.storage
             .from(STORAGE_BUCKET)
             .remove([file.storagePath]);
+          log.success(`Deleted from storage: ${file.storagePath}`);
         } catch (e) {
-          console.warn("Could not delete from storage:", e);
+          log.warn("Could not delete from storage", e);
         }
       }
       setGalleryImageList((prev) => prev.filter((f) => f.uid !== file.uid));
@@ -229,21 +400,29 @@ function Services() {
   };
 
   useEffect(() => {
+    log.info("Component mounted, fetching services...");
     fetchServices();
   }, []);
 
   const fetchServices = async () => {
     try {
       setLoading(true);
+      log.info("Fetching services from database...");
+
       const { data, error } = await supabase
         .from("services")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        log.error("Failed to fetch services", error);
+        throw error;
+      }
+
+      log.success(`Fetched ${data?.length || 0} services`);
       setServices(data || []);
     } catch (error) {
-      console.error("Error fetching services:", error);
+      log.error("Error fetching services", error);
       message.error("Failed to load services");
     } finally {
       setLoading(false);
@@ -251,15 +430,26 @@ function Services() {
   };
 
   const handleAdd = () => {
+    log.info("Opening modal for new service");
     setEditingService(null);
     form.resetFields();
     setServiceImageList([]);
     setGalleryImageList([]);
+    setValidationErrors({});
+    setActiveTab("basic");
     setModalVisible(true);
   };
 
   const handleEdit = (record) => {
+    log.info(
+      `Opening modal for editing service #${record.id}: ${record.service_name}`,
+    );
     setEditingService(record);
+    setValidationErrors({});
+    setActiveTab("basic");
+    
+    // Reset form first
+    form.resetFields();
 
     // Parse existing service images into fileList format
     const existingServiceImages = (() => {
@@ -358,26 +548,52 @@ function Services() {
           : "",
     };
 
-    form.setFieldsValue(formValues);
+    log.info("Setting form values for edit", { 
+      serviceName: formValues.service_name,
+      serviceType: formValues.service_type,
+      price: formValues.default_price
+    });
+    
+    // Set modal visible first, then set form values after a tick
     setModalVisible(true);
+    
+    // Use setTimeout to ensure form is mounted before setting values
+    setTimeout(() => {
+      form.setFieldsValue(formValues);
+      log.success("Form values set for editing");
+    }, 0);
   };
 
   const handleDelete = async (id) => {
     try {
+      log.info(`Deleting service #${id}`);
       const { error } = await supabase.from("services").delete().eq("id", id);
 
-      if (error) throw error;
+      if (error) {
+        log.error(`Failed to delete service #${id}`, error);
+        throw error;
+      }
+      log.success(`Service #${id} deleted successfully`);
       message.success("Service deleted successfully");
       fetchServices();
     } catch (error) {
-      console.error("Error deleting service:", error);
+      log.error("Error deleting service", error);
       message.error("Failed to delete service");
     }
   };
 
   const handleSubmit = async (values) => {
+    log.info("Form submitted, validating...", values);
+
+    // Validate all tabs first
+    if (!validateAllTabs()) {
+      log.warn("Validation failed, aborting submit");
+      return;
+    }
+
     try {
       setSubmitting(true);
+      log.info("Validation passed, preparing payload...");
 
       // Build the payload matching the DB schema
       const payload = {
@@ -422,27 +638,51 @@ function Services() {
         is_active: values.is_active ?? true,
       };
 
+      log.info("Payload prepared", {
+        serviceName: payload.service_name,
+        serviceType: payload.service_type,
+        category: payload.category,
+        price: payload.default_price,
+        imagesCount: payload.service_image.length,
+        galleryCount: payload.gallery.length,
+      });
+
       if (editingService) {
+        log.info(`Updating service #${editingService.id}...`);
         const { error } = await supabase
           .from("services")
           .update(payload)
           .eq("id", editingService.id);
 
-        if (error) throw error;
+        if (error) {
+          log.error(`Failed to update service #${editingService.id}`, error);
+          throw error;
+        }
+        log.success(`Service #${editingService.id} updated successfully`);
         message.success("Service updated successfully");
       } else {
-        const { error } = await supabase.from("services").insert([payload]);
+        log.info("Creating new service...");
+        const { data, error } = await supabase
+          .from("services")
+          .insert([payload])
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          log.error("Failed to create service", error);
+          throw error;
+        }
+        log.success("Service created successfully", { id: data?.[0]?.id });
         message.success("Service created successfully");
       }
 
       setModalVisible(false);
       form.resetFields();
+      setServiceImageList([]);
+      setGalleryImageList([]);
       fetchServices();
     } catch (error) {
-      console.error("Error saving service:", error);
-      message.error("Failed to save service");
+      log.error("Error saving service", error);
+      message.error(`Failed to save service: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -587,12 +827,42 @@ function Services() {
   ];
 
   // Tabs config for the form modal
+  const getTabLabel = (key, label) => {
+    const errors = validationErrors[key] || [];
+    if (errors.length > 0) {
+      return (
+        <span>
+          <ExclamationCircleOutlined
+            style={{ color: "#ff4d4f", marginRight: 4 }}
+          />
+          {label}
+        </span>
+      );
+    }
+    return label;
+  };
+
   const formTabs = [
     {
       key: "basic",
-      label: "Basic Info",
+      label: getTabLabel("basic", "Basic Info"),
       children: (
         <>
+          {validationErrors.basic?.length > 0 && (
+            <Alert
+              type="error"
+              message="Please fill all required fields"
+              description={
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {validationErrors.basic.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              }
+              style={{ marginBottom: 16 }}
+              showIcon
+            />
+          )}
           <Row gutter={16}>
             <Col span={16}>
               <Form.Item
@@ -719,9 +989,24 @@ function Services() {
     },
     {
       key: "schedule",
-      label: "Schedule & Availability",
+      label: getTabLabel("schedule", "Schedule & Availability"),
       children: (
         <>
+          {validationErrors.schedule?.length > 0 && (
+            <Alert
+              type="error"
+              message="Please fill all required fields"
+              description={
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {validationErrors.schedule.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              }
+              style={{ marginBottom: 16 }}
+              showIcon
+            />
+          )}
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item dependencies={["start_time", "end_time"]} noStyle>
@@ -830,12 +1115,27 @@ function Services() {
     },
     {
       key: "media",
-      label: "Images & Media",
+      label: getTabLabel("media", "Images & Media"),
       children: (
         <>
+          {validationErrors.media?.length > 0 && (
+            <Alert
+              type="error"
+              message="Please upload required images"
+              description={
+                <ul style={{ margin: 0, paddingLeft: 20 }}>
+                  {validationErrors.media.map((err, i) => (
+                    <li key={i}>{err}</li>
+                  ))}
+                </ul>
+              }
+              style={{ marginBottom: 16 }}
+              showIcon
+            />
+          )}
           <div style={{ marginBottom: 8 }}>
             <Text strong>
-              Service Images{" "}
+              Service Images <Text type="danger">*</Text>{" "}
               <Text type="secondary">(shown on cards &amp; detail page)</Text>
             </Text>
             <div style={{ marginTop: 4, marginBottom: 4 }}>
@@ -892,7 +1192,7 @@ function Services() {
     },
     {
       key: "details",
-      label: "Details & Info",
+      label: getTabLabel("details", "Details & Info"),
       children: (
         <>
           <Form.List name="highlights">
@@ -1038,19 +1338,41 @@ function Services() {
 
       {/* Create / Edit Modal */}
       <Modal
-        title={editingService ? "Edit Service" : "Add New Service"}
+        title={
+          editingService
+            ? `Edit Service: ${editingService.service_name}`
+            : "Add New Service"
+        }
         open={modalVisible}
         onCancel={() => {
+          log.info("Modal cancelled");
           setModalVisible(false);
           form.resetFields();
+          setServiceImageList([]);
+          setGalleryImageList([]);
+          setValidationErrors({});
         }}
-        onOk={() => form.submit()}
-        okText={editingService ? "Update" : "Create"}
-        confirmLoading={submitting}
+        onOk={() => {
+          log.info("Modal OK clicked, triggering form submit");
+          form.submit();
+        }}
+        okText={editingService ? "Update Service" : "Create Service"}
+        confirmLoading={submitting || uploading}
+        okButtonProps={{ disabled: uploading }}
         width={860}
         styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
-        destroyOnClose
+        forceRender
       >
+        {uploading && (
+          <Alert
+            type="info"
+            message="Uploading images..."
+            description="Please wait for the upload to complete before saving."
+            icon={<Spin />}
+            style={{ marginBottom: 16 }}
+            showIcon
+          />
+        )}
         <Form
           form={form}
           layout="vertical"
@@ -1070,7 +1392,14 @@ function Services() {
           }}
           preserve={false}
         >
-          <Tabs items={formTabs} />
+          <Tabs
+            items={formTabs}
+            activeKey={activeTab}
+            onChange={(key) => {
+              log.info(`Tab changed to: ${key}`);
+              setActiveTab(key);
+            }}
+          />
         </Form>
       </Modal>
 
