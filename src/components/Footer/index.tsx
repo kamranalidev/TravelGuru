@@ -17,7 +17,11 @@ export const Footer = () => {
           className="footer-grid"
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "repeat(3, minmax(0, 1fr))" },
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(4, minmax(0, 1fr))",
+            },
             gap: 4,
           }}
         >
@@ -54,7 +58,7 @@ export const Footer = () => {
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  navigate("/");
+                  navigate("/about");
                 }}
                 className="footer-link"
               >
@@ -64,19 +68,57 @@ export const Footer = () => {
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
+                  navigate("/contact");
                 }}
                 className="footer-link"
               >
-                Partner with us
+                Contact us
               </a>
               <a
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
+                  navigate("/faq");
                 }}
                 className="footer-link"
               >
-                Become an affiliate
+                FAQ
+              </a>
+            </Box>
+          </Box>
+
+          <Box className="footer-column">
+            <Typography className="footer-column-title">Legal</Typography>
+            <Box className="footer-links-column">
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/terms");
+                }}
+                className="footer-link"
+              >
+                Terms &amp; Conditions
+              </a>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/privacy");
+                }}
+                className="footer-link"
+              >
+                Privacy Policy
+              </a>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/cancellation-policy");
+                }}
+                className="footer-link"
+              >
+                Cancellation Policy
               </a>
             </Box>
           </Box>

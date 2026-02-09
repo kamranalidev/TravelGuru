@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Typography, Card } from "@mui/material";
+import { Box, Typography, Card, Divider } from "@mui/material";
 import {
   CustomTextField,
   ButtonComponent,
@@ -7,6 +7,11 @@ import {
 } from "../../../../components";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "../../../../supabaseClient";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import TravelExploreIcon from "@mui/icons-material/TravelExplore";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import "../../shared.css";
 
 export const LoginPage = () => {
@@ -88,56 +93,144 @@ export const LoginPage = () => {
 
       {popupMsg && <Box className={`auth-popup ${popupType}`}>{popupMsg}</Box>}
 
-      <Card className="auth-card">
-        <Box className="auth-header">
-          <img
-            src="/Travel-Guru-Logo-Final.png"
-            alt="Travel Guru Logo"
-            className="auth-logo"
-          />
-          <Typography variant="h4" className="auth-title">
-            Travel Guru
-          </Typography>
-          <Typography variant="h5" className="auth-subtitle">
-            Welcome Back
-          </Typography>
+      <Box className="auth-split-container">
+        {/* Left branding panel */}
+        <Box className="auth-branding-panel">
+          <Box className="auth-branding-content">
+            <img
+              src="/Travel-Guru-Logo-Final.png"
+              alt="Travel Guru Logo"
+              className="auth-branding-logo"
+            />
+            <Typography className="auth-branding-title">
+              Welcome Back to Travel Guru
+            </Typography>
+            <Typography className="auth-branding-subtitle">
+              Your gateway to unforgettable Dubai experiences
+            </Typography>
+
+            <Box className="auth-branding-features">
+              <Box className="auth-feature-item">
+                <TravelExploreIcon className="auth-feature-icon" />
+                <Box>
+                  <Typography className="auth-feature-title">
+                    50+ Curated Experiences
+                  </Typography>
+                  <Typography className="auth-feature-desc">
+                    Desert safaris, city tours, cruises & more
+                  </Typography>
+                </Box>
+              </Box>
+              <Box className="auth-feature-item">
+                <VerifiedUserIcon className="auth-feature-icon" />
+                <Box>
+                  <Typography className="auth-feature-title">
+                    Secure Payments
+                  </Typography>
+                  <Typography className="auth-feature-desc">
+                    256-bit SSL encrypted transactions
+                  </Typography>
+                </Box>
+              </Box>
+              <Box className="auth-feature-item">
+                <SupportAgentIcon className="auth-feature-icon" />
+                <Box>
+                  <Typography className="auth-feature-title">
+                    24/7 Support
+                  </Typography>
+                  <Typography className="auth-feature-desc">
+                    Dedicated team at your service
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
         </Box>
 
-        <form onSubmit={signInWithEmail} className="auth-form">
-          <CustomTextField
-            placeholder="Email"
-            name="email"
-            type="email"
-            required
-            fullWidth
-          />
-          <PasswordField
-            placeholder="Password"
-            name="password"
-            required
-            fullWidth
-          />
+        {/* Right form panel */}
+        <Card className="auth-card">
+          <Box className="auth-header">
+            <Box className="auth-icon-circle">
+              <LockOutlinedIcon sx={{ fontSize: 28, color: "#FF621F" }} />
+            </Box>
+            <Typography variant="h4" className="auth-title">
+              Sign In
+            </Typography>
+            <Typography className="auth-description">
+              Enter your credentials to access your account
+            </Typography>
+          </Box>
 
-          <ButtonComponent
-            title={isLoading ? "Logging in..." : "Login"}
-            width="100%"
-            type="submit"
-            disabled={isLoading}
-          />
-        </form>
+          <form onSubmit={signInWithEmail} className="auth-form">
+            <Box className="auth-input-group">
+              <Typography className="auth-input-label">
+                <EmailOutlinedIcon
+                  sx={{ fontSize: 16, mr: 0.5, verticalAlign: "middle" }}
+                />
+                Email Address
+              </Typography>
+              <CustomTextField
+                placeholder="you@example.com"
+                name="email"
+                type="email"
+                required
+                fullWidth
+              />
+            </Box>
+            <Box className="auth-input-group">
+              <Typography className="auth-input-label">
+                <LockOutlinedIcon
+                  sx={{ fontSize: 16, mr: 0.5, verticalAlign: "middle" }}
+                />
+                Password
+              </Typography>
+              <PasswordField
+                placeholder="Enter your password"
+                name="password"
+                required
+                fullWidth
+              />
+            </Box>
 
-        <Box className="auth-links">
-          <Typography
-            onClick={() => navigate("/password-reset")}
-            className="auth-link"
-          >
-            Forgot Password?
+            <ButtonComponent
+              title={isLoading ? "Signing in..." : "Sign In"}
+              width="100%"
+              type="submit"
+              disabled={isLoading}
+            />
+          </form>
+
+          <Divider sx={{ my: 2, color: "#d1d5db", fontSize: "0.8rem" }}>
+            or
+          </Divider>
+
+          <Box className="auth-links">
+            <Typography
+              onClick={() => navigate("/password-reset")}
+              className="auth-link"
+            >
+              Forgot Password?
+            </Typography>
+            <Typography
+              onClick={() => navigate("/signup")}
+              className="auth-link"
+            >
+              Create Account
+            </Typography>
+          </Box>
+
+          <Typography className="auth-footer-text">
+            By signing in, you agree to our{" "}
+            <Box component="a" href="/terms" className="auth-footer-link">
+              Terms
+            </Box>{" "}
+            and{" "}
+            <Box component="a" href="/privacy" className="auth-footer-link">
+              Privacy Policy
+            </Box>
           </Typography>
-          <Typography onClick={() => navigate("/signup")} className="auth-link">
-            Create Account
-          </Typography>
-        </Box>
-      </Card>
+        </Card>
+      </Box>
     </Box>
   );
 };

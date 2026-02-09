@@ -18,7 +18,8 @@ export interface EmailResponse {
   skipped?: boolean;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
 
 /**
  * Send a booking confirmation email via the backend API.
@@ -26,8 +27,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3001
  * so only booking_id is required.
  */
 export const sendBookingConfirmationEmail = async (
-  params: BookingConfirmationEmailParams
+  params: BookingConfirmationEmailParams,
 ): Promise<EmailResponse> => {
+  const timestamp = new Date().toISOString();
+  console.log(
+    `[${timestamp}] 📧 [EmailService] Sending confirmation email for booking #${params.bookingId}`,
+  );
+  console.log(
+    `[${timestamp}] 📧 [EmailService] API URL: ${API_BASE_URL}/send-booking-confirmation`,
+  );
+
   try {
     const response = await fetch(`${API_BASE_URL}/send-booking-confirmation`, {
       method: "POST",
@@ -37,16 +46,39 @@ export const sendBookingConfirmationEmail = async (
       body: JSON.stringify({ booking_id: params.bookingId }),
     });
 
+    console.log(
+      `[${timestamp}] 📧 [EmailService] Response status: ${response.status} ${response.statusText}`,
+    );
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to send confirmation email");
+      console.error(`[${timestamp}] ❌ [EmailService] API error:`, errorData);
+      throw new Error(
+        errorData.error ||
+          `HTTP ${response.status}: Failed to send confirmation email`,
+      );
     }
 
     const data = await response.json();
+    console.log(
+      `[${timestamp}] ✅ [EmailService] Email sent successfully:`,
+      data,
+    );
     return data;
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to send confirmation email";
-    console.error("Error sending booking confirmation email:", message);
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to send confirmation email";
+    console.error(`[${timestamp}] ❌ [EmailService] Error:`, message);
+
+    // Check if it's a network error
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      console.error(
+        `[${timestamp}] ❌ [EmailService] Network error - API server may be unreachable at ${API_BASE_URL}`,
+      );
+    }
+
     return {
       success: false,
       error: message,
@@ -59,7 +91,7 @@ export const sendBookingConfirmationEmail = async (
  * Useful for resending emails if the original failed.
  */
 export const resendBookingConfirmation = async (
-  bookingId: number | string
+  bookingId: number | string,
 ): Promise<EmailResponse> => {
   return sendBookingConfirmationEmail({ bookingId });
 };

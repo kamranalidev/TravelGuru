@@ -29,6 +29,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   Drawer,
+  Divider,
 } from "@mui/material";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -94,7 +95,7 @@ interface PackageData {
   isBase?: boolean;
   service_id?: number;
   package_type?: string;
-  combo_packages?: number[]; // IDs of packages included in combo
+  combo_items?: Array<{ name: string; price: number }>; // Inline combo items
   original_price?: number; // For showing savings on combo
   cancellation_policy?: string | { type?: string; details?: string };
   confirmation_type?: string;
@@ -327,6 +328,11 @@ export const BookingPage = () => {
   const [isBooking] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+
+  // === Booking capacity state ===
+  const [slotsBooked, setSlotsBooked] = useState<number>(0);
+  const [capacityLoading, setCapacityLoading] = useState(false);
+
   const [pageData, setPageData] = useState<PageDataState>({
     Image: [],
     description: "",
@@ -358,6 +364,56 @@ export const BookingPage = () => {
   const [serviceLoading, setServiceLoading] = useState(false);
   const [serviceError, setServiceError] = useState<string | null>(null);
   const [packagesLoading, setPackagesLoading] = useState(false);
+
+  // Derived capacity values
+  const isServiceFull =
+    pageData.daily_slots != null &&
+    pageData.daily_slots > 0 &&
+    slotsBooked >= pageData.daily_slots;
+  const slotsRemaining =
+    pageData.daily_slots != null && pageData.daily_slots > 0
+      ? Math.max(0, pageData.daily_slots - slotsBooked)
+      : null;
+
+  // Check booking capacity whenever date or service changes
+  useEffect(() => {
+    const checkCapacity = async () => {
+      if (
+        !pageData.id ||
+        !date ||
+        pageData.daily_slots == null ||
+        pageData.daily_slots <= 0
+      ) {
+        setSlotsBooked(0);
+        return;
+      }
+
+      try {
+        setCapacityLoading(true);
+        const bookingDate = date.format("YYYY-MM-DD");
+
+        const { count, error } = await supabase
+          .from("bookings")
+          .select("id", { count: "exact", head: true })
+          .eq("service_id", pageData.id)
+          .eq("booking_date", bookingDate);
+
+        if (error) {
+          console.error("Error checking booking capacity:", error);
+          setSlotsBooked(0);
+        } else {
+          setSlotsBooked(count ?? 0);
+        }
+      } catch (err) {
+        console.error("Unexpected error checking capacity:", err);
+        setSlotsBooked(0);
+      } finally {
+        setCapacityLoading(false);
+      }
+    };
+
+    void checkCapacity();
+  }, [pageData.id, pageData.daily_slots, date]);
 
   useEffect(() => {
     if (!serviceIdFromRoute || Number.isNaN(serviceIdFromRoute)) return;
@@ -582,6 +638,15 @@ export const BookingPage = () => {
       return;
     }
 
+    // Block booking if service is full for the selected date
+    if (isServiceFull) {
+      setBookingFeedback({
+        type: "error",
+        message: `This service is fully booked for ${date.format("MMMM DD, YYYY")}. Please select a different date.`,
+      });
+      return;
+    }
+
     if (!session?.user) {
       setBookingFeedback({
         type: "error",
@@ -704,6 +769,15 @@ export const BookingPage = () => {
 
   const addToCart = () => {
     if (!pageData.id || !date) return;
+
+    // Block if service is full for the selected date
+    if (isServiceFull) {
+      setBookingFeedback({
+        type: "error",
+        message: `This service is fully booked for ${date.format("MMMM DD, YYYY")}. Please select a different date.`,
+      });
+      return;
+    }
 
     // Airport transfer validation
     if (isAirportPickup) {
@@ -1108,15 +1182,37 @@ export const BookingPage = () => {
                                         type?: string;
                                         details?: string;
                                       }
-                                    ).type || "No cancellation"
+                                    ).type
+                                      ?.replace(/_/g, " ")
+                                      .replace(/\b\w/g, (c: string) =>
+                                        c.toUpperCase(),
+                                      ) || "No cancellation"
                                   : typeof pack.cancellation_policy === "string"
                                     ? pack.cancellation_policy
                                     : "No cancellation"
                               }
                               size="small"
                               sx={{
-                                bgcolor: "#f5f5f5",
-                                color: "#666",
+                                bgcolor:
+                                  typeof pack.cancellation_policy ===
+                                    "object" &&
+                                  (
+                                    pack.cancellation_policy as {
+                                      type?: string;
+                                    }
+                                  )?.type === "free_cancellation"
+                                    ? "#e8f5e9"
+                                    : "#f5f5f5",
+                                color:
+                                  typeof pack.cancellation_policy ===
+                                    "object" &&
+                                  (
+                                    pack.cancellation_policy as {
+                                      type?: string;
+                                    }
+                                  )?.type === "free_cancellation"
+                                    ? "#2e7d32"
+                                    : "#666",
                                 fontSize: "0.75rem",
                               }}
                             />
@@ -1357,14 +1453,16 @@ export const BookingPage = () => {
               <Button
                 variant="outlined"
                 onClick={addToCart}
+                disabled={isBooking || isServiceFull}
                 sx={{
                   borderRadius: 2,
                   textTransform: "none",
                   fontWeight: 700,
-                  borderColor: "#d0d5dd",
+                  borderColor: isServiceFull ? "#ef4444" : "#d0d5dd",
+                  color: isServiceFull ? "#ef4444" : undefined,
                 }}
               >
-                Add to cart
+                {isServiceFull ? "Fully Booked" : "Add to cart"}
               </Button>
             </Box>
 
@@ -1407,14 +1505,71 @@ export const BookingPage = () => {
               </LocalizationProvider>
             )}
 
+            {/* Availability indicator */}
+            {pageData.daily_slots != null && pageData.daily_slots > 0 && (
+              <Box
+                sx={{
+                  mt: 1,
+                  mb: 1,
+                  p: 1.5,
+                  borderRadius: 2,
+                  bgcolor: isServiceFull ? "#fef2f2" : "#f0fdf4",
+                  border: `1px solid ${isServiceFull ? "#fecaca" : "#bbf7d0"}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                {capacityLoading ? (
+                  <Typography sx={{ fontSize: "0.85rem", color: "#666" }}>
+                    Checking availability…
+                  </Typography>
+                ) : isServiceFull ? (
+                  <>
+                    <BlockIcon sx={{ color: "#ef4444", fontSize: 20 }} />
+                    <Typography
+                      sx={{
+                        fontSize: "0.85rem",
+                        color: "#ef4444",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Fully booked for {date.format("MMM DD, YYYY")}
+                    </Typography>
+                  </>
+                ) : (
+                  <>
+                    <EventAvailableIcon
+                      sx={{ color: "#16a34a", fontSize: 20 }}
+                    />
+                    <Typography
+                      sx={{
+                        fontSize: "0.85rem",
+                        color: "#16a34a",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {slotsRemaining} of {pageData.daily_slots} slots available
+                    </Typography>
+                  </>
+                )}
+              </Box>
+            )}
+
             <ButtonComponent
-              title={isBooking ? "Processing..." : "Book Now"}
+              title={
+                isServiceFull
+                  ? "Fully Booked"
+                  : isBooking
+                    ? "Processing..."
+                    : "Book Now"
+              }
               width="100%"
-              bgColor="#FF621F"
+              bgColor={isServiceFull ? "#d1d5db" : "#FF621F"}
               onClick={handleBookNow}
               isLoading={isBooking}
               loadingText="Processing..."
-              disabled={isBooking}
+              disabled={isBooking || isServiceFull}
             />
             {bookingFeedback && (
               <Alert
@@ -1651,7 +1806,19 @@ export const BookingPage = () => {
                     <Typography
                       sx={{ fontSize: "0.8rem", color: "#888", ml: 0.5 }}
                     >
-                      No cancellations, refunds, or changes can be made
+                      {typeof packageToView.cancellation_policy === "object" &&
+                      packageToView.cancellation_policy !== null &&
+                      (
+                        packageToView.cancellation_policy as {
+                          details?: string;
+                        }
+                      ).details
+                        ? (
+                            packageToView.cancellation_policy as {
+                              details?: string;
+                            }
+                          ).details
+                        : "No cancellations, refunds, or changes can be made"}
                     </Typography>
                   </Box>
                 </Stack>
@@ -1789,9 +1956,13 @@ export const BookingPage = () => {
                   </AccordionSummary>
                   <AccordionDetails>
                     <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
-                      You will receive confirmation of your booking within 24
-                      hours. A voucher will be sent to your email address which
-                      you can present at the venue.
+                      {packageToView.confirmation_type === "instant"
+                        ? "You will receive instant confirmation of your booking. A voucher will be sent to your email address which you can present at the venue."
+                        : packageToView.confirmation_type === "24_hours"
+                          ? "You will receive confirmation of your booking within 24 hours. A voucher will be sent to your email address which you can present at the venue."
+                          : packageToView.confirmation_type === "48_hours"
+                            ? "You will receive confirmation of your booking within 48 hours. A voucher will be sent to your email address which you can present at the venue."
+                            : "Confirmation details will be sent to your email after your booking is reviewed."}
                     </Typography>
                   </AccordionDetails>
                 </Accordion>
@@ -1818,6 +1989,106 @@ export const BookingPage = () => {
                     </Typography>
                   </AccordionDetails>
                 </Accordion>
+
+                {/* Combo Items - show what's included in combo */}
+                {packageToView.package_type === "combo" &&
+                  Array.isArray(packageToView.combo_items) &&
+                  packageToView.combo_items.length > 0 && (
+                    <Box
+                      sx={{
+                        bgcolor: "#fff9f5",
+                        border: "1px solid #FF621F",
+                        borderRadius: 2,
+                        p: 2,
+                        mt: 2,
+                        mb: 2,
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontWeight: 700,
+                          mb: 1.5,
+                          color: "#FF621F",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                        }}
+                      >
+                        🎁 Combo Includes
+                      </Typography>
+                      <Stack spacing={1}>
+                        {packageToView.combo_items.map((item, idx) => (
+                          <Box
+                            key={idx}
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Typography
+                              sx={{ fontSize: "0.9rem", color: "#444" }}
+                            >
+                              {item.name}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontSize: "0.85rem",
+                                color: "#888",
+                                textDecoration: "line-through",
+                              }}
+                            >
+                              AED {item.price}
+                            </Typography>
+                          </Box>
+                        ))}
+                        <Divider sx={{ my: 1 }} />
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Typography sx={{ fontWeight: 600, color: "#444" }}>
+                            Total if bought separately
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              color: "#888",
+                              textDecoration: "line-through",
+                            }}
+                          >
+                            AED{" "}
+                            {packageToView.original_price ||
+                              packageToView.combo_items.reduce(
+                                (sum, item) => sum + (item.price || 0),
+                                0,
+                              )}
+                          </Typography>
+                        </Box>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Typography
+                            sx={{ fontWeight: 700, color: "#2e7d32" }}
+                          >
+                            Combo Price
+                          </Typography>
+                          <Typography
+                            sx={{ fontWeight: 700, color: "#2e7d32" }}
+                          >
+                            AED {packageToView.price}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </Box>
+                  )}
 
                 {/* How to use */}
                 <Typography
@@ -1865,8 +2136,13 @@ export const BookingPage = () => {
                   </AccordionSummary>
                   <AccordionDetails>
                     <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
-                      {packageToView.voucher_type ||
-                        "Show your mobile voucher to gain entry. No printing required."}
+                      {packageToView.voucher_type === "mobile"
+                        ? "Show your mobile voucher to gain entry. No printing required."
+                        : packageToView.voucher_type === "print"
+                          ? "Please print your voucher and present it at the entrance."
+                          : packageToView.voucher_type === "both"
+                            ? "You can show your mobile voucher or bring a printed copy."
+                            : "Show your mobile voucher to gain entry. No printing required."}
                     </Typography>
                   </AccordionDetails>
                 </Accordion>
@@ -1886,11 +2162,25 @@ export const BookingPage = () => {
                     </Typography>
                   </AccordionSummary>
                   <AccordionDetails>
-                    <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
-                      Present your voucher at the ticket counter or entrance.
-                      Staff will scan your voucher code to validate your
-                      booking.
-                    </Typography>
+                    {Array.isArray(packageToView.how_to_use) &&
+                    packageToView.how_to_use.length > 0 ? (
+                      <Stack spacing={1}>
+                        {packageToView.how_to_use.map((step, idx) => (
+                          <Typography
+                            key={idx}
+                            sx={{ fontSize: "0.9rem", color: "#666" }}
+                          >
+                            {idx + 1}. {step}
+                          </Typography>
+                        ))}
+                      </Stack>
+                    ) : (
+                      <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
+                        Present your voucher at the ticket counter or entrance.
+                        Staff will scan your voucher code to validate your
+                        booking.
+                      </Typography>
+                    )}
                   </AccordionDetails>
                 </Accordion>
 

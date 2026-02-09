@@ -1,10 +1,10 @@
 # TravelGuru Backend Server
 
-Express.js API server with Nodemailer for sending booking confirmation emails.
+Express.js API server with Resend for sending booking confirmation emails.
 
 ## Features
 
-- 📧 **Nodemailer Integration** - Send beautiful HTML emails when bookings are confirmed
+- 📧 **Resend Email Integration** - Send beautiful HTML emails when bookings are confirmed
 - 💳 **Stripe Webhook Handler** - Automatically triggers email on successful payment
 - 🔒 **Supabase Integration** - Fetches booking and user data securely
 
@@ -34,26 +34,21 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 STRIPE_SECRET_KEY=sk_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-# SMTP (Gmail Example)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_password
-SMTP_FROM=TravelGuru <your_email@gmail.com>
+# Resend Email (https://resend.com)
+RESEND_API_KEY=re_...
+EMAIL_FROM=TravelGuru <onboarding@resend.dev>
+ADMIN_EMAIL=admin@yourcompany.com  # Optional: receive booking notifications
 
 # Frontend URL
 FRONTEND_URL=https://travelguroo.com
 ```
 
-### 3. Gmail Setup (App Password)
+### 3. Resend Setup
 
-If using Gmail:
-
-1. Enable 2-Factor Authentication on your Google Account
-2. Go to Google Account → Security → App Passwords
-3. Create a new App Password for "Mail"
-4. Use this password as `SMTP_PASS`
+1. Sign up at [resend.com](https://resend.com)
+2. Get your API key from the dashboard
+3. For testing, use `onboarding@resend.dev` as the from address
+4. For production, verify your domain to send from your own email address
 
 ### 4. Run the Server
 
@@ -77,12 +72,136 @@ npm start
 GET /api/health
 ```
 
+### Diagnostics (Check Configuration)
+
+```
+GET /api/diagnostics
+```
+
+Returns the status of SMTP, Stripe, and Supabase configuration. Useful for debugging.
+
+**Example Response:**
+```json
+{
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "smtp": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "user": "configured",
+    "pass": "configured",
+    "connection": "OK"
+  },
+  "stripe": {
+    "secretKey": "configured",
+    "webhookSecret": "configured"
+  },
+  "supabase": {
+    "url": "configured",
+    "serviceRoleKey": "configured"
+  }
+}
+```
+
+### Test Email
+
+```
+POST /api/test-email
+Body: { "to": "test@example.com" }
+```
+
+Sends a test email to verify Resend configuration is working.
+
 ### Send Booking Confirmation (Manual/Resend)
 
 ```
 POST /api/send-booking-confirmation
 Body: { "booking_id": 123 }
 ```
+
+Generates a voucher code (if not exists) and sends voucher email to customer + admin notification.
+
+---
+
+## 🎫 Voucher System API
+
+### Lookup Voucher
+
+```
+GET /api/voucher/:code
+```
+
+Returns voucher status and booking details. Auto-expires if booking date has passed.
+
+**Response:**
+```json
+{
+  "valid": true,
+  "code": "TG-ABC12345",
+  "status": "active",
+  "booking": {
+    "id": 123,
+    "date": "2024-02-15",
+    "time": "10:00 AM",
+    "service": "Desert Safari",
+    "location": "Dubai",
+    "package": "Premium Package",
+    "amount": "AED 500.00",
+    "paymentStatus": "succeeded"
+  },
+  "verifiedAt": null
+}
+```
+
+### Verify/Redeem Voucher (Admin)
+
+```
+POST /api/voucher/verify
+Body: { "code": "TG-ABC12345", "admin_id": "optional-admin-uuid" }
+```
+
+Marks the voucher as used. Returns error if already used, expired, or cancelled.
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "message": "Voucher verified successfully!",
+  "code": "TG-ABC12345",
+  "booking": { ... },
+  "verifiedAt": "2024-02-15T10:30:00.000Z"
+}
+```
+
+### List All Vouchers (Admin Dashboard)
+
+```
+GET /api/vouchers?status=active&date=2024-02-15&limit=50
+```
+
+**Query Parameters:**
+- `status` - Filter by status: `active`, `used`, `expired`, `cancelled`
+- `date` - Filter by booking date
+- `limit` - Max results (default: 50)
+
+### Resend Voucher Email
+
+```
+POST /api/voucher/resend
+Body: { "code": "TG-ABC12345" }  // OR { "booking_id": 123 }
+```
+
+Resends the voucher email to the customer.
+
+### Cancel Voucher (Admin)
+
+```
+POST /api/voucher/cancel
+Body: { "code": "TG-ABC12345", "reason": "Customer requested refund", "admin_id": "optional" }
+```
+
+Cancels an active voucher. Cannot cancel already used vouchers.
+
+---
 
 ### Stripe Webhook
 
