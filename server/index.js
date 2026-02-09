@@ -63,7 +63,8 @@ log.info("Environment Check:", {
   PORT: PORT,
   RESEND_API_KEY: process.env.RESEND_API_KEY ? "✓ Set" : "✗ Missing",
   EMAIL_FROM: process.env.EMAIL_FROM || "TravelGuru <noreply@travelguroo.com>",
-  ADMIN_NOTIFICATION_EMAIL: process.env.ADMIN_NOTIFICATION_EMAIL || "admin@travelguroo.com",
+  ADMIN_NOTIFICATION_EMAIL:
+    process.env.ADMIN_NOTIFICATION_EMAIL || "admin@travelguroo.com",
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ? "✓ Set" : "✗ Missing",
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET
     ? "✓ Set"
@@ -158,7 +159,7 @@ const isVoucherExpired = (bookingDate) => {
   return bDate < today;
 };
 
-// Generate customer voucher email HTML (simplified, clean design)
+// Generate customer voucher email HTML (enhanced premium design)
 const generateVoucherEmailHTML = (
   booking,
   service,
@@ -172,9 +173,8 @@ const generateVoucherEmailHTML = (
   const packageName = packageInfo?.name || "";
   const amount = formatMoney(booking.amount, booking.currency);
   const bookingTime = booking.departure_arrival_time || "";
-  const greeting = userName
-    ? `Dear ${escapeHtml(userName)},`
-    : "Dear Customer,";
+  const greeting = userName ? escapeHtml(userName) : "Valued Customer";
+  const bookingDate = booking.booking_date || "";
 
   return `
 <!DOCTYPE html>
@@ -182,65 +182,100 @@ const generateVoucherEmailHTML = (
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Booking Voucher</title>
+  <title>Your TravelGuru E-Voucher</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0a0a0a;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%); padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.12);">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(255,98,31,0.2);">
           
-          <!-- Header -->
+          <!-- Premium Header with Logo -->
           <tr>
-            <td style="background: linear-gradient(135deg, #FF621F 0%, #ff8533 100%); padding: 30px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">🎫 TravelGuru</h1>
-              <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 14px;">Your E-Voucher</p>
-            </td>
-          </tr>
-          
-          <!-- Greeting -->
-          <tr>
-            <td style="padding: 30px 30px 20px; text-align: center;">
-              <p style="color: #333; margin: 0; font-size: 16px;">${greeting}</p>
-              <p style="color: #666; margin: 8px 0 0; font-size: 14px;">Your booking is confirmed! Present this voucher on arrival.</p>
-            </td>
-          </tr>
-          
-          <!-- VOUCHER CODE - Main Focus -->
-          <tr>
-            <td style="padding: 0 30px 30px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); border-radius: 12px; overflow: hidden;">
+            <td style="background: linear-gradient(135deg, #FF621F 0%, #ff8533 50%, #FF621F 100%); padding: 40px 30px; text-align: center; position: relative;">
+              <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                  <td style="padding: 30px; text-align: center;">
-                    <p style="color: #FF621F; margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">Voucher Code</p>
-                    <p style="color: #ffffff; margin: 0; font-size: 36px; font-weight: 700; letter-spacing: 4px; font-family: 'Courier New', monospace;">${voucherCode}</p>
-                    <p style="color: #888; margin: 12px 0 0; font-size: 11px;">Show this code to staff for verification</p>
+                  <td style="text-align: center;">
+                    <div style="display: inline-block; background: rgba(255,255,255,0.2); border-radius: 16px; padding: 12px 24px; margin-bottom: 16px;">
+                      <span style="color: #ffffff; font-size: 32px; font-weight: 800; letter-spacing: 1px;">TravelGuru</span>
+                    </div>
+                    <p style="color: rgba(255,255,255,0.95); margin: 0; font-size: 18px; font-weight: 500;">✨ Your Premium E-Voucher ✨</p>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
           
-          <!-- Booking Details - Compact -->
+          <!-- Personalized Greeting -->
           <tr>
-            <td style="padding: 0 30px 30px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 12px;">
+            <td style="padding: 35px 30px 25px; text-align: center; background: linear-gradient(180deg, #fff 0%, #fafafa 100%);">
+              <p style="color: #1a1a1a; margin: 0 0 8px; font-size: 22px; font-weight: 700;">Hello, ${greeting}! 👋</p>
+              <p style="color: #666; margin: 0; font-size: 15px; line-height: 1.6;">Your booking is <span style="color: #4CAF50; font-weight: 600;">confirmed</span>. Present this voucher on arrival for a seamless experience.</p>
+            </td>
+          </tr>
+          
+          <!-- ============ VOUCHER CODE - MAIN HIGHLIGHT ============ -->
+          <tr>
+            <td style="padding: 0 24px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(145deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%); border-radius: 20px; overflow: hidden; border: 2px solid #FF621F;">
                 <tr>
-                  <td style="padding: 20px;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
+                  <td style="padding: 8px; text-align: center;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background: repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 20px);">
                       <tr>
-                        <td style="padding: 8px 0;">
-                          <p style="color: #999; margin: 0; font-size: 11px; text-transform: uppercase;">Service</p>
-                          <p style="color: #1a1a1a; margin: 4px 0 0; font-size: 16px; font-weight: 600;">${escapeHtml(serviceName)}</p>
+                        <td style="padding: 30px 20px 15px; text-align: center;">
+                          <div style="display: inline-block; background: linear-gradient(135deg, #FF621F, #ff8533); padding: 6px 20px; border-radius: 20px; margin-bottom: 15px;">
+                            <span style="color: #fff; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; font-weight: 700;">🎫 Your Voucher Code</span>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 0 20px 15px; text-align: center;">
+                          <div style="background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%); border: 3px dashed #FF621F; border-radius: 12px; padding: 25px 15px;">
+                            <p style="color: #ffffff; margin: 0; font-size: 42px; font-weight: 800; letter-spacing: 6px; font-family: 'Courier New', monospace; text-shadow: 0 0 20px rgba(255,98,31,0.5);">${voucherCode}</p>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 20px 25px; text-align: center;">
+                          <p style="color: #aaa; margin: 0 0 8px; font-size: 12px;">📱 Show this code to our staff for instant verification</p>
+                          <p style="color: #FF621F; margin: 0; font-size: 11px; font-weight: 600;">Valid for one-time use only</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Booking Details Card -->
+          <tr>
+            <td style="padding: 0 24px 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 16px; border: 1px solid #e8e8e8;">
+                <tr>
+                  <td style="padding: 24px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <!-- Section Title -->
+                      <tr>
+                        <td style="padding-bottom: 16px; border-bottom: 2px solid #FF621F;">
+                          <p style="color: #1a1a1a; margin: 0; font-size: 16px; font-weight: 700;">📋 Booking Details</p>
+                        </td>
+                      </tr>
+                      <!-- Service -->
+                      <tr>
+                        <td style="padding: 16px 0 12px;">
+                          <p style="color: #888; margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Experience</p>
+                          <p style="color: #1a1a1a; margin: 0; font-size: 18px; font-weight: 700;">${escapeHtml(serviceName)}</p>
                         </td>
                       </tr>
                       ${
                         packageName
                           ? `
+                      <!-- Package -->
                       <tr>
-                        <td style="padding: 8px 0;">
-                          <p style="color: #999; margin: 0; font-size: 11px; text-transform: uppercase;">Package</p>
-                          <p style="color: #1a1a1a; margin: 4px 0 0; font-size: 14px;">${escapeHtml(packageName)}</p>
+                        <td style="padding: 12px 0;">
+                          <p style="color: #888; margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Package</p>
+                          <p style="color: #1a1a1a; margin: 0; font-size: 15px; font-weight: 600;">📦 ${escapeHtml(packageName)}</p>
                         </td>
                       </tr>
                       `
@@ -249,32 +284,63 @@ const generateVoucherEmailHTML = (
                       ${
                         location
                           ? `
+                      <!-- Location -->
                       <tr>
-                        <td style="padding: 8px 0;">
-                          <p style="color: #999; margin: 0; font-size: 11px; text-transform: uppercase;">Location</p>
-                          <p style="color: #1a1a1a; margin: 4px 0 0; font-size: 14px;">📍 ${escapeHtml(location)}</p>
+                        <td style="padding: 12px 0;">
+                          <p style="color: #888; margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Location</p>
+                          <p style="color: #1a1a1a; margin: 0; font-size: 15px;">📍 ${escapeHtml(location)}</p>
                         </td>
                       </tr>
                       `
                           : ""
                       }
+                      <!-- Date & Time -->
                       <tr>
-                        <td style="padding: 8px 0;">
-                          <p style="color: #999; margin: 0; font-size: 11px; text-transform: uppercase;">Date & Time</p>
-                          <p style="color: #1a1a1a; margin: 4px 0 0; font-size: 14px;">📅 ${escapeHtml(booking.booking_date)}${bookingTime ? ` at ${escapeHtml(bookingTime)}` : ""}</p>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 0 0;">
-                          <hr style="border: none; border-top: 1px dashed #ddd; margin: 0;">
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 12px 0 0;">
-                          <table width="100%">
+                        <td style="padding: 12px 0;">
+                          <table width="100%" cellpadding="0" cellspacing="0">
                             <tr>
-                              <td><p style="color: #1a1a1a; margin: 0; font-size: 16px; font-weight: 600;">Total Paid</p></td>
-                              <td style="text-align: right;"><p style="color: #FF621F; margin: 0; font-size: 20px; font-weight: 700;">${amount}</p></td>
+                              <td width="50%">
+                                <p style="color: #888; margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Date</p>
+                                <p style="color: #1a1a1a; margin: 0; font-size: 15px; font-weight: 600;">📅 ${escapeHtml(bookingDate)}</p>
+                              </td>
+                              ${
+                                bookingTime
+                                  ? `
+                              <td width="50%">
+                                <p style="color: #888; margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Time</p>
+                                <p style="color: #1a1a1a; margin: 0; font-size: 15px; font-weight: 600;">🕐 ${escapeHtml(bookingTime)}</p>
+                              </td>
+                              `
+                                  : ""
+                              }
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      <!-- Divider -->
+                      <tr>
+                        <td style="padding: 16px 0;">
+                          <hr style="border: none; border-top: 2px dashed #e0e0e0; margin: 0;">
+                        </td>
+                      </tr>
+                      <!-- Amount Paid -->
+                      <tr>
+                        <td>
+                          <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #fff8f5 0%, #fff 100%); border-radius: 12px; padding: 16px;">
+                            <tr>
+                              <td style="padding: 16px;">
+                                <table width="100%">
+                                  <tr>
+                                    <td>
+                                      <p style="color: #666; margin: 0; font-size: 13px;">Total Amount Paid</p>
+                                      <p style="color: #4CAF50; margin: 4px 0 0; font-size: 12px; font-weight: 500;">✓ Payment Successful</p>
+                                    </td>
+                                    <td style="text-align: right;">
+                                      <p style="color: #FF621F; margin: 0; font-size: 28px; font-weight: 800;">${amount}</p>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
                             </tr>
                           </table>
                         </td>
@@ -288,16 +354,39 @@ const generateVoucherEmailHTML = (
           
           <!-- Important Notice -->
           <tr>
-            <td style="padding: 0 30px 30px;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fff3e0; border-radius: 8px; border-left: 4px solid #FF621F;">
+            <td style="padding: 0 24px 24px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #fff8e1 0%, #fff3e0 100%); border-radius: 12px; border-left: 5px solid #FF621F;">
                 <tr>
-                  <td style="padding: 16px;">
-                    <p style="color: #e65100; margin: 0 0 8px; font-size: 13px; font-weight: 600;">⚠️ Important</p>
-                    <ul style="color: #333; margin: 0; padding-left: 16px; font-size: 12px; line-height: 1.6;">
-                      <li>Please arrive 15 minutes before your scheduled time</li>
-                      <li>Bring a valid ID or passport for verification</li>
-                      <li>This voucher is valid only for the date shown above</li>
-                    </ul>
+                  <td style="padding: 20px;">
+                    <p style="color: #e65100; margin: 0 0 12px; font-size: 14px; font-weight: 700;">⚠️ Important Information</p>
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding: 4px 0; color: #5d4037; font-size: 13px;">• Please arrive <strong>15 minutes before</strong> your scheduled time</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 4px 0; color: #5d4037; font-size: 13px;">• Bring a <strong>valid ID or passport</strong> for verification</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 4px 0; color: #5d4037; font-size: 13px;">• This voucher is valid <strong>only for the date</strong> shown above</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 4px 0; color: #5d4037; font-size: 13px;">• Voucher becomes <strong>invalid after use</strong> or expiration</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- QR-style Voucher Reminder -->
+          <tr>
+            <td style="padding: 0 24px 30px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background: #f0f0f0; border-radius: 12px; text-align: center;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="color: #666; margin: 0 0 8px; font-size: 12px;">Your voucher code for quick reference:</p>
+                    <p style="color: #1a1a1a; margin: 0; font-size: 24px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 3px; background: #fff; display: inline-block; padding: 10px 20px; border-radius: 8px; border: 2px solid #FF621F;">${voucherCode}</p>
                   </td>
                 </tr>
               </table>
@@ -306,14 +395,30 @@ const generateVoucherEmailHTML = (
           
           <!-- Footer -->
           <tr>
-            <td style="background-color: #1a1a1a; padding: 24px; text-align: center;">
-              <p style="color: #888; margin: 0 0 8px; font-size: 12px;">Booking Reference: #${booking.id}</p>
-              <p style="color: rgba(255,255,255,0.9); margin: 0 0 8px; font-size: 13px;">
-                Need help? <a href="mailto:support@travelguroo.com" style="color: #FF621F;">support@travelguroo.com</a>
+            <td style="background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%); padding: 30px; text-align: center;">
+              <p style="color: #888; margin: 0 0 12px; font-size: 13px;">Booking Reference: <span style="color: #FF621F; font-weight: 600;">#${booking.id}</span></p>
+              <p style="color: rgba(255,255,255,0.9); margin: 0 0 12px; font-size: 14px;">
+                Questions? Contact us at <a href="mailto:support@travelguroo.com" style="color: #FF621F; text-decoration: none; font-weight: 600;">support@travelguroo.com</a>
               </p>
-              <p style="color: rgba(255,255,255,0.5); margin: 0; font-size: 11px;">
-                © ${new Date().getFullYear()} TravelGuru. All rights reserved.
-              </p>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="text-align: center; padding-top: 16px; border-top: 1px solid #333;">
+                    <p style="color: rgba(255,255,255,0.5); margin: 0; font-size: 11px;">
+                      © ${new Date().getFullYear()} TravelGuru. All rights reserved.<br>
+                      Your adventure partner in the UAE 🌴
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Bottom spacing -->
+        <table width="600" cellpadding="0" cellspacing="0" style="margin-top: 20px;">
+          <tr>
+            <td style="text-align: center;">
+              <p style="color: #666; margin: 0; font-size: 11px;">This email was sent by TravelGuru booking system.</p>
             </td>
           </tr>
         </table>
@@ -947,7 +1052,9 @@ const sendBookingConfirmationEmail = async (bookingId) => {
       if (adminEmailError) {
         log.warn(`Failed to send admin notification`, adminEmailError);
       } else {
-        log.success(`Admin notification SENT to ${adminEmail} for booking #${bookingId}`);
+        log.success(
+          `Admin notification SENT to ${adminEmail} for booking #${bookingId}`,
+        );
       }
     } else {
       log.warn(`No admin email configured - skipping admin notification`);
