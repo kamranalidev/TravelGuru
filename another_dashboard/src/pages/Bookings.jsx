@@ -67,7 +67,13 @@ const Bookings = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setBookings(data || []);
+      // Rename `children` → `children_count` to avoid conflict with antd Table's
+      // reserved `children` prop (used for tree/expandable rows).
+      const sanitized = (data || []).map(({ children, ...rest }) => ({
+        ...rest,
+        children_count: children ?? 0,
+      }));
+      setBookings(sanitized);
     } catch (error) {
       message.error("Failed to fetch bookings");
       console.error(error);
@@ -248,6 +254,35 @@ const Bookings = () => {
         record.amount
           ? `${(record.amount / 100).toFixed(2)} ${record.currency?.toUpperCase() || "AED"}`
           : "-",
+    },
+    {
+      title: "Guests",
+      key: "guests",
+      render: (_, record) => {
+        const adults = record.adults || 0;
+        const children = record.children_count || 0;
+        const infants = record.infants || 0;
+        const total = adults + children + infants;
+        if (total === 0) return "-";
+        const parts = [];
+        if (adults > 0) parts.push(`${adults} Adult${adults !== 1 ? "s" : ""}`);
+        if (children > 0)
+          parts.push(`${children} Child${children !== 1 ? "ren" : ""}`);
+        if (infants > 0)
+          parts.push(`${infants} Infant${infants !== 1 ? "s" : ""}`);
+        return (
+          <div>
+            {parts.map((p, i) => (
+              <div key={i} style={{ fontSize: 13 }}>
+                {p}
+              </div>
+            ))}
+            {total > 1 && (
+              <small style={{ color: "#888" }}>({total} total)</small>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: "Payment Status",
@@ -515,6 +550,36 @@ const Bookings = () => {
               {selectedBooking.amount
                 ? `${(selectedBooking.amount / 100).toFixed(2)} ${selectedBooking.currency?.toUpperCase()}`
                 : "-"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Guests">
+              {(() => {
+                const adults = selectedBooking.adults || 0;
+                const children = selectedBooking.children_count || 0;
+                const infants = selectedBooking.infants || 0;
+                const total = adults + children + infants;
+                if (total === 0) return "-";
+                const parts = [];
+                if (adults > 0)
+                  parts.push(`👤 ${adults} Adult${adults !== 1 ? "s" : ""}`);
+                if (children > 0)
+                  parts.push(
+                    `👦 ${children} Child${children !== 1 ? "ren" : ""}`,
+                  );
+                if (infants > 0)
+                  parts.push(`👶 ${infants} Infant${infants !== 1 ? "s" : ""}`);
+                return (
+                  <div>
+                    {parts.map((p, i) => (
+                      <div key={i}>{p}</div>
+                    ))}
+                    {total > 1 && (
+                      <div style={{ fontWeight: 600, marginTop: 4 }}>
+                        Total: {total} guest{total !== 1 ? "s" : ""}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </Descriptions.Item>
             <Descriptions.Item label="Payment Status">
               <Tag

@@ -1,22 +1,30 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Box, Typography, TextField, IconButton, Paper } from "@mui/material";
+import {
+  Box,
+  Typography,
+  TextField,
+  IconButton,
+  Paper,
+  CircularProgress,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import SendIcon from "@mui/icons-material/Send";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import {
-  getChatbotResponse,
-  getQuickQuestions,
-} from "../../services/chatbotService";
-import type { ChatMessage } from "../../services/chatbotService";
+  getGeminiResponse,
+  getSmartQuickQuestions,
+} from "../../services/geminiService";
+import type { Message } from "../../services/geminiService";
 import "./index.css";
 
 export const Chatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
+  const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
       content:
-        "Hello! 👋 I'm your Travel Guroo assistant. How can I help you explore the Arabian Dream today?",
+        "Hello! 👋 I'm your AI-powered Travel Guroo assistant. I can help you discover amazing Dubai experiences, answer questions about our tours, pricing, and bookings. What would you like to explore today?",
     },
   ]);
   const [inputValue, setInputValue] = useState("");
@@ -40,11 +48,11 @@ export const Chatbot: React.FC = () => {
     }
   }, [isOpen]);
 
-  const handleSendMessage = (message?: string) => {
+  const handleSendMessage = async (message?: string) => {
     const userMessage = message || inputValue.trim();
-    if (!userMessage) return;
+    if (!userMessage || isLoading) return;
 
-    const newUserMessage: ChatMessage = {
+    const newUserMessage: Message = {
       role: "user",
       content: userMessage,
     };
@@ -53,15 +61,26 @@ export const Chatbot: React.FC = () => {
     setInputValue("");
     setIsLoading(true);
 
-    setTimeout(() => {
-      const response = getChatbotResponse(userMessage);
-      const assistantMessage: ChatMessage = {
+    try {
+      // Get response from Gemini API with context awareness
+      const response = await getGeminiResponse(messages, userMessage);
+
+      const assistantMessage: Message = {
         role: "assistant",
         content: response,
       };
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Error getting AI response:", error);
+      const errorMessage: Message = {
+        role: "assistant",
+        content:
+          "I apologize, but I'm having trouble connecting right now. Please try again or contact our support team directly at info@travelguroo.com 📧",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -71,7 +90,45 @@ export const Chatbot: React.FC = () => {
     }
   };
 
-  const quickQuestions = getQuickQuestions();
+  const quickQuestions = getSmartQuickQuestions();
+
+  const formatMessage = (content: string) => {
+    // Simple markdown-like formatting for better readability
+    const lines = content.split("\n");
+    return lines.map((line, idx) => {
+      // Handle bullet points
+      if (
+        line.trim().startsWith("•") ||
+        line.trim().startsWith("-") ||
+        line.trim().startsWith("*")
+      ) {
+        return (
+          <div key={idx} className="chatbot-bullet">
+            {line}
+          </div>
+        );
+      }
+      // Handle numbered lists
+      if (/^\d+[\.\)]\s/.test(line.trim())) {
+        return (
+          <div key={idx} className="chatbot-numbered">
+            {line}
+          </div>
+        );
+      }
+      // Handle bold text wrapped in **
+      const boldFormatted = line.replace(
+        /\*\*(.*?)\*\*/g,
+        "<strong>$1</strong>",
+      );
+      if (boldFormatted !== line) {
+        return (
+          <div key={idx} dangerouslySetInnerHTML={{ __html: boldFormatted }} />
+        );
+      }
+      return <div key={idx}>{line || <br />}</div>;
+    });
+  };
 
   return (
     <>
@@ -79,9 +136,12 @@ export const Chatbot: React.FC = () => {
         <button
           className="chatbot-toggle-button"
           onClick={() => setIsOpen(true)}
-          aria-label="Open chatbot"
+          aria-label="Open AI chatbot"
         >
           <ChatBubbleIcon sx={{ fontSize: 28 }} />
+          <span className="chatbot-ai-badge">
+            <AutoAwesomeIcon sx={{ fontSize: 12 }} />
+          </span>
         </button>
       )}
 
@@ -89,11 +149,13 @@ export const Chatbot: React.FC = () => {
         <Paper className="chatbot-container" elevation={8}>
           <Box className="chatbot-header">
             <Box className="chatbot-header-content">
-              <Typography variant="h6" className="chatbot-title">
-                Travel Guroo Assistant
-              </Typography>
+              <Box className="chatbot-title-wrapper">
+                <Typography variant="h6" className="chatbot-title">
+                  Travel Guroo Assistant
+                </Typography>
+              </Box>
               <Typography variant="caption" className="chatbot-subtitle">
-                Ask me anything about our services
+                Ask me anything about Dubai tours & experiences
               </Typography>
             </Box>
             <IconButton
@@ -112,18 +174,34 @@ export const Chatbot: React.FC = () => {
                 key={index}
                 className={`chatbot-message chatbot-message-${message.role}`}
               >
-                <Typography variant="body2" className="chatbot-message-content">
-                  {message.content}
-                </Typography>
+                {message.role === "assistant" && (
+                  <div className="chatbot-avatar">
+                    <AutoAwesomeIcon sx={{ fontSize: 16 }} />
+                  </div>
+                )}
+                <div className="chatbot-message-bubble">
+                  <Typography
+                    variant="body2"
+                    component="div"
+                    className="chatbot-message-content"
+                  >
+                    {formatMessage(message.content)}
+                  </Typography>
+                </div>
               </Box>
             ))}
             {isLoading && (
               <Box className="chatbot-message chatbot-message-assistant">
-                <Typography variant="body2" className="chatbot-typing">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </Typography>
+                <div className="chatbot-avatar">
+                  <AutoAwesomeIcon sx={{ fontSize: 16 }} />
+                </div>
+                <div className="chatbot-message-bubble">
+                  <Typography variant="body2" className="chatbot-typing">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </Typography>
+                </div>
               </Box>
             )}
             <div ref={messagesEndRef} />
@@ -132,6 +210,7 @@ export const Chatbot: React.FC = () => {
           {messages.length === 1 && (
             <Box className="chatbot-quick-questions">
               <Typography variant="caption" className="quick-questions-title">
+                <AutoAwesomeIcon sx={{ fontSize: 14, marginRight: 0.5 }} />
                 Quick questions:
               </Typography>
               <Box className="quick-questions-list">
@@ -140,6 +219,7 @@ export const Chatbot: React.FC = () => {
                     key={index}
                     className="quick-question-button"
                     onClick={() => handleSendMessage(question)}
+                    disabled={isLoading}
                   >
                     {question}
                   </button>
@@ -152,7 +232,7 @@ export const Chatbot: React.FC = () => {
             <TextField
               inputRef={inputRef}
               fullWidth
-              placeholder="Type your message..."
+              placeholder="Ask me about tours, pricing, bookings..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -167,8 +247,18 @@ export const Chatbot: React.FC = () => {
               className="chatbot-send-button"
               aria-label="Send message"
             >
-              <SendIcon />
+              {isLoading ? (
+                <CircularProgress size={20} sx={{ color: "#FF621F" }} />
+              ) : (
+                <SendIcon />
+              )}
             </IconButton>
+          </Box>
+
+          <Box className="chatbot-footer">
+            <Typography variant="caption" className="chatbot-footer-text">
+              Powered by AI • Real-time data from our services
+            </Typography>
           </Box>
         </Paper>
       )}

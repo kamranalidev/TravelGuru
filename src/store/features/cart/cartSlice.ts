@@ -28,6 +28,8 @@ export type CartItem = {
   quantity: number; // total number of tickets (adults + children + infants)
   participants: ParticipantCounts;
   participantPricing?: ParticipantPricing; // individual prices per type
+  childAgeRange?: string | null; // e.g., "3-12 years"
+  infantAgeRange?: string | null; // e.g., "0-2 years"
 };
 
 export type CartState = {
@@ -45,16 +47,16 @@ const keyOf = (i: CartItem) =>
 const calculateTotalFromParticipants = (item: CartItem): number => {
   const pricing = item.participantPricing;
   const participants = item.participants;
-  
+
   if (!pricing) {
     // Fall back to unitPrice * quantity if no participant pricing
     return item.unitPrice * item.quantity;
   }
-  
+
   const adultTotal = participants.adults * pricing.adultPrice;
   const childTotal = participants.children * (pricing.childPrice ?? 0);
   const infantTotal = participants.infants * (pricing.infantPrice ?? 0);
-  
+
   return adultTotal + childTotal + infantTotal;
 };
 
@@ -88,8 +90,10 @@ export const cartSlice = createSlice({
         const existing = state.items[existingIndex];
         existing.participants = {
           adults: existing.participants.adults + normalizedParticipants.adults,
-          children: existing.participants.children + normalizedParticipants.children,
-          infants: existing.participants.infants + normalizedParticipants.infants,
+          children:
+            existing.participants.children + normalizedParticipants.children,
+          infants:
+            existing.participants.infants + normalizedParticipants.infants,
         };
         existing.quantity =
           existing.participants.adults +

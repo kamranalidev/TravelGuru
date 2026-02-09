@@ -106,7 +106,14 @@ const Dashboard = () => {
         .order("created_at", { ascending: false })
         .limit(5);
 
-      setRecentBookings(bookings || []);
+      // Rename `children` → `children_count` to avoid conflict with antd Table's
+      // reserved `children` prop (used for tree/expandable rows).
+      setRecentBookings(
+        (bookings || []).map(({ children, ...rest }) => ({
+          ...rest,
+          children_count: children ?? 0,
+        })),
+      );
 
       // Fetch bookings by service for pie chart
       const { data: serviceBookings } = await supabase.from("bookings").select(`
@@ -195,6 +202,22 @@ const Dashboard = () => {
         `${(amount / 100).toFixed(2)} ${record.currency?.toUpperCase() || "AED"}`,
     },
     {
+      title: "Guests",
+      key: "guests",
+      render: (_, record) => {
+        const adults = record.adults || 0;
+        const children = record.children_count || 0;
+        const infants = record.infants || 0;
+        const total = adults + children + infants;
+        if (total === 0) return "-";
+        const parts = [];
+        if (adults > 0) parts.push(`${adults}A`);
+        if (children > 0) parts.push(`${children}C`);
+        if (infants > 0) parts.push(`${infants}I`);
+        return parts.join(" · ");
+      },
+    },
+    {
       title: "Status",
       dataIndex: "payment_status",
       key: "status",
@@ -251,7 +274,7 @@ const Dashboard = () => {
               title="Total Bookings"
               value={stats.totalBookings}
               prefix={<CalendarOutlined style={{ color: "#1890ff" }} />}
-              valueStyle={{ color: "#1890ff" }}
+              styles={{ content: { color: "#1890ff" } }}
             />
           </Card>
         </Col>
@@ -263,7 +286,7 @@ const Dashboard = () => {
               precision={2}
               prefix={<DollarOutlined style={{ color: "#52c41a" }} />}
               suffix="AED"
-              valueStyle={{ color: "#52c41a" }}
+              styles={{ content: { color: "#52c41a" } }}
             />
           </Card>
         </Col>
@@ -273,7 +296,7 @@ const Dashboard = () => {
               title="Total Users"
               value={stats.totalUsers}
               prefix={<UserOutlined style={{ color: "#722ed1" }} />}
-              valueStyle={{ color: "#722ed1" }}
+              styles={{ content: { color: "#722ed1" } }}
             />
           </Card>
         </Col>
@@ -283,7 +306,7 @@ const Dashboard = () => {
               title="Active Carts"
               value={stats.activeCarts}
               prefix={<ShoppingCartOutlined style={{ color: "#fa8c16" }} />}
-              valueStyle={{ color: "#fa8c16" }}
+              styles={{ content: { color: "#fa8c16" } }}
             />
           </Card>
         </Col>

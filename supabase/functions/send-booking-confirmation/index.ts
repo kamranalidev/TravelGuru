@@ -41,7 +41,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405, headers: corsHeaders });
+    return new Response("Method Not Allowed", {
+      status: 405,
+      headers: corsHeaders,
+    });
   }
 
   try {
@@ -56,10 +59,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     if (!serviceRoleKey) {
-      return new Response(JSON.stringify({ error: "Missing SERVICE_ROLE_KEY" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Missing SERVICE_ROLE_KEY" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const authHeader = req.headers.get("Authorization");
@@ -81,10 +87,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     if (!body?.booking_id || typeof body.booking_id !== "number") {
-      return new Response(JSON.stringify({ error: "booking_id (number) is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "booking_id (number) is required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
@@ -107,7 +116,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from("bookings")
       .select(
-        "id, user_id, booking_date, departure_arrival_time, address, type, amount, currency, payment_intent_id, payment_status, package_id, service_id, services(name, location, service_description, service_type), packages(name, duration, includes, excludes, price)"
+        "id, user_id, booking_date, departure_arrival_time, address, type, amount, currency, payment_intent_id, payment_status, package_id, service_id, adults, children, infants, adult_price, child_price, infant_price, services(name, location, service_description, service_type), packages(name, duration, includes, excludes, price)",
       )
       .eq("id", body.booking_id)
       .maybeSingle();
@@ -137,10 +146,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const to = user.email;
     if (!to) {
-      return new Response(JSON.stringify({ error: "User email not available" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "User email not available" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     type JoinedService = {
@@ -157,16 +169,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
       price?: number | null;
     };
 
-    const rawServices = booking.services as JoinedService | JoinedService[] | null | undefined;
-    const rawPackages = (booking as { packages?: JoinedPackage | JoinedPackage[] | null }).packages;
+    const rawServices = booking.services as
+      | JoinedService
+      | JoinedService[]
+      | null
+      | undefined;
+    const rawPackages = (
+      booking as { packages?: JoinedPackage | JoinedPackage[] | null }
+    ).packages;
 
     const serviceRow: JoinedService | null = Array.isArray(rawServices)
-      ? rawServices[0] ?? null
-      : rawServices ?? null;
+      ? (rawServices[0] ?? null)
+      : (rawServices ?? null);
 
     const packageRow: JoinedPackage | null = Array.isArray(rawPackages)
-      ? rawPackages[0] ?? null
-      : rawPackages ?? null;
+      ? (rawPackages[0] ?? null)
+      : (rawPackages ?? null);
 
     const serviceName = serviceRow?.name ?? "Your booking";
     const location = serviceRow?.location ?? "";
@@ -183,6 +201,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const amountMinor = typeof booking.amount === "number" ? booking.amount : 0;
     const currency = (booking.currency ?? "aed") as string;
+
+    // Participant info
+    const adults =
+      ((booking as Record<string, unknown>).adults as number | null) ?? 1;
+    const children =
+      ((booking as Record<string, unknown>).children as number | null) ?? 0;
+    const infants =
+      ((booking as Record<string, unknown>).infants as number | null) ?? 0;
+    const totalGuests = adults + children + infants;
+
+    let guestsHtml = "";
+    if (totalGuests > 0) {
+      const parts: string[] = [];
+      if (adults > 0)
+        parts.push(`👤 ${adults} Adult${adults !== 1 ? "s" : ""}`);
+      if (children > 0)
+        parts.push(`👦 ${children} Child${children !== 1 ? "ren" : ""}`);
+      if (infants > 0)
+        parts.push(`👶 ${infants} Infant${infants !== 1 ? "s" : ""}`);
+      guestsHtml = `<p><strong>Guests:</strong> ${escapeHtml(parts.join(" · "))}${totalGuests > 1 ? ` (${totalGuests} total)` : ""}</p>`;
+    }
 
     const subject = `Booking confirmed: ${serviceName}`;
 
@@ -206,6 +245,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         ${packageName ? `<p><strong>Package:</strong> ${escapeHtml(packageName)}</p>` : ""}
         ${packageDuration ? `<p><strong>Package Duration:</strong> ${escapeHtml(packageDuration)}</p>` : ""}
         ${packagePrice ? `<p><strong>Package Price:</strong> ${escapeHtml(packagePrice)}</p>` : ""}
+        ${guestsHtml}
         <p><strong>Total:</strong> ${escapeHtml(formatMoney(amountMinor, currency))}</p>
         ${booking.payment_intent_id ? `<p><strong>Payment Intent:</strong> ${escapeHtml(String(booking.payment_intent_id))}</p>` : ""}
         ${
@@ -237,7 +277,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           skipped: true,
           error: "Missing RESEND_API_KEY or EMAIL_FROM (email not sent)",
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -264,21 +304,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
           error: "Email send failed",
           details: resendJson,
         }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
       );
     }
 
     return new Response(
       JSON.stringify({ success: true, messageId: resendJson?.id ?? undefined }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("send-booking-confirmation error:", message);
 
-    return new Response(JSON.stringify({ error: "Server error", details: message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Server error", details: message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });

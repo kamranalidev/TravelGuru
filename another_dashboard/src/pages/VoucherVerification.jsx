@@ -187,6 +187,25 @@ const VoucherVerification = () => {
             <strong>Booking Date:</strong>{" "}
             {dayjs(booking.booking_date).format("MMMM DD, YYYY")}
           </p>
+          {(() => {
+            const adults = booking.adults || 0;
+            const children = booking.children || 0;
+            const infants = booking.infants || 0;
+            const total = adults + children + infants;
+            if (total === 0) return null;
+            const parts = [];
+            if (adults > 0)
+              parts.push(`${adults} Adult${adults !== 1 ? "s" : ""}`);
+            if (children > 0)
+              parts.push(`${children} Child${children !== 1 ? "ren" : ""}`);
+            if (infants > 0)
+              parts.push(`${infants} Infant${infants !== 1 ? "s" : ""}`);
+            return (
+              <p>
+                <strong>Guests:</strong> {parts.join(" · ")}
+              </p>
+            );
+          })()}
         </div>
       ),
       okText: "Verify & Redeem",
@@ -306,7 +325,7 @@ const VoucherVerification = () => {
             <Statistic
               title="Active Vouchers"
               value={stats.totalActive}
-              valueStyle={{ color: "#52c41a" }}
+              styles={{ content: { color: "#52c41a" } }}
               prefix={<CheckCircleOutlined />}
             />
           </Card>
@@ -316,7 +335,7 @@ const VoucherVerification = () => {
             <Statistic
               title="Used Vouchers"
               value={stats.totalUsed}
-              valueStyle={{ color: "#1890ff" }}
+              styles={{ content: { color: "#1890ff" } }}
               prefix={<SafetyCertificateOutlined />}
             />
           </Card>
@@ -326,7 +345,7 @@ const VoucherVerification = () => {
             <Statistic
               title="Expired Vouchers"
               value={stats.totalExpired}
-              valueStyle={{ color: "#faad14" }}
+              styles={{ content: { color: "#faad14" } }}
               prefix={<ExclamationCircleOutlined />}
             />
           </Card>
@@ -586,6 +605,39 @@ const VoucherVerification = () => {
                   ? `${(booking.amount / 100).toFixed(2)} ${booking.currency?.toUpperCase() || "AED"}`
                   : "-"}
               </Text>
+            </Descriptions.Item>
+
+            <Descriptions.Item label="Guests">
+              {(() => {
+                const adults = booking.adults || 0;
+                const children = booking.children || 0;
+                const infants = booking.infants || 0;
+                const total = adults + children + infants;
+                if (total === 0) return "-";
+                const parts = [];
+                if (adults > 0)
+                  parts.push(`👤 ${adults} Adult${adults !== 1 ? "s" : ""}`);
+                if (children > 0)
+                  parts.push(
+                    `👦 ${children} Child${children !== 1 ? "ren" : ""}`,
+                  );
+                if (infants > 0)
+                  parts.push(`👶 ${infants} Infant${infants !== 1 ? "s" : ""}`);
+                return (
+                  <div>
+                    {parts.map((p, i) => (
+                      <div key={i} style={{ fontWeight: 500 }}>
+                        {p}
+                      </div>
+                    ))}
+                    {total > 1 && (
+                      <div style={{ fontWeight: 700, marginTop: 4 }}>
+                        Total: {total} guest{total !== 1 ? "s" : ""}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </Descriptions.Item>
 
             <Descriptions.Item label="Booking Type">

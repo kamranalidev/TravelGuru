@@ -68,27 +68,51 @@ export const loadServerCartToLocal = createAsyncThunk(
     const { data, error } = await supabase
       .from("cart_items")
       .select(
-        "service_id, package_id, booking_date, departure_arrival_time, airport_type, address, unit_price_micros, currency, services(service_name, location), packages(name)",
+        "service_id, package_id, booking_date, departure_arrival_time, airport_type, address, unit_price_micros, currency, adults, children, infants, adult_price_micros, child_price_micros, infant_price_micros, child_age_range, infant_age_range, services(service_name, location), packages(name)",
       )
       .eq("cart_id", cartId)
       .order("created_at", { ascending: true });
 
     if (error) throw new Error(error.message);
 
-    const items: CartItem[] = (data ?? []).map((row: any) => ({
-      serviceId: Number(row.service_id),
-      serviceName: row.services?.service_name ?? null,
-      location: row.services?.location ?? null,
-      packageId: row.package_id == null ? null : Number(row.package_id),
-      packageName:
-        row.packages?.name ?? (row.package_id ? null : "Standard Experience"),
-      bookingDate: String(row.booking_date),
-      bookingTime: row.departure_arrival_time ?? null,
-      airportType: row.airport_type ?? null,
-      address: row.address ?? null,
-      unitPrice: Number(row.unit_price_micros ?? 0) / 1_000_000,
-      quantity: 1, // Default quantity for server cart items
-    }));
+    const items: CartItem[] = (data ?? []).map((row: any) => {
+      const adults = row.adults ?? 1;
+      const children = row.children ?? 0;
+      const infants = row.infants ?? 0;
+      const unitPrice = Number(row.unit_price_micros ?? 0) / 1_000_000;
+
+      return {
+        serviceId: Number(row.service_id),
+        serviceName: row.services?.service_name ?? null,
+        location: row.services?.location ?? null,
+        packageId: row.package_id == null ? null : Number(row.package_id),
+        packageName:
+          row.packages?.name ?? (row.package_id ? null : "Standard Experience"),
+        bookingDate: String(row.booking_date),
+        bookingTime: row.departure_arrival_time ?? null,
+        airportType: row.airport_type ?? null,
+        address: row.address ?? null,
+        unitPrice,
+        quantity: adults + children + infants,
+        participants: { adults, children, infants },
+        participantPricing: {
+          adultPrice:
+            row.adult_price_micros != null
+              ? Number(row.adult_price_micros) / 1_000_000
+              : unitPrice,
+          childPrice:
+            row.child_price_micros != null
+              ? Number(row.child_price_micros) / 1_000_000
+              : null,
+          infantPrice:
+            row.infant_price_micros != null
+              ? Number(row.infant_price_micros) / 1_000_000
+              : null,
+        },
+        childAgeRange: row.child_age_range ?? null,
+        infantAgeRange: row.infant_age_range ?? null,
+      };
+    });
 
     return { cartId, items };
   },
@@ -127,6 +151,23 @@ export const addServerCartItem = createAsyncThunk(
       address: it.address,
       unit_price_micros: Math.round((Number(it.unitPrice) || 0) * 1_000_000),
       currency: "aed",
+      // Participant data
+      adults: it.participants?.adults ?? 1,
+      children: it.participants?.children ?? 0,
+      infants: it.participants?.infants ?? 0,
+      adult_price_micros: it.participantPricing?.adultPrice
+        ? Math.round(it.participantPricing.adultPrice * 1_000_000)
+        : null,
+      child_price_micros:
+        it.participantPricing?.childPrice != null
+          ? Math.round(it.participantPricing.childPrice * 1_000_000)
+          : null,
+      infant_price_micros:
+        it.participantPricing?.infantPrice != null
+          ? Math.round(it.participantPricing.infantPrice * 1_000_000)
+          : null,
+      child_age_range: it.childAgeRange ?? null,
+      infant_age_range: it.infantAgeRange ?? null,
     };
 
     const { error } = await supabase.from("cart_items").insert(row);

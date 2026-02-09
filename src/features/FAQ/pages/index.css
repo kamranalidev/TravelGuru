@@ -262,7 +262,7 @@
 
 /* Focus states */
 .faq-accordion:focus-within {
-  box-shadow: 0 0 0 2px #FF621F;
+  box-shadow: 0 4px 12px rgba(255, 98, 31, 0.15);
 }
 
 .contact-link:focus-visible {

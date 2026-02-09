@@ -52,13 +52,20 @@ const calculateItemTotal = (item: CartItem): number => {
   const participants = item.participants;
 
   if (!pricing) {
-    // Fall back to unitPrice * quantity
-    return item.unitPrice * item.quantity;
+    // Fall back to unitPrice for adults only (children/infants without pricing = free)
+    return item.unitPrice * (participants?.adults || 1);
   }
 
   const adultTotal = participants.adults * pricing.adultPrice;
-  const childTotal = participants.children * (pricing.childPrice ?? 0);
-  const infantTotal = participants.infants * (pricing.infantPrice ?? 0);
+  // Only add child/infant costs if their prices are defined and greater than 0
+  const childTotal =
+    pricing.childPrice && pricing.childPrice > 0
+      ? participants.children * pricing.childPrice
+      : 0;
+  const infantTotal =
+    pricing.infantPrice && pricing.infantPrice > 0
+      ? participants.infants * pricing.infantPrice
+      : 0;
 
   return adultTotal + childTotal + infantTotal;
 };
@@ -91,7 +98,10 @@ export const CartPage: React.FC = () => {
   // Calculate total with participant pricing
   const total = useMemo(
     () =>
-      items.reduce((acc: number, it: CartItem) => acc + calculateItemTotal(it), 0),
+      items.reduce(
+        (acc: number, it: CartItem) => acc + calculateItemTotal(it),
+        0,
+      ),
     [items],
   );
 
@@ -124,15 +134,19 @@ export const CartPage: React.FC = () => {
   const handleParticipantChange = async (
     it: CartItem,
     type: "adults" | "children" | "infants",
-    delta: number
+    delta: number,
   ) => {
-    const current = it.participants || { adults: it.quantity || 1, children: 0, infants: 0 };
+    const current = it.participants || {
+      adults: it.quantity || 1,
+      children: 0,
+      infants: 0,
+    };
     const newValue = (current[type] || 0) + delta;
-    
+
     // Minimum: 1 adult, 0 children/infants
     if (type === "adults" && newValue < 1) return;
     if (newValue < 0) return;
-    
+
     dispatch(
       updateParticipants({
         serviceId: it.serviceId,
@@ -484,146 +498,380 @@ export const CartPage: React.FC = () => {
                         </Typography>
 
                         {/* Participant Controls */}
-                        <Box sx={{ mb: 1.5, p: 1.5, bgcolor: "#f8f9fa", borderRadius: 1.5, minWidth: 220 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: "#444", display: "block", mb: 1 }}>
+                        <Box
+                          sx={{
+                            mb: 1.5,
+                            p: 1.5,
+                            bgcolor: "#f8f9fa",
+                            borderRadius: 1.5,
+                            minWidth: 220,
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontWeight: 700,
+                              color: "#444",
+                              display: "block",
+                              mb: 1,
+                            }}
+                          >
                             Guests
                           </Typography>
-                          
+
                           {/* Adults */}
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              mb: 1,
+                            }}
+                          >
                             <Box>
-                              <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 600, fontSize: 13 }}
+                              >
                                 👤 Adults
                               </Typography>
-                              <Typography variant="caption" sx={{ color: "#888" }}>
-                                {formatAED(it.participantPricing?.adultPrice ?? it.unitPrice)}/person
+                              <Typography
+                                variant="caption"
+                                sx={{ color: "#888" }}
+                              >
+                                {formatAED(
+                                  it.participantPricing?.adultPrice ??
+                                    it.unitPrice,
+                                )}
+                                /person
                               </Typography>
                             </Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                              <IconButton 
-                                size="small" 
-                                onClick={() => void handleParticipantChange(it, "adults", -1)}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  void handleParticipantChange(it, "adults", -1)
+                                }
                                 disabled={(it.participants?.adults ?? 1) <= 1}
-                                sx={{ width: 28, height: 28, bgcolor: "white", "&.Mui-disabled": { opacity: 0.4 } }}
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  bgcolor: "white",
+                                  "&.Mui-disabled": { opacity: 0.4 },
+                                }}
                               >
                                 <RemoveIcon sx={{ fontSize: 16 }} />
                               </IconButton>
-                              <Typography sx={{ fontWeight: 700, minWidth: 24, textAlign: "center" }}>
+                              <Typography
+                                sx={{
+                                  fontWeight: 700,
+                                  minWidth: 24,
+                                  textAlign: "center",
+                                }}
+                              >
                                 {it.participants?.adults ?? 1}
                               </Typography>
-                              <IconButton 
-                                size="small" 
-                                onClick={() => void handleParticipantChange(it, "adults", 1)}
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  void handleParticipantChange(it, "adults", 1)
+                                }
                                 sx={{ width: 28, height: 28, bgcolor: "white" }}
                               >
                                 <AddIcon sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Box>
                           </Box>
-                          
-                          {/* Children - Only show if child pricing exists */}
-                          {it.participantPricing?.childPrice !== null && (
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                              <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
-                                  👦 Children
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: "#888" }}>
-                                  {formatAED(it.participantPricing?.childPrice ?? 0)}/child (3-12)
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                <IconButton 
-                                  size="small" 
-                                  onClick={() => void handleParticipantChange(it, "children", -1)}
-                                  disabled={(it.participants?.children ?? 0) <= 0}
-                                  sx={{ width: 28, height: 28, bgcolor: "white", "&.Mui-disabled": { opacity: 0.4 } }}
-                                >
-                                  <RemoveIcon sx={{ fontSize: 16 }} />
-                                </IconButton>
-                                <Typography sx={{ fontWeight: 700, minWidth: 24, textAlign: "center" }}>
-                                  {it.participants?.children ?? 0}
-                                </Typography>
-                                <IconButton 
-                                  size="small" 
-                                  onClick={() => void handleParticipantChange(it, "children", 1)}
-                                  sx={{ width: 28, height: 28, bgcolor: "white" }}
-                                >
-                                  <AddIcon sx={{ fontSize: 16 }} />
-                                </IconButton>
-                              </Box>
+
+                          {/* Children - Always show so users can add children */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              mb: 1,
+                            }}
+                          >
+                            <Box>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 600, fontSize: 13 }}
+                              >
+                                👦 Children
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color:
+                                    !it.participantPricing?.childPrice ||
+                                    it.participantPricing?.childPrice === 0
+                                      ? "#4CAF50"
+                                      : "#888",
+                                }}
+                              >
+                                {!it.participantPricing?.childPrice ||
+                                it.participantPricing?.childPrice === 0
+                                  ? "FREE"
+                                  : `${formatAED(it.participantPricing?.childPrice ?? 0)}/child`}{" "}
+                                ({it.childAgeRange || "3-12 yrs"})
+                              </Typography>
                             </Box>
-                          )}
-                          
-                          {/* Infants - Only show if infant pricing exists */}
-                          {it.participantPricing?.infantPrice !== null && (
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
-                                  👶 Infants
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: it.participantPricing?.infantPrice === 0 ? "#4CAF50" : "#888" }}>
-                                  {it.participantPricing?.infantPrice === 0 ? "FREE" : `${formatAED(it.participantPricing?.infantPrice ?? 0)}/infant`} (0-2)
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                <IconButton 
-                                  size="small" 
-                                  onClick={() => void handleParticipantChange(it, "infants", -1)}
-                                  disabled={(it.participants?.infants ?? 0) <= 0}
-                                  sx={{ width: 28, height: 28, bgcolor: "white", "&.Mui-disabled": { opacity: 0.4 } }}
-                                >
-                                  <RemoveIcon sx={{ fontSize: 16 }} />
-                                </IconButton>
-                                <Typography sx={{ fontWeight: 700, minWidth: 24, textAlign: "center" }}>
-                                  {it.participants?.infants ?? 0}
-                                </Typography>
-                                <IconButton 
-                                  size="small" 
-                                  onClick={() => void handleParticipantChange(it, "infants", 1)}
-                                  sx={{ width: 28, height: 28, bgcolor: "white" }}
-                                >
-                                  <AddIcon sx={{ fontSize: 16 }} />
-                                </IconButton>
-                              </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  void handleParticipantChange(
+                                    it,
+                                    "children",
+                                    -1,
+                                  )
+                                }
+                                disabled={(it.participants?.children ?? 0) <= 0}
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  bgcolor: "white",
+                                  "&.Mui-disabled": { opacity: 0.4 },
+                                }}
+                              >
+                                <RemoveIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                              <Typography
+                                sx={{
+                                  fontWeight: 700,
+                                  minWidth: 24,
+                                  textAlign: "center",
+                                }}
+                              >
+                                {it.participants?.children ?? 0}
+                              </Typography>
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  void handleParticipantChange(
+                                    it,
+                                    "children",
+                                    1,
+                                  )
+                                }
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  bgcolor: "white",
+                                }}
+                              >
+                                <AddIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
                             </Box>
-                          )}
+                          </Box>
+
+                          {/* Infants - Always show so users can add infants */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Box>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 600, fontSize: 13 }}
+                              >
+                                👶 Infants
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color:
+                                    !it.participantPricing?.infantPrice ||
+                                    it.participantPricing?.infantPrice === 0
+                                      ? "#4CAF50"
+                                      : "#888",
+                                }}
+                              >
+                                {!it.participantPricing?.infantPrice ||
+                                it.participantPricing?.infantPrice === 0
+                                  ? "FREE"
+                                  : `${formatAED(it.participantPricing?.infantPrice ?? 0)}/infant`}{" "}
+                                ({it.infantAgeRange || "0-2 yrs"})
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                              }}
+                            >
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  void handleParticipantChange(
+                                    it,
+                                    "infants",
+                                    -1,
+                                  )
+                                }
+                                disabled={(it.participants?.infants ?? 0) <= 0}
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  bgcolor: "white",
+                                  "&.Mui-disabled": { opacity: 0.4 },
+                                }}
+                              >
+                                <RemoveIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                              <Typography
+                                sx={{
+                                  fontWeight: 700,
+                                  minWidth: 24,
+                                  textAlign: "center",
+                                }}
+                              >
+                                {it.participants?.infants ?? 0}
+                              </Typography>
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  void handleParticipantChange(it, "infants", 1)
+                                }
+                                sx={{
+                                  width: 28,
+                                  height: 28,
+                                  bgcolor: "white",
+                                }}
+                              >
+                                <AddIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Box>
+                          </Box>
                         </Box>
 
                         {/* Ticket Breakdown Summary */}
                         {it.participants && (
-                          <Box sx={{ mb: 1, p: 1, bgcolor: "#fff8f5", borderRadius: 1, border: "1px solid #FF621F20" }}>
-                            <Typography variant="caption" sx={{ fontWeight: 600, color: "#666", display: "block", mb: 0.5 }}>
+                          <Box
+                            sx={{
+                              mb: 1,
+                              p: 1,
+                              bgcolor: "#fff8f5",
+                              borderRadius: 1,
+                              border: "1px solid #FF621F20",
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontWeight: 600,
+                                color: "#666",
+                                display: "block",
+                                mb: 0.5,
+                              }}
+                            >
                               Price Breakdown
                             </Typography>
                             {it.participants.adults > 0 && (
-                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <Typography variant="body2" sx={{ fontSize: 12 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontSize: 12 }}
+                                >
                                   Adults x{it.participants.adults}
                                 </Typography>
-                                <Typography variant="body2" sx={{ fontSize: 12, fontWeight: 600 }}>
-                                  {formatAED((it.participantPricing?.adultPrice ?? it.unitPrice) * it.participants.adults)}
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontSize: 12, fontWeight: 600 }}
+                                >
+                                  {formatAED(
+                                    (it.participantPricing?.adultPrice ??
+                                      it.unitPrice) * it.participants.adults,
+                                  )}
                                 </Typography>
                               </Box>
                             )}
                             {it.participants.children > 0 && (
-                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <Typography variant="body2" sx={{ fontSize: 12 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontSize: 12 }}
+                                >
                                   Children x{it.participants.children}
                                 </Typography>
-                                <Typography variant="body2" sx={{ fontSize: 12, fontWeight: 600 }}>
-                                  {formatAED((it.participantPricing?.childPrice ?? 0) * it.participants.children)}
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    color:
+                                      !it.participantPricing?.childPrice ||
+                                      it.participantPricing?.childPrice === 0
+                                        ? "#4CAF50"
+                                        : "inherit",
+                                  }}
+                                >
+                                  {!it.participantPricing?.childPrice ||
+                                  it.participantPricing?.childPrice === 0
+                                    ? "FREE"
+                                    : formatAED(
+                                        (it.participantPricing?.childPrice ??
+                                          0) * it.participants.children,
+                                      )}
                                 </Typography>
                               </Box>
                             )}
                             {it.participants.infants > 0 && (
-                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <Typography variant="body2" sx={{ fontSize: 12 }}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontSize: 12 }}
+                                >
                                   Infants x{it.participants.infants}
                                 </Typography>
-                                <Typography variant="body2" sx={{ fontSize: 12, fontWeight: 600, color: "#4CAF50" }}>
-                                  {it.participantPricing?.infantPrice && it.participantPricing.infantPrice > 0 
-                                    ? formatAED(it.participantPricing.infantPrice * it.participants.infants)
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    color: "#4CAF50",
+                                  }}
+                                >
+                                  {it.participantPricing?.infantPrice &&
+                                  it.participantPricing.infantPrice > 0
+                                    ? formatAED(
+                                        it.participantPricing.infantPrice *
+                                          it.participants.infants,
+                                      )
                                     : "FREE"}
                                 </Typography>
                               </Box>

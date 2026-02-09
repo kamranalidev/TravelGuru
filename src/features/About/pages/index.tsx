@@ -1,5 +1,12 @@
-import React from "react";
-import { Box, Typography, Container, Card, CardContent } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  Container,
+  Card,
+  CardContent,
+  Skeleton,
+} from "@mui/material";
 import { Header, Footer } from "../../../components";
 import "./index.css";
 import ExploreIcon from "@mui/icons-material/Explore";
@@ -8,8 +15,39 @@ import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import GroupsIcon from "@mui/icons-material/Groups";
 import VerifiedIcon from "@mui/icons-material/Verified";
+import { supabase } from "../../../supabaseClient";
+
+interface ServiceRow {
+  id: number;
+  service_name: string;
+  service_description?: string;
+  location?: string;
+  default_price?: number;
+}
 
 const AboutPage: React.FC = () => {
+  const [services, setServices] = useState<ServiceRow[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("services")
+          .select(
+            "id, service_name, service_description, location, default_price",
+          );
+
+        if (error) throw error;
+        setServices(data || []);
+      } catch (err) {
+        console.error("Failed to fetch services for About page:", err);
+      } finally {
+        setLoadingServices(false);
+      }
+    };
+    loadServices();
+  }, []);
   const values = [
     {
       icon: <GroupsIcon sx={{ fontSize: 48, color: "#FF621F" }} />,
@@ -157,58 +195,67 @@ const AboutPage: React.FC = () => {
         </Container>
       </Box>
 
-      {/* Services Section */}
+      {/* Services Section — Dynamic from database */}
       <Box className="about-why-section">
         <Container maxWidth="lg">
           <Typography variant="h3" className="about-section-title-center">
             What We Do Best
           </Typography>
           <Typography className="about-values-subtitle">
-            The "Big Four" experiences that define a visit to the Emirates
+            {loadingServices
+              ? "Loading our experiences..."
+              : `Discover our ${services.length} curated experiences across the UAE`}
           </Typography>
           <Box className="about-features-grid">
-            <Box className="about-feature">
-              <Typography variant="h5" className="about-feature-title">
-                �️ Desert Safari
+            {loadingServices ? (
+              [1, 2, 3, 4].map((i) => (
+                <Box className="about-feature" key={i}>
+                  <Skeleton
+                    variant="text"
+                    width="60%"
+                    height={36}
+                    sx={{ mb: 1 }}
+                  />
+                  <Skeleton variant="text" width="100%" />
+                  <Skeleton variant="text" width="100%" />
+                  <Skeleton variant="text" width="80%" />
+                </Box>
+              ))
+            ) : services.length > 0 ? (
+              services.map((service) => (
+                <Box className="about-feature" key={service.id}>
+                  <Typography variant="h5" className="about-feature-title">
+                    ✨ {service.service_name}
+                  </Typography>
+                  <Typography className="about-feature-text">
+                    {service.service_description ||
+                      `Experience the best of ${service.service_name} with Travel Guroo.`}
+                  </Typography>
+                  {service.default_price && (
+                    <Typography
+                      sx={{
+                        mt: 1,
+                        fontWeight: 600,
+                        color: "#FF621F",
+                        fontSize: "0.95rem",
+                      }}
+                    >
+                      Starting from AED {service.default_price}
+                    </Typography>
+                  )}
+                </Box>
+              ))
+            ) : (
+              <Typography
+                sx={{
+                  textAlign: "center",
+                  color: "#666",
+                  gridColumn: "1 / -1",
+                }}
+              >
+                Our experiences are being updated. Check back soon!
               </Typography>
-              <Typography className="about-feature-text">
-                Experience the raw beauty of the Arabian desert with
-                heart-pounding dune bashing, camel treks, and traditional
-                Bedouin-style dinners under the stars. Feel the adrenaline rush
-                as you conquer the golden dunes.
-              </Typography>
-            </Box>
-            <Box className="about-feature">
-              <Typography variant="h5" className="about-feature-title">
-                ⛵ Dhow Cruise
-              </Typography>
-              <Typography className="about-feature-text">
-                Drift through history on a traditional wooden Dhow. Enjoy a
-                5-star buffet and live entertainment as you witness the
-                glittering skyline of Dubai Marina or the historic Creek under
-                the moonlit sky.
-              </Typography>
-            </Box>
-            <Box className="about-feature">
-              <Typography variant="h5" className="about-feature-title">
-                🕌 Abu Dhabi City Tour
-              </Typography>
-              <Typography className="about-feature-text">
-                Explore the capital's grandeur, from the breathtaking Sheikh
-                Zayed Grand Mosque to the futuristic sights of Yas Island.
-                Discover the perfect blend of tradition and modernity.
-              </Typography>
-            </Box>
-            <Box className="about-feature">
-              <Typography variant="h5" className="about-feature-title">
-                ✈️ Airport Pickup & Drop-off
-              </Typography>
-              <Typography className="about-feature-text">
-                Start and end your trip with zero stress. Our punctual,
-                professional chauffeurs ensure you move between the airport and
-                your destination in total comfort and safety.
-              </Typography>
-            </Box>
+            )}
           </Box>
         </Container>
       </Box>

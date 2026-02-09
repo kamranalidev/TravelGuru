@@ -33,6 +33,9 @@ type BookingRow = {
   created_at?: string | null;
   voucher_code?: string | null;
   voucher_status?: string | null;
+  adults?: number | null;
+  children?: number | null;
+  infants?: number | null;
   services?:
     | { service_name?: string | null; location?: string | null }
     | { service_name?: string | null; location?: string | null }[]
@@ -55,6 +58,9 @@ type BookingDetailsRow = {
   departure_arrival_time?: string | null;
   type?: string | null;
   address?: string | null;
+  adults?: number | null;
+  children?: number | null;
+  infants?: number | null;
   services?:
     | { service_name?: string | null; location?: string | null }
     | { service_name?: string | null; location?: string | null }[]
@@ -143,7 +149,7 @@ export const UserBookingsPage = () => {
       } = await supabase
         .from("bookings")
         .select(
-          "id, booking_date, payment_status, amount, currency, service_id, package_id, departure_arrival_time, type, address, created_at, voucher_code, voucher_status, services(service_name, location), packages(name)",
+          "id, booking_date, payment_status, amount, currency, service_id, package_id, departure_arrival_time, type, address, created_at, voucher_code, voucher_status, adults, children, infants, services(service_name, location), packages(name)",
           { count: "exact" },
         )
         .eq("user_id", user.id)
@@ -209,7 +215,7 @@ export const UserBookingsPage = () => {
       const { data, error: fetchError } = await supabase
         .from("bookings")
         .select(
-          "id, created_at, booking_date, payment_status, amount, currency, service_id, package_id, payment_intent_id, voucher_code, voucher_status, departure_arrival_time, type, address, services(service_name, location), packages(name)",
+          "id, created_at, booking_date, payment_status, amount, currency, service_id, package_id, payment_intent_id, voucher_code, voucher_status, departure_arrival_time, type, address, adults, children, infants, services(service_name, location), packages(name)",
         )
         .eq("id", bookingId)
         .eq("user_id", user.id)
@@ -236,7 +242,7 @@ export const UserBookingsPage = () => {
   };
 
   return (
-    <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+    <Box sx={{ backgroundColor: "#ffffff", minHeight: "100vh" }}>
       <Header />
 
       <Dialog
@@ -354,6 +360,64 @@ export const UserBookingsPage = () => {
                       <strong>Package:</strong> {pack.name}
                     </Typography>
                   ) : null}
+                  {/* Participant breakdown */}
+                  {(() => {
+                    const adults = selectedBooking.adults ?? 1;
+                    const children = selectedBooking.children ?? 0;
+                    const infants = selectedBooking.infants ?? 0;
+                    const totalGuests = adults + children + infants;
+                    if (totalGuests <= 0) return null;
+                    return (
+                      <Box
+                        sx={{
+                          background: "#f8f9fa",
+                          borderRadius: 2,
+                          p: 1.5,
+                          mt: 0.5,
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            fontSize: "0.75rem",
+                            textTransform: "uppercase",
+                            letterSpacing: 1,
+                            color: "#888",
+                            mb: 0.5,
+                          }}
+                        >
+                          Guests
+                        </Typography>
+                        {adults > 0 && (
+                          <Typography sx={{ fontSize: "0.9rem" }}>
+                            👤 {adults} Adult{adults !== 1 ? "s" : ""}
+                          </Typography>
+                        )}
+                        {children > 0 && (
+                          <Typography sx={{ fontSize: "0.9rem" }}>
+                            👦 {children} Child{children !== 1 ? "ren" : ""}
+                          </Typography>
+                        )}
+                        {infants > 0 && (
+                          <Typography sx={{ fontSize: "0.9rem" }}>
+                            👶 {infants} Infant{infants !== 1 ? "s" : ""}
+                          </Typography>
+                        )}
+                        {totalGuests > 1 && (
+                          <Typography
+                            sx={{
+                              fontSize: "0.85rem",
+                              fontWeight: 700,
+                              mt: 0.5,
+                              borderTop: "1px dashed #ddd",
+                              pt: 0.5,
+                            }}
+                          >
+                            Total Guests: {totalGuests}
+                          </Typography>
+                        )}
+                      </Box>
+                    );
+                  })()}
                   <Typography>
                     <strong>Status:</strong>{" "}
                     {selectedBooking.payment_status ?? "unknown"}
@@ -419,6 +483,7 @@ export const UserBookingsPage = () => {
                   sx={{
                     p: 2,
                     borderRadius: 3,
+                    border: "1px solid #f0f0f0",
                     transition: "box-shadow 120ms ease",
                     "&:hover": {
                       boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
@@ -483,6 +548,33 @@ export const UserBookingsPage = () => {
                           📦 {pack.name}
                         </Typography>
                       )}
+                      {/* Participant counts */}
+                      {(() => {
+                        const adults = b.adults ?? 1;
+                        const children = b.children ?? 0;
+                        const infants = b.infants ?? 0;
+                        const parts: string[] = [];
+                        if (adults > 0)
+                          parts.push(
+                            `${adults} Adult${adults !== 1 ? "s" : ""}`,
+                          );
+                        if (children > 0)
+                          parts.push(
+                            `${children} Child${children !== 1 ? "ren" : ""}`,
+                          );
+                        if (infants > 0)
+                          parts.push(
+                            `${infants} Infant${infants !== 1 ? "s" : ""}`,
+                          );
+                        return parts.length > 0 ? (
+                          <Typography
+                            color="text.secondary"
+                            sx={{ fontSize: "0.9rem" }}
+                          >
+                            👥 {parts.join(" · ")}
+                          </Typography>
+                        ) : null;
+                      })()}
                     </Box>
 
                     <Stack
