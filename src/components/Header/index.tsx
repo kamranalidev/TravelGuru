@@ -215,7 +215,7 @@ export const Header = (props: { hidePages?: boolean }) => {
               <img
                 src="/Travel-Guru-Logo-Final.png"
                 alt="Travel Guru"
-                style={{ width: "90px", height: "auto" }}
+                style={{ width: "55px", height: "auto" }}
               />
             </Box>
             {!props.hidePages && (

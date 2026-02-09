@@ -175,6 +175,15 @@ const generateVoucherEmailHTML = (
   const bookingTime = booking.departure_arrival_time || "";
   const greeting = userName ? escapeHtml(userName) : "Valued Customer";
   const bookingDate = booking.booking_date || "";
+  
+  // Participant information
+  const adults = booking.adults || 1;
+  const children = booking.children || 0;
+  const infants = booking.infants || 0;
+  const totalGuests = adults + children + infants;
+  const adultPrice = booking.adult_price ? formatMoney(booking.adult_price * 100, booking.currency) : null;
+  const childPrice = booking.child_price ? formatMoney(booking.child_price * 100, booking.currency) : null;
+  const infantPrice = booking.infant_price ? formatMoney(booking.infant_price * 100, booking.currency) : null;
 
   return `
 <!DOCTYPE html>
@@ -317,6 +326,48 @@ const generateVoucherEmailHTML = (
                           </table>
                         </td>
                       </tr>
+                      <!-- Participants Breakdown -->
+                      ${totalGuests > 1 || children > 0 || infants > 0 ? `
+                      <tr>
+                        <td style="padding: 12px 0;">
+                          <p style="color: #888; margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Guests</p>
+                          <table width="100%" cellpadding="0" cellspacing="0" style="background: #f8f9fa; border-radius: 8px; padding: 12px;">
+                            <tr>
+                              <td style="padding: 8px 12px;">
+                                <table width="100%" cellpadding="0" cellspacing="0">
+                                  ${adults > 0 ? `
+                                  <tr>
+                                    <td style="color: #1a1a1a; font-size: 14px; padding: 4px 0;">👤 Adults</td>
+                                    <td style="color: #666; font-size: 14px; text-align: center; padding: 4px 0;">${adults}</td>
+                                    <td style="color: #FF621F; font-size: 14px; text-align: right; padding: 4px 0; font-weight: 600;">${adultPrice ? `${adultPrice}/person` : ''}</td>
+                                  </tr>
+                                  ` : ''}
+                                  ${children > 0 ? `
+                                  <tr>
+                                    <td style="color: #1a1a1a; font-size: 14px; padding: 4px 0;">👦 Children (3-12)</td>
+                                    <td style="color: #666; font-size: 14px; text-align: center; padding: 4px 0;">${children}</td>
+                                    <td style="color: #FF621F; font-size: 14px; text-align: right; padding: 4px 0; font-weight: 600;">${childPrice ? `${childPrice}/child` : ''}</td>
+                                  </tr>
+                                  ` : ''}
+                                  ${infants > 0 ? `
+                                  <tr>
+                                    <td style="color: #1a1a1a; font-size: 14px; padding: 4px 0;">👶 Infants (0-2)</td>
+                                    <td style="color: #666; font-size: 14px; text-align: center; padding: 4px 0;">${infants}</td>
+                                    <td style="color: #4CAF50; font-size: 14px; text-align: right; padding: 4px 0; font-weight: 600;">${infantPrice && booking.infant_price > 0 ? `${infantPrice}/infant` : 'FREE'}</td>
+                                  </tr>
+                                  ` : ''}
+                                  <tr>
+                                    <td colspan="3" style="border-top: 1px dashed #ddd; padding-top: 8px; margin-top: 8px;">
+                                      <p style="color: #1a1a1a; font-size: 14px; font-weight: 700; margin: 4px 0;">Total Guests: ${totalGuests}</p>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                      ` : ''}
                       <!-- Divider -->
                       <tr>
                         <td style="padding: 16px 0;">

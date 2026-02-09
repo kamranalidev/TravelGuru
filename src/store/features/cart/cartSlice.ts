@@ -1,5 +1,17 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
+export type ParticipantCounts = {
+  adults: number;
+  children: number;
+  infants: number;
+};
+
+export type ParticipantPricing = {
+  adultPrice: number;
+  childPrice: number | null; // null means children not available
+  infantPrice: number | null; // null means infants not available
+};
+
 export type CartItem = {
   serviceId: number;
   serviceName?: string | null;
@@ -7,17 +19,15 @@ export type CartItem = {
   location?: string | null;
   packageId: number | null;
   packageName?: string | null;
+  packageImage?: string | null; // Package-specific image
   bookingDate: string; // YYYY-MM-DD
   bookingTime: string | null; // HH:mm (optional)
   airportType: "pickup" | "dropoff" | null;
   address: string | null;
-  unitPrice: number; // in major units (AED) - price per single item
-  quantity: number; // number of tickets/bookings
-  participants?: {
-    adults: number;
-    children: number;
-    infants: number;
-  };
+  unitPrice: number; // in major units (AED) - base price (adult price)
+  quantity: number; // total number of tickets (adults + children + infants)
+  participants: ParticipantCounts;
+  participantPricing?: ParticipantPricing; // individual prices per type
 };
 
 export type CartState = {
@@ -30,6 +40,23 @@ const initialState: CartState = {
 
 const keyOf = (i: CartItem) =>
   `${i.serviceId}__${i.packageId ?? "base"}__${i.bookingDate}__${i.bookingTime ?? ""}`;
+
+// Calculate total price based on participants
+const calculateTotalFromParticipants = (item: CartItem): number => {
+  const pricing = item.participantPricing;
+  const participants = item.participants;
+  
+  if (!pricing) {
+    // Fall back to unitPrice * quantity if no participant pricing
+    return item.unitPrice * item.quantity;
+  }
+  
+  const adultTotal = participants.adults * pricing.adultPrice;
+  const childTotal = participants.children * (pricing.childPrice ?? 0);
+  const infantTotal = participants.infants * (pricing.infantPrice ?? 0);
+  
+  return adultTotal + childTotal + infantTotal;
+};
 
 export const cartSlice = createSlice({
   name: "cart",
@@ -44,14 +71,40 @@ export const cartSlice = createSlice({
         (x) => keyOf(x) === incomingKey,
       );
 
+      // Ensure participants has default values
+      const normalizedParticipants = incoming.participants || {
+        adults: incoming.quantity || 1,
+        children: 0,
+        infants: 0,
+      };
+
+      const totalQuantity =
+        normalizedParticipants.adults +
+        normalizedParticipants.children +
+        normalizedParticipants.infants;
+
       if (existingIndex >= 0) {
-        // Increase quantity if item exists
-        state.items[existingIndex].quantity += incoming.quantity || 1;
+        // Update participants if item exists
+        const existing = state.items[existingIndex];
+        existing.participants = {
+          adults: existing.participants.adults + normalizedParticipants.adults,
+          children: existing.participants.children + normalizedParticipants.children,
+          infants: existing.participants.infants + normalizedParticipants.infants,
+        };
+        existing.quantity =
+          existing.participants.adults +
+          existing.participants.children +
+          existing.participants.infants;
+        // Keep pricing info
+        if (incoming.participantPricing) {
+          existing.participantPricing = incoming.participantPricing;
+        }
       } else {
-        // Add new item with quantity
+        // Add new item with participants
         state.items.push({
           ...incoming,
-          quantity: incoming.quantity || 1,
+          participants: normalizedParticipants,
+          quantity: totalQuantity || 1,
         });
       }
     },
@@ -118,7 +171,7 @@ export const cartSlice = createSlice({
       }>,
     ) => {
       const { serviceId, packageId, bookingDate, bookingTime } = action.payload;
-      const itemIndex = state.items.findIndex(
+      const item = state.items.find(
         (x) =>
           x.serviceId === serviceId &&
           x.packageId === packageId &&
@@ -126,14 +179,10 @@ export const cartSlice = createSlice({
           (x.bookingTime ?? null) === (bookingTime ?? null),
       );
 
-      if (itemIndex >= 0) {
-        const item = state.items[itemIndex];
-        if (item.quantity > 1) {
-          item.quantity -= 1;
-        } else {
-          state.items.splice(itemIndex, 1);
-        }
+      if (item && item.quantity > 1) {
+        item.quantity -= 1;
       }
+      // Don't allow quantity to go below 1 - use removeItem instead
     },
 
     removeItem: (
@@ -157,6 +206,42 @@ export const cartSlice = createSlice({
       );
     },
 
+    // Update participant counts for an item
+    updateParticipants: (
+      state,
+      action: PayloadAction<{
+        serviceId: number;
+        packageId: number | null;
+        bookingDate: string;
+        bookingTime: string | null;
+        participants: ParticipantCounts;
+      }>,
+    ) => {
+      const { serviceId, packageId, bookingDate, bookingTime, participants } =
+        action.payload;
+      const item = state.items.find(
+        (x) =>
+          x.serviceId === serviceId &&
+          x.packageId === packageId &&
+          x.bookingDate === bookingDate &&
+          (x.bookingTime ?? null) === (bookingTime ?? null),
+      );
+
+      if (item) {
+        // Ensure at least 1 adult
+        const normalizedParticipants = {
+          adults: Math.max(1, participants.adults),
+          children: Math.max(0, participants.children),
+          infants: Math.max(0, participants.infants),
+        };
+        item.participants = normalizedParticipants;
+        item.quantity =
+          normalizedParticipants.adults +
+          normalizedParticipants.children +
+          normalizedParticipants.infants;
+      }
+    },
+
     clearCart: (state) => {
       state.items = [];
     },
@@ -169,6 +254,7 @@ export const {
   incrementQuantity,
   decrementQuantity,
   removeItem,
+  updateParticipants,
   clearCart,
 } = cartSlice.actions;
 

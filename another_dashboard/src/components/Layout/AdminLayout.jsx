@@ -12,6 +12,7 @@ import {
   MenuUnfoldOutlined,
   LogoutOutlined,
   SettingOutlined,
+  QrcodeOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
@@ -36,6 +37,11 @@ const AdminLayout = () => {
       key: "/admin/bookings",
       icon: <CalendarOutlined />,
       label: "Bookings",
+    },
+    {
+      key: "/admin/voucher-verification",
+      icon: <QrcodeOutlined />,
+      label: "Verify Voucher",
     },
     {
       key: "/admin/services",

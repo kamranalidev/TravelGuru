@@ -167,7 +167,8 @@ const Bookings = () => {
       booking.user_profiles?.full_name?.toLowerCase().includes(searchLower) ||
       booking.user_profiles?.email?.toLowerCase().includes(searchLower) ||
       booking.services?.service_name?.toLowerCase().includes(searchLower) ||
-      booking.payment_status?.toLowerCase().includes(searchLower)
+      booking.payment_status?.toLowerCase().includes(searchLower) ||
+      booking.voucher_code?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -185,6 +186,39 @@ const Bookings = () => {
         <div>
           <div>{record.user_profiles?.full_name || "Guest"}</div>
           <small style={{ color: "#888" }}>{record.user_profiles?.email}</small>
+        </div>
+      ),
+    },
+    {
+      title: "Voucher",
+      dataIndex: "voucher_code",
+      key: "voucher_code",
+      render: (code, record) => (
+        <div>
+          {code ? (
+            <>
+              <span style={{ fontFamily: "monospace", fontWeight: 600 }}>
+                {code}
+              </span>
+              <br />
+              <Tag
+                color={
+                  record.voucher_status === "active"
+                    ? "green"
+                    : record.voucher_status === "used"
+                      ? "blue"
+                      : record.voucher_status === "expired"
+                        ? "orange"
+                        : "red"
+                }
+                style={{ marginTop: 4 }}
+              >
+                {record.voucher_status || "pending"}
+              </Tag>
+            </>
+          ) : (
+            "-"
+          )}
         </div>
       ),
     },
@@ -498,6 +532,47 @@ const Bookings = () => {
             <Descriptions.Item label="Payment Intent">
               {selectedBooking.payment_intent_id || "-"}
             </Descriptions.Item>
+            <Descriptions.Item label="Voucher Code">
+              {selectedBooking.voucher_code ? (
+                <span
+                  style={{
+                    fontFamily: "monospace",
+                    fontWeight: 600,
+                    color: "#FF621F",
+                  }}
+                >
+                  {selectedBooking.voucher_code}
+                </span>
+              ) : (
+                "-"
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label="Voucher Status">
+              {selectedBooking.voucher_status ? (
+                <Tag
+                  color={
+                    selectedBooking.voucher_status === "active"
+                      ? "green"
+                      : selectedBooking.voucher_status === "used"
+                        ? "blue"
+                        : selectedBooking.voucher_status === "expired"
+                          ? "orange"
+                          : "red"
+                  }
+                >
+                  {selectedBooking.voucher_status}
+                </Tag>
+              ) : (
+                "-"
+              )}
+            </Descriptions.Item>
+            {selectedBooking.voucher_verified_at && (
+              <Descriptions.Item label="Verified At">
+                {dayjs(selectedBooking.voucher_verified_at).format(
+                  "MMMM DD, YYYY HH:mm",
+                )}
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label="Created At">
               {dayjs(selectedBooking.created_at).format("MMMM DD, YYYY HH:mm")}
             </Descriptions.Item>

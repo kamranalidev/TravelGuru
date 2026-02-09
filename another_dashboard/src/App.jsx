@@ -11,6 +11,7 @@ import Users from "./pages/Users";
 import Carts from "./pages/Carts";
 import Reviews from "./pages/Reviews";
 import Settings from "./pages/Settings";
+import VoucherVerification from "./pages/VoucherVerification";
 import "./App.css";
 
 function App() {
@@ -55,6 +56,10 @@ function App() {
             <Route path="carts" element={<Carts />} />
             <Route path="reviews" element={<Reviews />} />
             <Route path="settings" element={<Settings />} />
+            <Route
+              path="voucher-verification"
+              element={<VoucherVerification />}
+            />
           </Route>
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />

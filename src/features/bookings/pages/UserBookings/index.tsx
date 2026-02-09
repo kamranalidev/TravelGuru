@@ -31,6 +31,8 @@ type BookingRow = {
   type?: string | null;
   address?: string | null;
   created_at?: string | null;
+  voucher_code?: string | null;
+  voucher_status?: string | null;
   services?:
     | { service_name?: string | null; location?: string | null }
     | { service_name?: string | null; location?: string | null }[]
@@ -48,6 +50,8 @@ type BookingDetailsRow = {
   service_id: number | null;
   package_id: number | null;
   payment_intent_id?: string | null;
+  voucher_code?: string | null;
+  voucher_status?: string | null;
   departure_arrival_time?: string | null;
   type?: string | null;
   address?: string | null;
@@ -139,7 +143,7 @@ export const UserBookingsPage = () => {
       } = await supabase
         .from("bookings")
         .select(
-          "id, booking_date, payment_status, amount, currency, service_id, package_id, departure_arrival_time, type, address, created_at, services(service_name, location), packages(name)",
+          "id, booking_date, payment_status, amount, currency, service_id, package_id, departure_arrival_time, type, address, created_at, voucher_code, voucher_status, services(service_name, location), packages(name)",
           { count: "exact" },
         )
         .eq("user_id", user.id)
@@ -205,7 +209,7 @@ export const UserBookingsPage = () => {
       const { data, error: fetchError } = await supabase
         .from("bookings")
         .select(
-          "id, created_at, booking_date, payment_status, amount, currency, service_id, package_id, payment_intent_id, departure_arrival_time, type, address, services(service_name, location), packages(name)",
+          "id, created_at, booking_date, payment_status, amount, currency, service_id, package_id, payment_intent_id, voucher_code, voucher_status, departure_arrival_time, type, address, services(service_name, location), packages(name)",
         )
         .eq("id", bookingId)
         .eq("user_id", user.id)
@@ -253,6 +257,14 @@ export const UserBookingsPage = () => {
             (() => {
               const service = normalizeFirst(selectedBooking.services);
               const pack = normalizeFirst(selectedBooking.packages);
+              const voucherStatusColor =
+                selectedBooking.voucher_status === "used"
+                  ? "error"
+                  : selectedBooking.voucher_status === "expired"
+                    ? "warning"
+                    : selectedBooking.voucher_status === "valid"
+                      ? "success"
+                      : "default";
               return (
                 <Stack spacing={1.25}>
                   <Typography sx={{ fontWeight: 800 }}>
@@ -264,6 +276,52 @@ export const UserBookingsPage = () => {
                     <Typography color="text.secondary">
                       Location: {service.location}
                     </Typography>
+                  ) : null}
+
+                  <Divider />
+
+                  {/* Voucher Section - Prominent Display */}
+                  {selectedBooking.voucher_code ? (
+                    <Box
+                      sx={{
+                        background:
+                          "linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)",
+                        borderRadius: 2,
+                        p: 2,
+                        textAlign: "center",
+                        border: "2px solid #FF621F",
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          color: "#FF621F",
+                          fontSize: "0.7rem",
+                          textTransform: "uppercase",
+                          letterSpacing: 2,
+                          mb: 0.5,
+                        }}
+                      >
+                        🎫 Voucher Code
+                      </Typography>
+                      <Typography
+                        sx={{
+                          color: "#fff",
+                          fontSize: "1.5rem",
+                          fontWeight: 800,
+                          fontFamily: "monospace",
+                          letterSpacing: 3,
+                          mb: 1,
+                        }}
+                      >
+                        {selectedBooking.voucher_code}
+                      </Typography>
+                      <Chip
+                        label={selectedBooking.voucher_status ?? "valid"}
+                        color={voucherStatusColor}
+                        size="small"
+                        sx={{ fontWeight: 600 }}
+                      />
+                    </Box>
                   ) : null}
 
                   <Divider />
@@ -448,6 +506,61 @@ export const UserBookingsPage = () => {
                       <Typography color="text.secondary">
                         Booking ID: {b.id}
                       </Typography>
+
+                      {/* Voucher Code Badge */}
+                      {b.voucher_code && (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            background:
+                              "linear-gradient(135deg, #1a1a1a 0%, #333 100%)",
+                            borderRadius: 1,
+                            px: 1.5,
+                            py: 0.5,
+                          }}
+                        >
+                          <Typography
+                            sx={{
+                              color: "#FF621F",
+                              fontSize: "0.65rem",
+                              fontWeight: 600,
+                            }}
+                          >
+                            🎫
+                          </Typography>
+                          <Typography
+                            sx={{
+                              color: "#fff",
+                              fontSize: "0.75rem",
+                              fontWeight: 700,
+                              fontFamily: "monospace",
+                              letterSpacing: 1,
+                            }}
+                          >
+                            {b.voucher_code}
+                          </Typography>
+                          {b.voucher_status && b.voucher_status !== "valid" && (
+                            <Chip
+                              label={b.voucher_status}
+                              size="small"
+                              color={
+                                b.voucher_status === "used"
+                                  ? "error"
+                                  : b.voucher_status === "expired"
+                                    ? "warning"
+                                    : "default"
+                              }
+                              sx={{
+                                height: 18,
+                                fontSize: "0.6rem",
+                                ml: 0.5,
+                              }}
+                            />
+                          )}
+                        </Box>
+                      )}
 
                       {/* Action buttons */}
                       <Stack direction="row" spacing={1} sx={{ mt: 1 }}>

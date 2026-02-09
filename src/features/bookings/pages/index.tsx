@@ -88,6 +88,9 @@ interface PackageData {
   name: string;
   description?: string;
   price: number;
+  child_price?: number | null;
+  infant_price?: number | null;
+  package_image?: string | null;
   duration?: string;
   max_guests?: number;
   includes?: string[];
@@ -328,6 +331,11 @@ export const BookingPage = () => {
   const [isBooking] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
+
+  // Scroll to top when page loads
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [serviceIdFromRoute]);
 
   // === Booking capacity state ===
   const [slotsBooked, setSlotsBooked] = useState<number>(0);
@@ -724,9 +732,11 @@ export const BookingPage = () => {
       addItem({
         serviceId: pageData.id,
         serviceName: pageData.service_name,
+        serviceImage: pageData.Image?.[0] || null,
         location: pageData.location,
         packageId: selectedPackage?.id ?? null,
         packageName: selectedPackage?.name ?? "Standard Experience",
+        packageImage: selectedPackage?.package_image || null,
         bookingDate: date.format("YYYY-MM-DD"),
         bookingTime: normalizedAirportTime,
         airportType: isAirportPickup ? airportTransferType : null,
@@ -736,6 +746,12 @@ export const BookingPage = () => {
             : null,
         unitPrice: finalPrice,
         quantity: 1,
+        participants: { adults: 1, children: 0, infants: 0 },
+        participantPricing: {
+          adultPrice: finalPrice,
+          childPrice: selectedPackage?.child_price ?? null,
+          infantPrice: selectedPackage?.infant_price ?? null,
+        },
       }),
     );
 
@@ -747,9 +763,11 @@ export const BookingPage = () => {
           item: {
             serviceId: pageData.id,
             serviceName: pageData.service_name,
+            serviceImage: pageData.Image?.[0] || null,
             location: pageData.location,
             packageId: selectedPackage?.id ?? null,
             packageName: selectedPackage?.name ?? "Standard Experience",
+            packageImage: selectedPackage?.package_image || null,
             bookingDate: date.format("YYYY-MM-DD"),
             bookingTime: normalizedAirportTime,
             airportType: isAirportPickup ? airportTransferType : null,
@@ -759,6 +777,12 @@ export const BookingPage = () => {
                 : null,
             unitPrice: finalPrice,
             quantity: 1,
+            participants: { adults: 1, children: 0, infants: 0 },
+            participantPricing: {
+              adultPrice: finalPrice,
+              childPrice: selectedPackage?.child_price ?? null,
+              infantPrice: selectedPackage?.infant_price ?? null,
+            },
           },
         }),
       );
@@ -809,9 +833,11 @@ export const BookingPage = () => {
       addItem({
         serviceId: pageData.id,
         serviceName: pageData.service_name,
+        serviceImage: pageData.Image?.[0] || null,
         location: pageData.location,
         packageId: selectedPackage?.id ?? null,
         packageName: selectedPackage?.name ?? "Standard Experience",
+        packageImage: selectedPackage?.package_image || null,
         bookingDate: date.format("YYYY-MM-DD"),
         bookingTime: normalizedAirportTime,
         airportType: isAirportPickup ? airportTransferType : null,
@@ -821,6 +847,12 @@ export const BookingPage = () => {
             : null,
         unitPrice: finalPrice,
         quantity: 1,
+        participants: { adults: 1, children: 0, infants: 0 },
+        participantPricing: {
+          adultPrice: finalPrice,
+          childPrice: selectedPackage?.child_price ?? null,
+          infantPrice: selectedPackage?.infant_price ?? null,
+        },
       }),
     );
 
@@ -832,9 +864,11 @@ export const BookingPage = () => {
           item: {
             serviceId: pageData.id,
             serviceName: pageData.service_name,
+            serviceImage: pageData.Image?.[0] || null,
             location: pageData.location,
             packageId: selectedPackage?.id ?? null,
             packageName: selectedPackage?.name ?? "Standard Experience",
+            packageImage: selectedPackage?.package_image || null,
             bookingDate: date.format("YYYY-MM-DD"),
             bookingTime: normalizedAirportTime,
             airportType: isAirportPickup ? airportTransferType : null,
@@ -844,6 +878,12 @@ export const BookingPage = () => {
                 : null,
             unitPrice: finalPrice,
             quantity: 1,
+            participants: { adults: 1, children: 0, infants: 0 },
+            participantPricing: {
+              adultPrice: finalPrice,
+              childPrice: selectedPackage?.child_price ?? null,
+              infantPrice: selectedPackage?.infant_price ?? null,
+            },
           },
         }),
       );

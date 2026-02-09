@@ -20,6 +20,8 @@ import {
   Tabs,
   Spin,
   Tooltip,
+  Upload,
+  Image,
 } from "antd";
 import {
   PlusOutlined,
@@ -29,6 +31,7 @@ import {
   MinusCircleOutlined,
   ExclamationCircleOutlined,
   CheckCircleOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { supabase } from "../lib/supabase";
@@ -245,18 +248,21 @@ const Packages = () => {
     setEditingPackage(record);
     setValidationErrors({});
     setActiveTab("basic");
-    
+
     // Reset form first, then set values
     form.resetFields();
-    
+
     // Prepare the form values
     const formValues = {
       name: record.name,
       description: record.description,
       service_id: record.service_id,
       price: record.price,
+      child_price: record.child_price,
+      infant_price: record.infant_price,
+      package_image: record.package_image || "",
       duration: record.duration,
-      pricing_type: record.pricing_type || "fixed",
+      pricing_type: record.pricing_type || "per_person",
       min_duration: record.min_duration,
       max_duration: record.max_duration,
       max_guests: record.max_guests,
@@ -283,12 +289,12 @@ const Packages = () => {
       address: record.address || "",
       how_to_get_there: record.how_to_get_there || "",
     };
-    
+
     log.info("Setting form values for edit", formValues);
-    
+
     // Set modal visible first, then set form values after a tick
     setModalVisible(true);
-    
+
     // Use setTimeout to ensure form is mounted before setting values
     setTimeout(() => {
       form.setFieldsValue(formValues);
@@ -346,6 +352,9 @@ const Packages = () => {
         description: values.description,
         service_id: values.service_id,
         price: values.price,
+        child_price: values.child_price || null,
+        infant_price: values.infant_price || null,
+        package_image: values.package_image || null,
         duration: values.duration,
         pricing_type: values.pricing_type,
         min_duration: values.min_duration,
@@ -378,6 +387,8 @@ const Packages = () => {
       log.info("Prepared package data for save", {
         name: packageData.name,
         price: packageData.price,
+        child_price: packageData.child_price,
+        infant_price: packageData.infant_price,
         service_id: packageData.service_id,
         package_type: packageData.package_type,
         includesCount: packageData.includes.length,
@@ -453,10 +464,19 @@ const Packages = () => {
       key: "service",
     },
     {
-      title: "Price",
-      dataIndex: "price",
-      key: "price",
-      render: (price) => (price ? `${price} AED` : "-"),
+      title: "Pricing",
+      key: "pricing",
+      render: (_, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong style={{ color: '#1890ff' }}>Adult: {record.price || 0} AED</Text>
+          {record.child_price !== null && record.child_price !== undefined && (
+            <Text type="secondary" style={{ fontSize: 12 }}>Child: {record.child_price} AED</Text>
+          )}
+          {record.infant_price !== null && record.infant_price !== undefined && (
+            <Text type="secondary" style={{ fontSize: 12 }}>Infant: {record.infant_price === 0 ? 'Free' : `${record.infant_price} AED`}</Text>
+          )}
+        </Space>
+      ),
       sorter: (a, b) => (a.price || 0) - (b.price || 0),
     },
     {
@@ -464,7 +484,7 @@ const Packages = () => {
       dataIndex: "pricing_type",
       key: "pricing_type",
       render: (type) => (
-        <Tag color={type === "fixed" ? "blue" : "green"}>{type || "fixed"}</Tag>
+        <Tag color={type === "per_person" ? "green" : type === "per_hour" ? "blue" : "default"}>{type || "per_person"}</Tag>
       ),
     },
     {
@@ -480,6 +500,22 @@ const Packages = () => {
         <Tag color={type === "combo" ? "orange" : "default"}>
           {type === "combo" ? "Combo" : "Standard"}
         </Tag>
+      ),
+    },
+    {
+      title: "Image",
+      key: "package_image",
+      width: 80,
+      render: (_, record) => (
+        record.package_image ? (
+          <Image
+            src={record.package_image}
+            width={50}
+            height={50}
+            style={{ objectFit: 'cover', borderRadius: 4 }}
+            fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdLciLEVJYzMPBHMDBsayhILEqEO4DxG0txmrERhM29nYGBddr//5/DGRjYNRkY/l7////39v///y4Dmn+LgesKcf4CAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAB3RJTUUH5AsHCDsxjNyqaQAAAAlwSFlzAAALEwAACxMBAJqcGAAAAARnQU1BAACxjwv8YQUAAABJSURBVHja7cExAQAAAMKg9U9tDQ+gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC4GXDJAAE90tE9AAAAAElFTkSuQmCC"
+          />
+        ) : <Text type="secondary">-</Text>
       ),
     },
     {
@@ -700,34 +736,79 @@ const Packages = () => {
                     </Form.Item>
 
                     <Row gutter={16}>
-                      <Col span={8}>
+                      <Col span={6}>
                         <Form.Item
                           name="price"
-                          label="Selling Price (AED)"
+                          label="Base/Adult Price (AED)"
                           rules={[{ required: true, message: "Required" }]}
+                          tooltip="This is the adult ticket price"
                         >
                           <InputNumber min={0} style={{ width: "100%" }} />
                         </Form.Item>
                       </Col>
-                      <Col span={8}>
+                      <Col span={6}>
                         <Form.Item
-                          name="pricing_type"
-                          label="Pricing Type"
-                          initialValue="fixed"
+                          name="child_price"
+                          label="Child Price (AED)"
+                          tooltip="Price for children (ages 3-12). Leave empty if children pay adult price."
                         >
-                          <Select>
-                            <Option value="fixed">Fixed</Option>
-                            <Option value="per_person">Per Person</Option>
-                            <Option value="per_hour">Per Hour</Option>
-                          </Select>
+                          <InputNumber min={0} style={{ width: "100%" }} placeholder="Optional" />
                         </Form.Item>
                       </Col>
-                      <Col span={8}>
+                      <Col span={6}>
+                        <Form.Item
+                          name="infant_price"
+                          label="Infant Price (AED)"
+                          tooltip="Price for infants (ages 0-2). Leave empty or set to 0 for free."
+                        >
+                          <InputNumber min={0} style={{ width: "100%" }} placeholder="Optional" />
+                        </Form.Item>
+                      </Col>
+                      <Col span={6}>
                         <Form.Item name="max_guests" label="Max Guests">
                           <InputNumber min={1} style={{ width: "100%" }} />
                         </Form.Item>
                       </Col>
                     </Row>
+
+                    <Row gutter={16}>
+                      <Col span={8}>
+                        <Form.Item
+                          name="pricing_type"
+                          label="Pricing Type"
+                          initialValue="per_person"
+                        >
+                          <Select>
+                            <Option value="fixed">Fixed (Group Price)</Option>
+                            <Option value="per_person">Per Person</Option>
+                            <Option value="per_hour">Per Hour</Option>
+                          </Select>
+                        </Form.Item>
+                      </Col>
+                      <Col span={16}>
+                        <Form.Item 
+                          name="package_image" 
+                          label="Package Image URL"
+                          tooltip="Direct URL to the package image (optional)"
+                        >
+                          <Input placeholder="https://example.com/image.jpg" />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Alert
+                      message="Participant Pricing"
+                      description={
+                        <>
+                          <strong>Adult Price:</strong> Required, applies to guests aged 13+<br />
+                          <strong>Child Price:</strong> For ages 3-12. Leave empty = same as adult price<br />
+                          <strong>Infant Price:</strong> For ages 0-2. Leave empty or 0 = free entry
+                        </>
+                      }
+                      type="info"
+                      showIcon
+                      style={{ marginBottom: 16 }}
+                    />
 
                     <Row gutter={16}>
                       <Col span={8}>

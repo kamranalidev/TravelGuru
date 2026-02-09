@@ -31,6 +31,7 @@ import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import ShieldIcon from "@mui/icons-material/Shield";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import "./index.css";
 
 const normalizeTime = (value: unknown): string | null => {
@@ -113,7 +114,7 @@ export const Checkout = () => {
     setPaymentStep(0);
 
     try {
-      // Step 0: Validate cart
+      // Step 0: Validate cart and check for duplicate bookings BEFORE payment
       console.log("[Checkout] Starting payment flow...");
       console.log(
         "[Checkout] Cart items:",
@@ -134,6 +135,52 @@ export const Checkout = () => {
       if (!cardElement) {
         throw new Error("Payment form not loaded. Please refresh the page.");
       }
+
+      // Get user for duplicate check
+      const {
+        data: { user: currentUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !currentUser) {
+        throw new Error("Please log in to complete your booking.");
+      }
+
+      // Check for duplicate bookings BEFORE processing payment
+      console.log("[Checkout] Checking for duplicate bookings...");
+      for (const it of cartItems) {
+        const serviceId = Number(it.serviceId);
+        const bDate = String(it.bookingDate);
+        const safeTime = sanitizeNullableTime(it.bookingTime);
+
+        let existingQuery = supabase
+          .from("bookings")
+          .select("id")
+          .eq("user_id", currentUser.id)
+          .eq("service_id", serviceId)
+          .eq("booking_date", bDate);
+
+        existingQuery =
+          safeTime == null
+            ? existingQuery.is("departure_arrival_time", null)
+            : existingQuery.eq("departure_arrival_time", safeTime);
+
+        const { data: existing, error: existsError } =
+          await existingQuery.limit(1);
+
+        if (existsError) {
+          logPaymentError("duplicate-check", existsError, { serviceId, bDate });
+          throw new Error("Unable to verify booking. Please try again.");
+        }
+
+        if (existing && existing.length > 0) {
+          const serviceName = it.serviceName || `Service #${serviceId}`;
+          throw new Error(
+            `You already have a booking for "${serviceName}" on ${bDate}. Please remove it from your cart or choose a different date.`,
+          );
+        }
+      }
+      console.log("[Checkout] No duplicate bookings found, proceeding...");
 
       // Step 1: Create payment intent
       setPaymentStep(1);
@@ -292,36 +339,22 @@ export const Checkout = () => {
         const unitPriceMajor = Number(it.unitPrice ?? 0);
         const unitAmountInFils = Math.round(unitPriceMajor * 100);
 
-        // Duplicate check
-        let existingQuery = supabase
-          .from("bookings")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("service_id", serviceId)
-          .eq("booking_date", bDate);
-
-        existingQuery =
-          safeTime == null
-            ? existingQuery.is("departure_arrival_time", null)
-            : existingQuery.eq("departure_arrival_time", safeTime);
-
-        const { data: existing, error: existsError } =
-          await existingQuery.limit(1);
-
-        if (existsError) {
-          logPaymentError("duplicate-check", existsError, { serviceId, bDate });
-          throw new Error(
-            `Booking validation failed. Payment ref: ${paymentIntentId}`,
-          );
-        }
-        if (existing && existing.length > 0) {
-          throw new Error(
-            `You already have a booking for this service on ${bDate}. Contact support for a refund.`,
-          );
-        }
+        // Duplicate check already done before payment - no need to repeat
 
         const airportType = it.airportType ?? null;
         const address = it.address ?? null;
+
+        // Generate unique voucher code
+        const generateVoucherCode = () => {
+          const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+          let code = "TG-";
+          for (let i = 0; i < 8; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+          return code;
+        };
+
+        const voucherCode = generateVoucherCode();
 
         const insertPayload = {
           user_id: user.id,
@@ -333,6 +366,16 @@ export const Checkout = () => {
           amount: unitAmountInFils,
           currency: "aed",
           departure_arrival_time: safeTime,
+          voucher_code: voucherCode,
+          voucher_status: "active",
+          // Participant information
+          adults: it.participants?.adults ?? 1,
+          children: it.participants?.children ?? 0,
+          infants: it.participants?.infants ?? 0,
+          // Participant pricing
+          adult_price: it.participantPricing?.adultPrice ?? unitPriceMajor,
+          child_price: it.participantPricing?.childPrice ?? null,
+          infant_price: it.participantPricing?.infantPrice ?? null,
           ...(airportType ? { type: airportType } : {}),
           ...(airportType === "dropoff" && address ? { address } : {}),
         };
@@ -341,12 +384,13 @@ export const Checkout = () => {
           serviceId,
           bDate,
           packageId,
+          voucherCode,
         });
 
         const { data: created, error: insertError } = await supabase
           .from("bookings")
           .insert(insertPayload)
-          .select("id")
+          .select("id, voucher_code")
           .single();
 
         if (insertError) {
@@ -356,6 +400,9 @@ export const Checkout = () => {
           );
         }
         createdIds.push(created.id);
+        console.log(
+          `[Checkout] Booking #${created.id} created with voucher: ${created.voucher_code}`,
+        );
       }
 
       console.log("[Checkout] All bookings created:", createdIds);
@@ -404,10 +451,42 @@ export const Checkout = () => {
     navigate("/bookings", { replace: true });
   };
 
+  const handleGoBack = () => {
+    navigate("/cart");
+  };
+
   return (
     <Box sx={{ backgroundColor: "#f8f9fb", minHeight: "100vh" }}>
       <Header hidePages />
       <StepperComponent activeStep={2} />
+
+      {/* Back Navigation */}
+      <Box
+        sx={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          px: { xs: 2, md: 4 },
+          pt: 2,
+        }}
+      >
+        <Button
+          variant="text"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleGoBack}
+          disabled={loading}
+          sx={{
+            color: "#6b7280",
+            fontWeight: 500,
+            textTransform: "none",
+            "&:hover": {
+              bgcolor: "#f3f4f6",
+              color: "#1a1a1a",
+            },
+          }}
+        >
+          Back to Cart
+        </Button>
+      </Box>
 
       {/* Success Dialog */}
       <Dialog

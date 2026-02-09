@@ -18,16 +18,17 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { Header } from "../../../../components/index.tsx";
+import { Header, StepperComponent } from "../../../../components/index.tsx";
 import type { AppDispatch, RootState } from "../../../../store/store.ts";
 import {
   clearCart,
   removeItem,
   addItem,
-  incrementQuantity,
-  decrementQuantity,
+  updateParticipants,
   type CartItem,
 } from "../../../../store/features/cart/cartSlice.ts";
 import { useAuth } from "../../../../hooks/useAuth.tsx";
@@ -44,6 +45,23 @@ const formatAED = (amount: number) =>
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   })}`;
+
+// Calculate item total considering participant pricing
+const calculateItemTotal = (item: CartItem): number => {
+  const pricing = item.participantPricing;
+  const participants = item.participants;
+
+  if (!pricing) {
+    // Fall back to unitPrice * quantity
+    return item.unitPrice * item.quantity;
+  }
+
+  const adultTotal = participants.adults * pricing.adultPrice;
+  const childTotal = participants.children * (pricing.childPrice ?? 0);
+  const infantTotal = participants.infants * (pricing.infantPrice ?? 0);
+
+  return adultTotal + childTotal + infantTotal;
+};
 
 export const CartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -70,14 +88,10 @@ export const CartPage: React.FC = () => {
     void load();
   }, [dispatch, session?.user?.id]);
 
-  // Calculate total with quantities
+  // Calculate total with participant pricing
   const total = useMemo(
     () =>
-      items.reduce(
-        (acc: number, it: CartItem) =>
-          acc + (Number(it.unitPrice) || 0) * (it.quantity || 1),
-        0,
-      ),
+      items.reduce((acc: number, it: CartItem) => acc + calculateItemTotal(it), 0),
     [items],
   );
 
@@ -107,24 +121,28 @@ export const CartPage: React.FC = () => {
     }
   };
 
-  const handleIncrement = (it: CartItem) => {
+  const handleParticipantChange = async (
+    it: CartItem,
+    type: "adults" | "children" | "infants",
+    delta: number
+  ) => {
+    const current = it.participants || { adults: it.quantity || 1, children: 0, infants: 0 };
+    const newValue = (current[type] || 0) + delta;
+    
+    // Minimum: 1 adult, 0 children/infants
+    if (type === "adults" && newValue < 1) return;
+    if (newValue < 0) return;
+    
     dispatch(
-      incrementQuantity({
+      updateParticipants({
         serviceId: it.serviceId,
         packageId: it.packageId,
         bookingDate: it.bookingDate,
         bookingTime: it.bookingTime,
-      }),
-    );
-  };
-
-  const handleDecrement = (it: CartItem) => {
-    dispatch(
-      decrementQuantity({
-        serviceId: it.serviceId,
-        packageId: it.packageId,
-        bookingDate: it.bookingDate,
-        bookingTime: it.bookingTime,
+        participants: {
+          ...current,
+          [type]: newValue,
+        },
       }),
     );
   };
@@ -177,10 +195,36 @@ export const CartPage: React.FC = () => {
     });
   };
 
+  const goBackToServices = () => {
+    navigate("/services");
+  };
+
   return (
     <Box sx={{ backgroundColor: "#f8f9fa", minHeight: "100vh" }}>
-      <Header />
-      <Box sx={{ maxWidth: 1000, mx: "auto", px: { xs: 2, md: 4 }, py: 4 }}>
+      <Header hidePages />
+      <StepperComponent activeStep={1} />
+
+      {/* Back Navigation */}
+      <Box sx={{ maxWidth: 1000, mx: "auto", px: { xs: 2, md: 4 }, pt: 2 }}>
+        <Button
+          variant="text"
+          startIcon={<ArrowBackIcon />}
+          onClick={goBackToServices}
+          sx={{
+            color: "#6b7280",
+            fontWeight: 500,
+            textTransform: "none",
+            "&:hover": {
+              bgcolor: "#f3f4f6",
+              color: "#1a1a1a",
+            },
+          }}
+        >
+          Continue Shopping
+        </Button>
+      </Box>
+
+      <Box sx={{ maxWidth: 1000, mx: "auto", px: { xs: 2, md: 4 }, py: 3 }}>
         {/* Header */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
@@ -439,51 +483,153 @@ export const CartPage: React.FC = () => {
                           {formatAED(it.unitPrice)} each
                         </Typography>
 
-                        {/* Quantity Controls */}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            bgcolor: "#f5f5f5",
-                            borderRadius: 2,
-                            p: 0.5,
-                            my: 1,
-                          }}
-                        >
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDecrement(it)}
-                            sx={{
-                              bgcolor: "white",
-                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                              "&:hover": { bgcolor: "#fff5f0" },
-                            }}
-                          >
-                            <RemoveIcon fontSize="small" />
-                          </IconButton>
-                          <Typography
-                            sx={{
-                              fontWeight: 700,
-                              minWidth: 32,
-                              textAlign: "center",
-                              fontSize: 16,
-                            }}
-                          >
-                            {it.quantity || 1}
+                        {/* Participant Controls */}
+                        <Box sx={{ mb: 1.5, p: 1.5, bgcolor: "#f8f9fa", borderRadius: 1.5, minWidth: 220 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: "#444", display: "block", mb: 1 }}>
+                            Guests
                           </Typography>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleIncrement(it)}
-                            sx={{
-                              bgcolor: "white",
-                              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                              "&:hover": { bgcolor: "#fff5f0" },
-                            }}
-                          >
-                            <AddIcon fontSize="small" />
-                          </IconButton>
+                          
+                          {/* Adults */}
+                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
+                                👤 Adults
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: "#888" }}>
+                                {formatAED(it.participantPricing?.adultPrice ?? it.unitPrice)}/person
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                              <IconButton 
+                                size="small" 
+                                onClick={() => void handleParticipantChange(it, "adults", -1)}
+                                disabled={(it.participants?.adults ?? 1) <= 1}
+                                sx={{ width: 28, height: 28, bgcolor: "white", "&.Mui-disabled": { opacity: 0.4 } }}
+                              >
+                                <RemoveIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                              <Typography sx={{ fontWeight: 700, minWidth: 24, textAlign: "center" }}>
+                                {it.participants?.adults ?? 1}
+                              </Typography>
+                              <IconButton 
+                                size="small" 
+                                onClick={() => void handleParticipantChange(it, "adults", 1)}
+                                sx={{ width: 28, height: 28, bgcolor: "white" }}
+                              >
+                                <AddIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                          
+                          {/* Children - Only show if child pricing exists */}
+                          {it.participantPricing?.childPrice !== null && (
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
+                                  👦 Children
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: "#888" }}>
+                                  {formatAED(it.participantPricing?.childPrice ?? 0)}/child (3-12)
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => void handleParticipantChange(it, "children", -1)}
+                                  disabled={(it.participants?.children ?? 0) <= 0}
+                                  sx={{ width: 28, height: 28, bgcolor: "white", "&.Mui-disabled": { opacity: 0.4 } }}
+                                >
+                                  <RemoveIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                                <Typography sx={{ fontWeight: 700, minWidth: 24, textAlign: "center" }}>
+                                  {it.participants?.children ?? 0}
+                                </Typography>
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => void handleParticipantChange(it, "children", 1)}
+                                  sx={{ width: 28, height: 28, bgcolor: "white" }}
+                                >
+                                  <AddIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Box>
+                            </Box>
+                          )}
+                          
+                          {/* Infants - Only show if infant pricing exists */}
+                          {it.participantPricing?.infantPrice !== null && (
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
+                                  👶 Infants
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: it.participantPricing?.infantPrice === 0 ? "#4CAF50" : "#888" }}>
+                                  {it.participantPricing?.infantPrice === 0 ? "FREE" : `${formatAED(it.participantPricing?.infantPrice ?? 0)}/infant`} (0-2)
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => void handleParticipantChange(it, "infants", -1)}
+                                  disabled={(it.participants?.infants ?? 0) <= 0}
+                                  sx={{ width: 28, height: 28, bgcolor: "white", "&.Mui-disabled": { opacity: 0.4 } }}
+                                >
+                                  <RemoveIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                                <Typography sx={{ fontWeight: 700, minWidth: 24, textAlign: "center" }}>
+                                  {it.participants?.infants ?? 0}
+                                </Typography>
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => void handleParticipantChange(it, "infants", 1)}
+                                  sx={{ width: 28, height: 28, bgcolor: "white" }}
+                                >
+                                  <AddIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Box>
+                            </Box>
+                          )}
                         </Box>
+
+                        {/* Ticket Breakdown Summary */}
+                        {it.participants && (
+                          <Box sx={{ mb: 1, p: 1, bgcolor: "#fff8f5", borderRadius: 1, border: "1px solid #FF621F20" }}>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: "#666", display: "block", mb: 0.5 }}>
+                              Price Breakdown
+                            </Typography>
+                            {it.participants.adults > 0 && (
+                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <Typography variant="body2" sx={{ fontSize: 12 }}>
+                                  Adults x{it.participants.adults}
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontSize: 12, fontWeight: 600 }}>
+                                  {formatAED((it.participantPricing?.adultPrice ?? it.unitPrice) * it.participants.adults)}
+                                </Typography>
+                              </Box>
+                            )}
+                            {it.participants.children > 0 && (
+                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <Typography variant="body2" sx={{ fontSize: 12 }}>
+                                  Children x{it.participants.children}
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontSize: 12, fontWeight: 600 }}>
+                                  {formatAED((it.participantPricing?.childPrice ?? 0) * it.participants.children)}
+                                </Typography>
+                              </Box>
+                            )}
+                            {it.participants.infants > 0 && (
+                              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <Typography variant="body2" sx={{ fontSize: 12 }}>
+                                  Infants x{it.participants.infants}
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontSize: 12, fontWeight: 600, color: "#4CAF50" }}>
+                                  {it.participantPricing?.infantPrice && it.participantPricing.infantPrice > 0 
+                                    ? formatAED(it.participantPricing.infantPrice * it.participants.infants)
+                                    : "FREE"}
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                        )}
 
                         {/* Subtotal */}
                         <Typography
@@ -493,7 +639,7 @@ export const CartPage: React.FC = () => {
                             color: "#FF621F",
                           }}
                         >
-                          {formatAED(it.unitPrice * (it.quantity || 1))}
+                          {formatAED(calculateItemTotal(it))}
                         </Typography>
 
                         {/* Remove Button */}
@@ -566,6 +712,7 @@ export const CartPage: React.FC = () => {
                   size="large"
                   fullWidth
                   onClick={goToCheckout}
+                  endIcon={<ArrowForwardIcon />}
                   sx={{
                     mt: 1,
                     py: 1.5,

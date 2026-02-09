@@ -229,6 +229,8 @@ export const ServicesPage = () => {
       service_image: service.service_image,
     };
 
+    // Scroll to top before navigating
+    window.scrollTo({ top: 0, behavior: "instant" });
     navigate(`/bookings/${service.id}`, { state: servicePayload });
   };
 

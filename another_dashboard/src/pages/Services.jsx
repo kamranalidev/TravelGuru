@@ -447,7 +447,7 @@ function Services() {
     setEditingService(record);
     setValidationErrors({});
     setActiveTab("basic");
-    
+
     // Reset form first
     form.resetFields();
 
@@ -548,15 +548,15 @@ function Services() {
           : "",
     };
 
-    log.info("Setting form values for edit", { 
+    log.info("Setting form values for edit", {
       serviceName: formValues.service_name,
       serviceType: formValues.service_type,
-      price: formValues.default_price
+      price: formValues.default_price,
     });
-    
+
     // Set modal visible first, then set form values after a tick
     setModalVisible(true);
-    
+
     // Use setTimeout to ensure form is mounted before setting values
     setTimeout(() => {
       form.setFieldsValue(formValues);
