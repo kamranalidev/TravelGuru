@@ -62,7 +62,8 @@ log.info("Environment Check:", {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: PORT,
   RESEND_API_KEY: process.env.RESEND_API_KEY ? "✓ Set" : "✗ Missing",
-  EMAIL_FROM: process.env.EMAIL_FROM || "onboarding@resend.dev",
+  EMAIL_FROM: process.env.EMAIL_FROM || "TravelGuru <noreply@travelguroo.com>",
+  ADMIN_NOTIFICATION_EMAIL: process.env.ADMIN_NOTIFICATION_EMAIL || "admin@travelguroo.com",
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ? "✓ Set" : "✗ Missing",
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET
     ? "✓ Set"
@@ -103,9 +104,13 @@ if (resend) {
   log.warn("RESEND_API_KEY not set - email sending will not work");
 }
 
-// Default from email (use verified domain or Resend's test address)
+// Default from email (use verified domain)
 const EMAIL_FROM =
-  process.env.EMAIL_FROM || "TravelGuru <onboarding@resend.dev>";
+  process.env.EMAIL_FROM || "TravelGuru <noreply@travelguroo.com>";
+
+// Admin notification email
+const ADMIN_NOTIFICATION_EMAIL =
+  process.env.ADMIN_NOTIFICATION_EMAIL || "admin@travelguroo.com";
 
 // Helper: Format money
 const formatMoney = (amountMinor, currency = "aed") => {
@@ -891,24 +896,28 @@ const sendBookingConfirmationEmail = async (bookingId) => {
 
     if (emailError) {
       log.error(`Resend API error`, emailError);
-      
+
       // Check if it's a domain verification issue (testing mode)
-      const isTestingRestriction = emailError.message?.includes('testing emails') || 
-                                    emailError.message?.includes('verify a domain');
-      
+      const isTestingRestriction =
+        emailError.message?.includes("testing emails") ||
+        emailError.message?.includes("verify a domain");
+
       if (isTestingRestriction) {
-        log.warn(`⚠️ RESEND TESTING MODE: Can only send to verified email. Voucher code generated: ${voucherCode}`);
+        log.warn(
+          `⚠️ RESEND TESTING MODE: Can only send to verified email. Voucher code generated: ${voucherCode}`,
+        );
         log.warn(`To fix: Verify your domain at https://resend.com/domains`);
         // Still return success with voucher code - email just didn't send
-        return { 
-          success: true, 
-          voucherCode, 
+        return {
+          success: true,
+          voucherCode,
           emailSent: false,
-          warning: "Email not sent - Resend domain not verified. Voucher code was still generated.",
-          hint: "Verify your domain at resend.com/domains to send emails to customers."
+          warning:
+            "Email not sent - Resend domain not verified. Voucher code was still generated.",
+          hint: "Verify your domain at resend.com/domains to send emails to customers.",
         };
       }
-      
+
       throw new Error(emailError.message || "Failed to send email via Resend");
     }
 
@@ -916,7 +925,7 @@ const sendBookingConfirmationEmail = async (bookingId) => {
     log.email(`Resend Email ID: ${emailData?.id}`);
 
     // Step 5: Send admin notification
-    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminEmail = ADMIN_NOTIFICATION_EMAIL;
     if (adminEmail) {
       log.email(`Sending admin notification to ${adminEmail}...`);
       const adminHtml = generateAdminNotificationHTML(
@@ -938,8 +947,10 @@ const sendBookingConfirmationEmail = async (bookingId) => {
       if (adminEmailError) {
         log.warn(`Failed to send admin notification`, adminEmailError);
       } else {
-        log.success(`Admin notification SENT for booking #${bookingId}`);
+        log.success(`Admin notification SENT to ${adminEmail} for booking #${bookingId}`);
       }
+    } else {
+      log.warn(`No admin email configured - skipping admin notification`);
     }
 
     return { success: true, emailId: emailData?.id, voucherCode };
@@ -1018,8 +1029,10 @@ app.get("/api/diagnostics", async (req, res) => {
     frontend: {
       url: process.env.FRONTEND_URL || "https://travelguroo.com",
     },
-    adminEmail:
-      process.env.ADMIN_EMAIL || "not set (admin notifications disabled)",
+    adminNotification: {
+      email: ADMIN_NOTIFICATION_EMAIL,
+      status: ADMIN_NOTIFICATION_EMAIL ? "configured" : "not set",
+    },
   };
 
   log.info("Diagnostics result:", diagnostics);

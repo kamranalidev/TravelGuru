@@ -36,8 +36,8 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 
 # Resend Email (https://resend.com)
 RESEND_API_KEY=re_...
-EMAIL_FROM=TravelGuru <onboarding@resend.dev>
-ADMIN_EMAIL=admin@yourcompany.com  # Optional: receive booking notifications
+EMAIL_FROM=TravelGuru <noreply@travelguroo.com>
+ADMIN_NOTIFICATION_EMAIL=admin@travelguroo.com
 
 # Frontend URL
 FRONTEND_URL=https://travelguroo.com
@@ -47,8 +47,9 @@ FRONTEND_URL=https://travelguroo.com
 
 1. Sign up at [resend.com](https://resend.com)
 2. Get your API key from the dashboard
-3. For testing, use `onboarding@resend.dev` as the from address
-4. For production, verify your domain to send from your own email address
+3. Verify your domain (travelguroo.com) in Resend dashboard
+4. Add the DNS records (SPF, DKIM, DMARC) to your domain
+5. Once verified, you can send from `noreply@travelguroo.com`
 
 ### 4. Run the Server
 
