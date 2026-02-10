@@ -5,17 +5,23 @@ import AppRouter from "./router/AppRouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { WhatsAppWidget, Chatbot } from "./components";
 function App() {
-    useEffect(() => {
-        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-        });
-        return () => {
-            authListener.subscription.unsubscribe();
-        };
-    }, []);
-    return (<ErrorBoundary>
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, _session) => {},
+    );
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+  return (
+    <ErrorBoundary>
       <AppRouter />
-      <WhatsAppWidget phoneNumber="+971586257508" message="Hello! I'm interested in your Dubai travel services."/>
+      <WhatsAppWidget
+        phoneNumber="+971586257508"
+        message="Hello! I'm interested in your Dubai travel services."
+      />
       <Chatbot />
-    </ErrorBoundary>);
+    </ErrorBoundary>
+  );
 }
 export default App;

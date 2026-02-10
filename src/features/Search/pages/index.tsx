@@ -104,7 +104,6 @@ export const SearchPage = () => {
             }
         }
         catch (e) {
-            console.warn("Error parsing images:", e);
         }
         return ["/assets/burjKhalifa.jpg"];
     };
@@ -132,7 +131,6 @@ export const SearchPage = () => {
             setPriceRange((prev) => [prev[0], Math.max(prev[1], safeMax)]);
         }
         catch (error) {
-            console.error("Error fetching services:", error);
         }
         finally {
             setLoading(false);

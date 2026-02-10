@@ -23,7 +23,7 @@ export const ReviewsList = ({
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleReviewSubmitted = () => {
-    // Force refresh the reviews list
+    
     setRefreshKey((prev) => prev + 1);
   };
 

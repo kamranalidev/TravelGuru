@@ -52,7 +52,7 @@ export default function PrivacyPage() {
   return (
     <Box sx={{ backgroundColor: "#f8f9fb", minHeight: "100vh" }}>
       <Header />
-      {/* Hero */}
+      {/* Hero Section */}
       <Box
         sx={{
           background:
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
         </Container>
       </Box>
 
-      {/* Content */}
+      {/* Content Section */}
       <Container maxWidth="md" sx={{ py: { xs: 4, md: 6 } }}>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>

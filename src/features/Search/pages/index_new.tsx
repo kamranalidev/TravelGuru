@@ -20,7 +20,7 @@ export const SearchPage = () => {
     const [searchParams] = useSearchParams();
     const [favorites, setFavorites] = useState<Set<string>>(new Set());
     const navigate = useNavigate();
-    // Filter states
+    
     const [searchQuery] = useState(searchParams.get("query") || "");
     const [priceRange, setPriceRange] = useState<number[]>([0, 2000]);
     const [sortBy, setSortBy] = useState("recommended");
@@ -38,13 +38,11 @@ export const SearchPage = () => {
                 .select("*")
                 .order("created_at", { ascending: false });
             if (error) {
-                console.error("Supabase error:", error);
                 throw error;
             }
             setServices(data || []);
         }
         catch (error) {
-            console.error("Error fetching services:", error);
         }
         finally {
             setLoading(false);
@@ -52,7 +50,7 @@ export const SearchPage = () => {
     };
     const applyFilters = () => {
         let filtered = [...services];
-        // Search filter
+        
         if (searchQuery) {
             filtered = filtered.filter((service) => service.service_name
                 ?.toLowerCase()
@@ -62,10 +60,10 @@ export const SearchPage = () => {
                     .includes(searchQuery.toLowerCase()) ||
                 service.location?.toLowerCase().includes(searchQuery.toLowerCase()));
         }
-        // Price filter
+        
         filtered = filtered.filter((service) => service.default_price >= priceRange[0] &&
             service.default_price <= priceRange[1]);
-        // Sort
+        
         switch (sortBy) {
             case "price-low":
                 filtered.sort((a, b) => a.default_price - b.default_price);
@@ -74,7 +72,7 @@ export const SearchPage = () => {
                 filtered.sort((a, b) => b.default_price - a.default_price);
                 break;
             default:
-                // Recommended (default order)
+                
                 break;
         }
         setFilteredServices(filtered);
@@ -106,7 +104,6 @@ export const SearchPage = () => {
             }
         }
         catch (e) {
-            console.warn("Error parsing images:", e);
         }
         return ["/assets/burjKhalifa.jpg"];
     };

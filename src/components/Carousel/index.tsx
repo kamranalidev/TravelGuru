@@ -4,7 +4,7 @@ import "./index.css";
 export const CustomCarousel = ({ children }: any) => {
   const responsive = {
     superLargeDesktop: {
-      // the naming can be any, depends on you.
+      
       breakpoint: { max: 4000, min: 3000 },
       items: 4,
     },
@@ -22,7 +22,7 @@ export const CustomCarousel = ({ children }: any) => {
     },
   };
   const CustomRightArrow = ({ onClick }: any) => {
-    // onMove means if dragging or swiping in progress.
+    
     return (
       <button onClick={() => onClick()} className="custom-right-arrow">
         <img src="/assets/icons/rightArrow.svg" alt="Right Arrow" />
@@ -39,10 +39,10 @@ export const CustomCarousel = ({ children }: any) => {
   return (
     <Carousel
       className="myCarouselClass"
-      // keyBoardControl={true}
+      
       showDots={true}
       transitionDuration={500}
-      // containerClass="carousel-container"
+      
       responsive={responsive}
       customRightArrow={<CustomRightArrow onClick={() => {}} />}
       customLeftArrow={<CustomLeftArrow onClick={() => {}} />}

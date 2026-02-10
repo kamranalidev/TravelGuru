@@ -40,7 +40,6 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Normalize images to array of URLs
   const normalizedImages = images.map((img) =>
     typeof img === "string" ? img : img.url,
   );
@@ -101,7 +100,6 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     );
   }
 
-  // Single image layout
   if (normalizedImages.length === 1) {
     return (
       <Box
@@ -152,9 +150,9 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 
   return (
     <>
-      {/* Main Gallery Grid */}
+      {/* Gallery Container */}
       <Box className="image-gallery-container" sx={{ position: "relative" }}>
-        {/* Desktop: Grid Layout */}
+        {/* Desktop Grid Layout */}
         {!isMobile && normalizedImages.length >= 2 && (
           <Box
             sx={{
@@ -169,7 +167,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
               height: 400,
             }}
           >
-            {/* Main large image */}
+            {/* Main Image */}
             <Box
               sx={{
                 gridRow: normalizedImages.length > 2 ? "1 / 3" : "1",

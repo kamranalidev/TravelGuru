@@ -82,7 +82,7 @@ export const SignupPage = () => {
       </Box>
 
       <Box className="auth-split-container">
-        {/* Left branding panel */}
+        {/* Branding Panel */}
         <Box className="auth-branding-panel">
           <Box className="auth-branding-content">
             <img
@@ -135,7 +135,7 @@ export const SignupPage = () => {
           </Box>
         </Box>
 
-        {/* Right form panel */}
+        {/* Signup Form Card */}
         <Card className="auth-card">
           <Box className="auth-header">
             <Box className="auth-icon-circle">

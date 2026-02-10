@@ -8,8 +8,8 @@ export type ParticipantCounts = {
 
 export type ParticipantPricing = {
   adultPrice: number;
-  childPrice: number | null; // null means children not available
-  infantPrice: number | null; // null means infants not available
+  childPrice: number | null;
+  infantPrice: number | null;
 };
 
 export type CartItem = {
@@ -19,17 +19,17 @@ export type CartItem = {
   location?: string | null;
   packageId: number | null;
   packageName?: string | null;
-  packageImage?: string | null; // Package-specific image
-  bookingDate: string; // YYYY-MM-DD
-  bookingTime: string | null; // HH:mm (optional)
+  packageImage?: string | null;
+  bookingDate: string;
+  bookingTime: string | null;
   airportType: "pickup" | "dropoff" | null;
   address: string | null;
-  unitPrice: number; // in major units (AED) - base price (adult price)
-  quantity: number; // total number of tickets (adults + children + infants)
+  unitPrice: number;
+  quantity: number;
   participants: ParticipantCounts;
-  participantPricing?: ParticipantPricing; // individual prices per type
-  childAgeRange?: string | null; // e.g., "3-12 years"
-  infantAgeRange?: string | null; // e.g., "0-2 years"
+  participantPricing?: ParticipantPricing;
+  childAgeRange?: string | null;
+  infantAgeRange?: string | null;
 };
 
 export type CartState = {
@@ -44,7 +44,7 @@ const keyOf = (i: CartItem) =>
   `${i.serviceId}__${i.packageId ?? "base"}__${i.bookingDate}__${i.bookingTime ?? ""}`;
 
 // Calculate total price based on participants
-const calculateTotalFromParticipants = (item: CartItem): number => {
+export const calculateTotalFromParticipants = (item: CartItem): number => {
   const pricing = item.participantPricing;
   const participants = item.participants;
 

@@ -1,8 +1,0 @@
-<svg width="180" height="50" viewBox="0 0 180 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="25" cy="25" r="20" fill="#6366F1"/>
-  <path d="M25 10 L35 20 L25 30 L15 20 Z" fill="white"/>
-  <circle cx="25" cy="25" r="5" fill="#6366F1"/>
-  <text x="50" y="30" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1F2937">
-    Travel Guru
-  </text>
-</svg>

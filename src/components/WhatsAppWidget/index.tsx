@@ -8,7 +8,7 @@ interface WhatsAppWidgetProps {
 }
 
 export const WhatsAppWidget = ({
-  phoneNumber = "+971501234567", // Default UAE number - update with your actual number
+  phoneNumber = "+971501234567", 
   message = "Hello! I'm interested in your Dubai travel services.",
 }: WhatsAppWidgetProps) => {
   const handleClick = () => {

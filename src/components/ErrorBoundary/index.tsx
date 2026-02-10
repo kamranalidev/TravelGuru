@@ -1,15 +1,14 @@
 import React from "react";
-
 interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
 }
-
 interface ErrorBoundaryProps {
   children: React.ReactNode;
-  fallback?: React.ComponentType<{ error?: Error }>;
+  fallback?: React.ComponentType<{
+    error?: Error;
+  }>;
 }
-
 class ErrorBoundary extends React.Component<
   ErrorBoundaryProps,
   ErrorBoundaryState
@@ -18,22 +17,16 @@ class ErrorBoundary extends React.Component<
     super(props);
     this.state = { hasError: false };
   }
-
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("ErrorBoundary caught an error:", error, errorInfo);
-  }
-
+  componentDidCatch(_error: Error, _errorInfo: React.ErrorInfo) {}
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
         const FallbackComponent = this.props.fallback;
         return <FallbackComponent error={this.state.error} />;
       }
-
       return (
         <div
           style={{
@@ -63,9 +56,7 @@ class ErrorBoundary extends React.Component<
         </div>
       );
     }
-
     return this.props.children;
   }
 }
-
 export default ErrorBoundary;

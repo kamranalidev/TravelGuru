@@ -53,28 +53,28 @@ export const AuthProvider = ({ children }: {
     const [profile, setProfile] = useState<UserProfile>(null);
     const [error, setError] = useState<string | null>(null);
     const dispatch = useDispatch<AppDispatch>();
-    // Force stop loading after 10 seconds
+    
     useEffect(() => {
         const timeout = setTimeout(() => {
             setLoading(false);
         }, 10000);
         return () => clearTimeout(timeout);
     }, []);
-    // helper to check expiry
+    
     const isSessionExpired = (session: Session) => {
         if (!session?.expires_at)
             return true;
-        const now = Math.floor(Date.now() / 1000); // current epoch seconds
+        const now = Math.floor(Date.now() / 1000); 
         return session.expires_at <= now;
     };
     useEffect(() => {
         let mounted = true;
         const clearSupabaseAuthStorage = () => {
             try {
-                // App-specific cached session
+                
                 localStorage.removeItem("supabase_session");
-                // Supabase-js persists sessions under sb-<project-ref>-auth-token
-                // Clear all possible supabase auth keys for this origin.
+                
+                
                 for (let i = localStorage.length - 1; i >= 0; i--) {
                     const key = localStorage.key(i);
                     if (!key)
@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }: {
                         localStorage.removeItem(key);
                     }
                 }
-                // Also clear any legacy supabase keys if present
+                
                 for (let i = localStorage.length - 1; i >= 0; i--) {
                     const key = localStorage.key(i);
                     if (!key)
@@ -95,12 +95,12 @@ export const AuthProvider = ({ children }: {
                 }
             }
             catch {
-                // ignore storage errors (private mode, etc.)
+                
             }
         };
         const checkSession = async () => {
             try {
-                // Add timeout to prevent infinite loading
+                
                 const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Session check timeout")), 10000));
                 const sessionPromise = supabase.auth.getSession();
                 const { data: { session }, } = (await Promise.race([sessionPromise, timeoutPromise])) as any;
@@ -112,9 +112,9 @@ export const AuthProvider = ({ children }: {
                         user: session.user,
                         token: session.access_token,
                     }));
-                    // Try to get user profile (optional, don't block on this)
+                    
                     dispatch(fetchUserProfile(session.user.id));
-                    // Keep local context profile too (existing behavior)
+                    
                     const fetchProfile = async () => {
                         try {
                             const { data: profileData } = await supabase
@@ -127,7 +127,6 @@ export const AuthProvider = ({ children }: {
                             }
                         }
                         catch {
-                            console.warn("Could not load user profile");
                         }
                     };
                     fetchProfile();
@@ -143,7 +142,6 @@ export const AuthProvider = ({ children }: {
                 }
             }
             catch (error) {
-                console.error("Error checking session:", error);
                 if (mounted) {
                     clearSupabaseAuthStorage();
                     setSession(null);
@@ -161,7 +159,7 @@ export const AuthProvider = ({ children }: {
             }
         };
         checkSession();
-        // listen for login/logout events
+        
         const { data: { subscription }, } = supabase.auth.onAuthStateChange(async (_event, session) => {
             if (!mounted)
                 return;
@@ -173,7 +171,7 @@ export const AuthProvider = ({ children }: {
                     token: session.access_token,
                 }));
                 dispatch(fetchUserProfile(session.user.id));
-                // Try to get user profile (optional)
+                
                 const fetchProfile = async () => {
                     try {
                         const { data: profileData } = await supabase
@@ -186,7 +184,6 @@ export const AuthProvider = ({ children }: {
                         }
                     }
                     catch {
-                        console.warn("Could not load user profile in auth change");
                     }
                 };
                 fetchProfile();
@@ -213,9 +210,9 @@ export const AuthProvider = ({ children }: {
         if (!session?.user?.id)
             return;
         try {
-            // Keep Redux profile in sync
+            
             await dispatch(fetchUserProfile(session.user.id)).unwrap();
-            // Keep AuthContext profile in sync (existing behavior)
+            
             const { data: profileData, error: profileError } = await supabase
                 .from("user_profiles")
                 .select("*")
@@ -227,7 +224,6 @@ export const AuthProvider = ({ children }: {
             setError(null);
         }
         catch (e: any) {
-            console.error("Failed to refresh profile:", e);
             setError(e?.message ?? "Failed to refresh profile");
         }
     };

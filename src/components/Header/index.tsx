@@ -34,13 +34,11 @@ import { clearProfile } from "../../store/features/profile/profileSlice";
 import { clearCart } from "../../store/features/cart/cartSlice";
 import { clearServerCartState } from "../../store/features/serverCart/serverCartSlice";
 import "./index.css";
-
 interface PageItem {
   label: string;
   route: string;
   isScroll?: boolean;
 }
-
 const pages: PageItem[] = [
   { label: "Home", route: "/" },
   { label: "Services", route: "/services" },
@@ -48,7 +46,6 @@ const pages: PageItem[] = [
   { label: "FAQ", route: "/faq" },
   { label: "Contact Us", route: "/contact" },
 ];
-
 export const Header = (props: { hidePages?: boolean }) => {
   const navigate = useNavigate();
   const { session, profile } = useAuth();
@@ -58,12 +55,10 @@ export const Header = (props: { hidePages?: boolean }) => {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const isMenuOpen = Boolean(menuAnchor);
-
   const handleNavigate = (route: string, isScroll?: boolean) => {
-    setMobileDrawerOpen(false); // Close mobile drawer on navigate
+    setMobileDrawerOpen(false);
     if (isScroll && route.includes("#")) {
       const [path, sectionId] = route.split("#");
-
       if (window.location.pathname !== path) {
         navigate(path);
         setTimeout(() => {
@@ -90,32 +85,25 @@ export const Header = (props: { hidePages?: boolean }) => {
       navigate(route);
     }
   };
-
   const handleOpenMenu = (event: MouseEvent<HTMLElement>) => {
     setMenuAnchor(event.currentTarget);
   };
-
   const handleCloseMenu = () => {
     setMenuAnchor(null);
   };
-
   const handleLogout = async () => {
     handleCloseMenu();
     try {
       await supabase.auth.signOut();
     } catch (error) {
-      console.error("Error during logout:", error);
     } finally {
-      // Ensure all local app state is cleared even if signOut fails.
       dispatch(logoutAction());
       dispatch(clearProfile());
       dispatch(clearCart());
       dispatch(clearServerCartState());
 
-      // Clear app-specific cached session
       localStorage.removeItem("supabase_session");
 
-      // Clear supabase-js persisted session keys (sb-<project-ref>-auth-token)
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const key = localStorage.key(i);
         if (!key) continue;
@@ -123,21 +111,17 @@ export const Header = (props: { hidePages?: boolean }) => {
           localStorage.removeItem(key);
         }
       }
-
       navigate("/");
     }
   };
-
   const handleBookingsNavigate = () => {
     handleCloseMenu();
     navigate("/bookings");
   };
-
   const handleProfileNavigate = () => {
     handleCloseMenu();
     setProfileModalOpen(true);
   };
-
   const displayName = useMemo(() => {
     if (!session?.user) return "Login";
     return (
@@ -149,13 +133,11 @@ export const Header = (props: { hidePages?: boolean }) => {
       "Traveler"
     );
   }, [profile?.email, profile?.full_name, session?.user]);
-
   const avatarUrl =
     profile?.profile_picture ||
     session?.user?.user_metadata?.avatar_url ||
     session?.user?.user_metadata?.picture ||
     null;
-
   const userInitials = useMemo(() => {
     if (!session?.user) return "TG";
     const nameParts = displayName.trim().split(" ");
@@ -166,11 +148,8 @@ export const Header = (props: { hidePages?: boolean }) => {
       .toUpperCase();
     return initials || "TG";
   }, [displayName, session?.user]);
-
   const userEmail = profile?.email || session?.user?.email;
-
   const isAuthenticated = Boolean(session);
-
   return (
     <Box
       component="header"
@@ -220,7 +199,7 @@ export const Header = (props: { hidePages?: boolean }) => {
             </Box>
             {!props.hidePages && (
               <>
-                {/* Desktop navigation */}
+                {/* Navigation Links */}
                 <Box
                   sx={{
                     display: { xs: "none", md: "flex" },
@@ -254,7 +233,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                   ))}
                 </Box>
 
-                {/* Mobile and Desktop right section */}
+                {/* User Actions */}
                 <Box
                   sx={{
                     display: "flex",
@@ -262,7 +241,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                     gap: 1.5,
                   }}
                 >
-                  {/* Cart entry point (authenticated only) */}
+                  {/* Cart Icon */}
                   {isAuthenticated ? (
                     <IconButton
                       aria-label="cart"
@@ -285,7 +264,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                     </IconButton>
                   ) : null}
 
-                  {/* Desktop: User button / Login & Sign Up */}
+                  {/* User Menu */}
                   {isAuthenticated ? (
                     <Button
                       disableRipple
@@ -449,7 +428,7 @@ export const Header = (props: { hidePages?: boolean }) => {
                     </MenuItem>
                   </Menu>
 
-                  {/* Mobile hamburger menu - right side */}
+                  {/* Mobile Menu Button */}
                   <IconButton
                     aria-label="open navigation menu"
                     onClick={() => setMobileDrawerOpen(true)}
@@ -468,7 +447,7 @@ export const Header = (props: { hidePages?: boolean }) => {
         </Toolbar>
       </AppBar>
 
-      {/* Mobile Navigation Drawer */}
+      {/* Mobile Drawer */}
       <Drawer
         anchor="right"
         open={mobileDrawerOpen}

@@ -9,10 +9,7 @@ interface BookingReviewSectionProps {
   userId: string;
 }
 
-/**
- * BookingReviewSection - Shows reviews and allows submission for completed bookings
- * Use this component in user's booking details/history pages
- */
+
 export const BookingReviewSection = ({
   bookingId,
   serviceName,
@@ -21,7 +18,7 @@ export const BookingReviewSection = ({
 }: BookingReviewSectionProps) => {
   const { session } = useAuth();
 
-  // Only show submit button if booking is completed and user owns the booking
+  
   const canSubmitReview =
     bookingStatus === "completed" && session?.user?.id === userId;
 

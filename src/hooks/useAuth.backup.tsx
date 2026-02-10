@@ -121,7 +121,6 @@ export const AuthProvider = ({ children }: {
             });
         }
         catch (error: any) {
-            console.error("Failed to sync user profile:", error);
             dispatch({
                 type: "SET_ERROR",
                 payload: error?.message || "Unable to sync profile.",
@@ -147,7 +146,6 @@ export const AuthProvider = ({ children }: {
             }
         }
         catch (error: any) {
-            console.error("Failed to refresh user profile:", error);
             dispatch({
                 type: "SET_ERROR",
                 payload: error?.message || "Failed to refresh profile.",
@@ -175,7 +173,6 @@ export const AuthProvider = ({ children }: {
                 }
             }
             catch (error: any) {
-                console.error("Error verifying session:", error);
                 dispatch({ type: "CLEAR_SESSION" });
                 dispatch({
                     type: "SET_ERROR",

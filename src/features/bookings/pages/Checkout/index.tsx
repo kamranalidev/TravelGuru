@@ -38,12 +38,12 @@ const normalizeTime = (value: unknown): string | null => {
 };
 const sanitizeNullableTime = (value: unknown): string | null => {
     const t = normalizeTime(value);
-    // Guard against callers accidentally passing the literal string "null".
+    
     if (t == null)
         return null;
     return t.toLowerCase() === "null" ? null : t;
 };
-// Payment step labels
+
 const PAYMENT_STEPS = [
     "Validating cart",
     "Creating payment intent",
@@ -84,7 +84,6 @@ export const Checkout = () => {
             decline_code: (err as any)?.decline_code,
             ...context,
         };
-        console.error(`[Payment Error] [${stage}]`, errorDetails);
         return errorDetails;
     };
     const handlePay = async () => {
@@ -102,7 +101,7 @@ export const Checkout = () => {
             if (!cardElement) {
                 throw new Error("Payment form not loaded. Please refresh the page.");
             }
-            // Get user for duplicate check
+            
             const { data: { user: currentUser }, error: authError, } = await supabase.auth.getUser();
             if (authError || !currentUser) {
                 throw new Error("Please log in to complete your booking.");
@@ -293,7 +292,6 @@ export const Checkout = () => {
                     await dispatch(clearServerCart(cartId)).unwrap();
                 }
                 catch (clearError) {
-                    console.warn("[Checkout] Failed to clear server cart:", clearError);
                 }
             }
             // Step 4: Send confirmation emails
@@ -499,7 +497,6 @@ export const Checkout = () => {
             setCardComplete(event.complete);
             if (event.error) {
                 setCardError(event.error.message);
-                console.warn("[Payment] Card validation error:", event.error);
             }
             else {
                 setCardError(null);

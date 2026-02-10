@@ -105,7 +105,7 @@ const ProfilePage = lazy(() =>
 );
 const FAQPage = lazy(() =>
   import("../features/FAQ/pages/index.tsx").then((module) => ({
-    // FAQ page exports a default component, not a named export
+    
     default: module.default,
   })),
 );
@@ -116,7 +116,7 @@ const AboutPage = lazy(() =>
 );
 const ContactPage = lazy(() =>
   import("../features/Contact/pages/index.ts").then((module) => ({
-    // Contact pages barrel exports default
+    
     default: module.default,
   })),
 );

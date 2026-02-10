@@ -16,7 +16,6 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import GroupsIcon from "@mui/icons-material/Groups";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import { supabase } from "../../../supabaseClient";
-
 interface ServiceRow {
   id: number;
   service_name: string;
@@ -24,11 +23,9 @@ interface ServiceRow {
   location?: string;
   default_price?: number;
 }
-
 const AboutPage: React.FC = () => {
   const [services, setServices] = useState<ServiceRow[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
-
   useEffect(() => {
     const loadServices = async () => {
       try {
@@ -37,11 +34,9 @@ const AboutPage: React.FC = () => {
           .select(
             "id, service_name, service_description, location, default_price",
           );
-
         if (error) throw error;
         setServices(data || []);
       } catch (err) {
-        console.error("Failed to fetch services for About page:", err);
       } finally {
         setLoadingServices(false);
       }
@@ -86,7 +81,6 @@ const AboutPage: React.FC = () => {
         "We curate experiences that linger in your memory long after the sand has been brushed off your shoes.",
     },
   ];
-
   return (
     <div className="about-page">
       <Header />
@@ -103,7 +97,7 @@ const AboutPage: React.FC = () => {
         </Container>
       </Box>
 
-      {/* Mission Section */}
+      {/* Who We Are Section */}
       <Box className="about-mission-section">
         <Container maxWidth="lg">
           <Box className="about-grid">
@@ -136,7 +130,7 @@ const AboutPage: React.FC = () => {
         </Container>
       </Box>
 
-      {/* Mission Statement */}
+      {/* Mission Section */}
       <Box className="about-vision-section">
         <Container maxWidth="lg">
           <Box className="about-grid about-grid-reverse">
@@ -195,7 +189,7 @@ const AboutPage: React.FC = () => {
         </Container>
       </Box>
 
-      {/* Services Section — Dynamic from database */}
+      {/* What We Do Best Section */}
       <Box className="about-why-section">
         <Container maxWidth="lg">
           <Typography variant="h3" className="about-section-title-center">
@@ -286,5 +280,4 @@ const AboutPage: React.FC = () => {
     </div>
   );
 };
-
 export default AboutPage;

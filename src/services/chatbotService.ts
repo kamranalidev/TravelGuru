@@ -7,13 +7,13 @@ interface KnowledgeBase {
   category: string;
   keywords: string[];
   answer: string;
-  priority?: number; // Higher priority = more specific answer
+  priority?: number; 
 }
 
 const MIN_CONFIDENCE_SCORE = 3;
 
 const knowledgeBase: KnowledgeBase[] = [
-  // Company Information
+  
   {
     category: "about",
     keywords: ["about", "who are you", "tell me about travel guroo", "what is travel guroo", "company", "who you are"],
@@ -29,7 +29,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 9
   },
 
-  // Services - The Big Four
+  
   {
     category: "services_overview",
     keywords: ["services", "tours", "activities", "experiences", "what do you offer", "big four", "what can i do"],
@@ -66,7 +66,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 10
   },
 
-  // Booking Process
+  
   {
     category: "how_to_book",
     keywords: ["book", "booking", "reservation", "reserve", "how to book", "make booking", "book tour"],
@@ -82,7 +82,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 8
   },
 
-  // Payment
+  
   {
     category: "payment_methods",
     keywords: ["payment", "pay", "credit card", "stripe", "visa", "mastercard", "amex", "checkout", "how to pay", "card"],
@@ -98,7 +98,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 9
   },
 
-  // Safety & Quality
+  
   {
     category: "safety",
     keywords: ["safe", "safety", "secure", "insurance", "certified", "licensed", "is it safe"],
@@ -114,7 +114,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 8
   },
 
-  // Customization
+  
   {
     category: "customize",
     keywords: ["customize", "tailored", "private", "vip", "personalized", "custom tour", "special request", "private tour"],
@@ -130,7 +130,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 8
   },
 
-  // Practical Information
+  
   {
     category: "hotel_pickup",
     keywords: ["pickup", "hotel pickup", "transport", "transfer", "drop off", "pick up", "where you pick"],
@@ -153,7 +153,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 8
   },
 
-  // Cancellation & Changes
+  
   {
     category: "cancellation",
     keywords: ["cancel", "cancellation", "refund", "reschedule", "modify", "change booking", "can i cancel"],
@@ -169,7 +169,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 7
   },
 
-  // Contact & Support
+  
   {
     category: "contact",
     keywords: ["contact", "support", "help", "email", "phone", "whatsapp", "reach", "customer service", "talk to someone"],
@@ -178,7 +178,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 9
   },
 
-  // Duration Questions
+  
   {
     category: "duration",
     keywords: ["how long", "duration", "time", "hours", "length", "how many hours"],
@@ -187,7 +187,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 8
   },
 
-  // Age & Family
+  
   {
     category: "family_friendly",
     keywords: ["children", "kids", "family", "age", "child friendly", "suitable for kids", "family tour"],
@@ -196,7 +196,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 7
   },
 
-  // Best time & recommendations
+  
   {
     category: "best_time",
     keywords: ["best time", "when to visit", "season", "recommend", "when should"],
@@ -205,7 +205,7 @@ const knowledgeBase: KnowledgeBase[] = [
     priority: 7
   },
 
-  // What's included
+  
   {
     category: "whats_included",
     keywords: ["included", "what's included", "inclusions", "what do i get", "package includes"],
@@ -245,48 +245,48 @@ function calculateMatchScore(query: string, keywords: string[], priority: number
   for (const keyword of keywords) {
     const normalizedKeyword = normalizeText(keyword);
 
-    // Exact phrase match gets highest score
+    
     if (normalizedQuery.includes(normalizedKeyword)) {
       score += 5;
     } else {
-      // Partial word matches
+      
       const keywordWords = normalizedKeyword.split(" ");
       keywordWords.forEach(word => {
-        if (queryWords.has(word) && word.length > 2) { // Ignore very short words
+        if (queryWords.has(word) && word.length > 2) { 
           score += 1;
         }
       });
     }
   }
 
-  // Apply priority multiplier
+  
   return score * (priority / 5);
 }
 
 export function getChatbotResponse(userMessage: string): string {
   const normalizedMessage = normalizeText(userMessage);
 
-  // Handle greetings
+  
   if (/\b(hi|hello|hey|good morning|good afternoon|good evening|greetings)\b/.test(normalizedMessage)) {
     return greetings[Math.floor(Math.random() * greetings.length)];
   }
 
-  // Handle thanks
+  
   if (/\b(thanks|thank you|appreciate|grateful)\b/.test(normalizedMessage)) {
     return "You're very welcome! 😊 Feel free to ask anything else about our UAE experiences. Have a wonderful day! 🌟";
   }
 
-  // Handle goodbye
+  
   if (/\b(bye|goodbye|see you|later|take care)\b/.test(normalizedMessage)) {
     return "Thank you for choosing Travel Guroo! We look forward to creating unforgettable memories with you. Safe travels! 🌟✈️";
   }
 
-  // Handle yes/no without context
+  
   if (/^(yes|yeah|yep|no|nope|nah|ok|okay)$/i.test(normalizedMessage)) {
     return "I'm here to help! What would you like to know about our Desert Safaris, Dhow Cruises, Abu Dhabi tours, or booking process? 😊";
   }
 
-  // Find best match from knowledge base
+  
   let bestMatch: KnowledgeBase | null = null;
   let bestScore = 0;
 
@@ -298,12 +298,12 @@ export function getChatbotResponse(userMessage: string): string {
     }
   }
 
-  // Return best match if confidence is high enough
+  
   if (bestMatch && bestScore >= MIN_CONFIDENCE_SCORE) {
     return bestMatch.answer;
   }
 
-  // Fallback response
+  
   return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
 }
 

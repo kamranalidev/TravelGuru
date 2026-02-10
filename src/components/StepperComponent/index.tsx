@@ -10,14 +10,14 @@ import { Check } from "@mui/icons-material";
 import "./index.css";
 
 const steps = ["Select package", "Checkout", "Confirmation"];
-// Orange background container
+
 const OrangeContainer = styled(Box)(() => ({
-  // background: 'linear-gradient(135deg, #ff6f00 0%, #ff8f00 100%)',
+  
   padding: "32px",
   minHeight: "150px",
 }));
 
-// Custom connector for orange theme
+
 const OrangeConnector = styled(StepConnector)(() => ({
   [`&.${stepConnectorClasses.alternativeLabel}`]: {
     top: 22,

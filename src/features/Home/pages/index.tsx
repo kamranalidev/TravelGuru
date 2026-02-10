@@ -10,7 +10,7 @@ import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ScheduleIcon from "@mui/icons-material/Schedule";
-// Helper functions for formatting service details
+
 const formatTime = (t: string | null | undefined) => {
     if (!t)
         return null;
@@ -100,7 +100,6 @@ const getServiceImages = (service: any): string[] => {
         return images.length > 0 ? images : ["/assets/desertSafari.jpg"];
     }
     catch (imgError) {
-        console.warn("Error parsing service images:", imgError);
         return ["/assets/desertSafari.jpg"];
     }
 };
@@ -135,7 +134,6 @@ export const Homepage = () => {
                     .select("id, service_name, service_description, location, service_image, default_price, service_type, daily_slots, start_time, end_time, duration, days")
                     .order("created_at", { ascending: true });
                 if (error) {
-                    console.error("Error fetching services:", error);
                     setError("Unable to load services at the moment.");
                     setServices([]);
                 }
@@ -148,7 +146,6 @@ export const Homepage = () => {
                 }
             }
             catch (error) {
-                console.error("Unexpected error fetching services:", error);
                 setError("Unexpected error fetching services. Please try again later.");
                 setServices([]);
             }
@@ -194,7 +191,6 @@ export const Homepage = () => {
                 .order("created_at", { ascending: false })
                 .limit(100);
             if (error) {
-                console.error("Error fetching testimonials:", error);
                 setTestimonialsError("Unable to load reviews right now.");
                 setTestimonials([]);
                 return;

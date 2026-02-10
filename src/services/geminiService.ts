@@ -1,15 +1,12 @@
 import { supabase } from "../supabaseClient";
 
-// Gemini API configuration
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
-
 export interface Message {
   role: "user" | "assistant" | "system";
   content: string;
 }
-
 export interface ServiceData {
   id: number;
   service_name: string;
@@ -19,7 +16,6 @@ export interface ServiceData {
   service_type: string;
   duration: number;
 }
-
 export interface PackageData {
   id: number;
   name: string;
@@ -32,19 +28,16 @@ export interface PackageData {
   service_name?: string;
 }
 
-// Cache for dynamic data
 let servicesCache: ServiceData[] | null = null;
 let packagesCache: PackageData[] | null = null;
 let cacheTimestamp = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000;
 
-// Fetch services from Supabase
 async function fetchServices(): Promise<ServiceData[]> {
   const now = Date.now();
   if (servicesCache && now - cacheTimestamp < CACHE_DURATION) {
     return servicesCache;
   }
-
   try {
     const { data, error } = await supabase
       .from("services")
@@ -52,24 +45,20 @@ async function fetchServices(): Promise<ServiceData[]> {
         "id, service_name, service_description, location, default_price, service_type, duration",
       )
       .eq("is_active", true);
-
     if (error) throw error;
     servicesCache = data || [];
     cacheTimestamp = now;
     return servicesCache;
   } catch (error) {
-    console.error("Error fetching services:", error);
     return [];
   }
 }
 
-// Fetch packages from Supabase
 async function fetchPackages(): Promise<PackageData[]> {
   const now = Date.now();
   if (packagesCache && now - cacheTimestamp < CACHE_DURATION) {
     return packagesCache;
   }
-
   try {
     const { data, error } = await supabase
       .from("packages")
@@ -80,29 +69,28 @@ async function fetchPackages(): Promise<PackageData[]> {
       `,
       )
       .eq("is_active", true);
-
     if (error) throw error;
     packagesCache = (data || []).map((p: Record<string, unknown>) => ({
       ...p,
       service_name:
-        (p.services as { service_name?: string } | null)?.service_name ||
-        "Unknown Service",
+        (
+          p.services as {
+            service_name?: string;
+          } | null
+        )?.service_name || "Unknown Service",
     })) as PackageData[];
     cacheTimestamp = now;
     return packagesCache;
   } catch (error) {
-    console.error("Error fetching packages:", error);
     return [];
   }
 }
 
-// Build dynamic context from database
 async function buildDynamicContext(): Promise<string> {
   const [services, packages] = await Promise.all([
     fetchServices(),
     fetchPackages(),
   ]);
-
   let context = `
 ## Travel Guru - Dubai's Premier Travel Experience Platform
 
@@ -119,7 +107,6 @@ Travel Guru is a leading Dubai-based travel company specializing in authentic Ar
 
 ### Current Services Available:
 `;
-
   if (services.length > 0) {
     services.forEach((service) => {
       context += `
@@ -132,9 +119,7 @@ Travel Guru is a leading Dubai-based travel company specializing in authentic Ar
 `;
     });
   }
-
   context += `\n### Available Packages:\n`;
-
   if (packages.length > 0) {
     packages.forEach((pkg) => {
       context += `
@@ -147,7 +132,6 @@ ${pkg.includes?.length > 0 ? `- Includes: ${pkg.includes.slice(0, 3).join(", ")}
 `;
     });
   }
-
   context += `
 ### Common FAQs:
 1. **Booking Process**: Browse services → Select package → Choose date → Pay securely → Get instant confirmation
@@ -165,11 +149,9 @@ ${pkg.includes?.length > 0 ? `- Includes: ${pkg.includes.slice(0, 3).join(", ")}
 - Comfortable clothing recommended for desert activities
 - Modest dress code for mosque visits
 `;
-
   return context;
 }
 
-// Generate system prompt
 function generateSystemPrompt(context: string): string {
   return `You are the Travel Guru AI Assistant, a friendly and knowledgeable virtual concierge for Travel Guru - Dubai's premier travel experience company.
 
@@ -197,7 +179,6 @@ ${context}
 - Highlight important info (prices, times, etc.)
 - Always be positive and enthusiastic about Dubai experiences`;
 }
-
 // Call Gemini API
 export async function getGeminiResponse(
   messages: Message[],
@@ -205,15 +186,12 @@ export async function getGeminiResponse(
 ): Promise<string> {
   // Check if API key exists
   if (!GEMINI_API_KEY) {
-    console.warn("Gemini API key not configured, using fallback responses");
     return getFallbackResponse(userMessage);
   }
-
   try {
     // Build dynamic context
     const context = await buildDynamicContext();
     const systemPrompt = generateSystemPrompt(context);
-
     // Format messages for Gemini
     const formattedMessages = [
       { role: "user", parts: [{ text: systemPrompt }] },
@@ -231,7 +209,6 @@ export async function getGeminiResponse(
       })),
       { role: "user", parts: [{ text: userMessage }] },
     ];
-
     const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
@@ -265,25 +242,19 @@ export async function getGeminiResponse(
         ],
       }),
     });
-
     if (!response.ok) {
-      const error = await response.text();
-      console.error("Gemini API error:", error);
+      await response.text();
       return getFallbackResponse(userMessage);
     }
-
     const data = await response.json();
     const generatedText =
       data.candidates?.[0]?.content?.parts?.[0]?.text ||
       "I apologize, but I couldn't generate a response. Please try again or contact our support team.";
-
     return generatedText;
   } catch (error) {
-    console.error("Error calling Gemini API:", error);
     return getFallbackResponse(userMessage);
   }
 }
-
 // Fallback responses when API is unavailable — uses real data from DB
 async function getFallbackResponseAsync(message: string): Promise<string> {
   const lowerMessage = message.toLowerCase();
@@ -291,7 +262,6 @@ async function getFallbackResponseAsync(message: string): Promise<string> {
     fetchServices(),
     fetchPackages(),
   ]);
-
   // Try to find a matching service by keyword
   const matchedService = services.find((s) => {
     const name = s.service_name.toLowerCase();
@@ -306,7 +276,6 @@ async function getFallbackResponseAsync(message: string): Promise<string> {
         .some((word) => word.length > 5 && lowerMessage.includes(word))
     );
   });
-
   if (matchedService) {
     const relatedPackages = packages.filter(
       (p) => p.service_name === matchedService.service_name,
@@ -325,15 +294,12 @@ async function getFallbackResponseAsync(message: string): Promise<string> {
     response += `\nWould you like to book this experience or know more details?`;
     return response;
   }
-
   if (lowerMessage.includes("book") || lowerMessage.includes("reservation")) {
     return "📝 Booking with Travel Guroo is easy!\n\n1. Browse our services on the website\n2. Select your preferred package\n3. Choose your date and time\n4. Complete secure payment via Stripe\n5. Receive instant confirmation!\n\nNeed help with a specific booking?";
   }
-
   if (lowerMessage.includes("cancel") || lowerMessage.includes("refund")) {
     return "Our cancellation policies vary by service. Generally, free cancellation is available 24-48 hours before the experience. For specific policies, check the service page or contact our support team and we'll help you out! 🤝";
   }
-
   if (
     lowerMessage.includes("price") ||
     lowerMessage.includes("cost") ||
@@ -350,7 +316,6 @@ async function getFallbackResponseAsync(message: string): Promise<string> {
       "\nAll prices are per person. Would you like detailed pricing for a specific experience?";
     return response;
   }
-
   if (
     lowerMessage.includes("hello") ||
     lowerMessage.includes("hi") ||
@@ -362,7 +327,6 @@ async function getFallbackResponseAsync(message: string): Promise<string> {
       .join(", ");
     return `Hello! 👋 Welcome to Travel Guroo! I'm here to help you plan your perfect UAE adventure. We currently offer: ${serviceNames || "amazing experiences"}. What would you like to explore?`;
   }
-
   // Default: list all services dynamically
   if (services.length > 0) {
     let response =
@@ -374,19 +338,15 @@ async function getFallbackResponseAsync(message: string): Promise<string> {
       "\n📝 I can also help with booking, pricing, and policies. What interests you?";
     return response;
   }
-
   return "Thank you for your message! 😊 I'm here to help with all our travel experiences, bookings, pricing, and more. What would you like to know?";
 }
-
 // Synchronous fallback wrapper (calls async internally)
 function getFallbackResponse(message: string): Promise<string> {
   return getFallbackResponseAsync(message);
 }
-
 // Quick questions for the chatbot — dynamically generated from DB
 let quickQuestionsCache: string[] | null = null;
 let quickQuestionsCacheTime = 0;
-
 export function getSmartQuickQuestions(): string[] {
   // Return cached if fresh
   if (
@@ -395,10 +355,8 @@ export function getSmartQuickQuestions(): string[] {
   ) {
     return quickQuestionsCache;
   }
-
   // Start async fetch but return defaults immediately
   refreshQuickQuestions();
-
   return (
     quickQuestionsCache || [
       "What experiences do you offer?",
@@ -410,7 +368,6 @@ export function getSmartQuickQuestions(): string[] {
     ]
   );
 }
-
 async function refreshQuickQuestions(): Promise<void> {
   try {
     const services = await fetchServices();

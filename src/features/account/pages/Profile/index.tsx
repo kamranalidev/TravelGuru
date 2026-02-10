@@ -14,17 +14,14 @@ import {
 import { useAuth } from "../../../../hooks/useAuth";
 import { supabase } from "../../../../supabaseClient";
 import "./index.css";
-
 type FormState = {
   fullName: string;
   phoneNumber: string;
   avatarUrl: string;
 };
-
 export const ProfilePage = () => {
   const { session, profile, refreshProfile } = useAuth();
   const user = session?.user;
-
   const [formState, setFormState] = useState<FormState>({
     fullName: "",
     phoneNumber: "",
@@ -36,21 +33,16 @@ export const ProfilePage = () => {
   } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-
   useEffect(() => {
     if (!user) {
       setIsInitializing(false);
       return;
     }
-
     if (!profile) {
       setIsInitializing(true);
       refreshProfile()
-        .catch((error) => {
-          console.error("Unable to load profile:", error);
-        })
+        .catch((_error) => {})
         .finally(() => setIsInitializing(false));
-
       setFormState({
         fullName:
           user.user_metadata?.full_name || user.user_metadata?.name || "",
@@ -60,7 +52,6 @@ export const ProfilePage = () => {
       });
       return;
     }
-
     setFormState({
       fullName: profile.full_name || "",
       phoneNumber: profile.phone_number ? String(profile.phone_number) : "",
@@ -68,7 +59,6 @@ export const ProfilePage = () => {
     });
     setIsInitializing(false);
   }, [user, profile, refreshProfile]);
-
   const initials = useMemo(() => {
     if (formState.fullName.trim()) {
       return formState.fullName
@@ -84,9 +74,8 @@ export const ProfilePage = () => {
       "U"
     );
   }, [formState.fullName, profile?.email, user?.email]);
-
   const handleInputChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = event.target;
     setFormState((prev) => ({
@@ -94,7 +83,6 @@ export const ProfilePage = () => {
       [name]: value,
     }));
   };
-
   const handleReset = () => {
     setStatusMessage(null);
     if (profile) {
@@ -105,7 +93,6 @@ export const ProfilePage = () => {
       });
       return;
     }
-
     if (user) {
       setFormState({
         fullName:
@@ -116,16 +103,13 @@ export const ProfilePage = () => {
       });
     }
   };
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!user) return;
     setIsSaving(true);
     setStatusMessage(null);
-
     try {
       const sanitizedPhone = formState.phoneNumber.replace(/[^\d]/g, "");
-
       const profilePayload = {
         user_id: user.id,
         email: user.email,
@@ -133,15 +117,12 @@ export const ProfilePage = () => {
         phone_number: sanitizedPhone || null,
         profile_picture: formState.avatarUrl.trim() || null,
       };
-
       const { error: profileError } = await supabase
         .from("user_profiles")
         .upsert(profilePayload, { onConflict: "user_id" });
-
       if (profileError) {
         throw profileError;
       }
-
       const { error: authError } = await supabase.auth.updateUser({
         data: {
           full_name: formState.fullName,
@@ -149,30 +130,24 @@ export const ProfilePage = () => {
           avatar_url: formState.avatarUrl || null,
         },
       });
-
       if (authError) {
         throw authError;
       }
-
       await refreshProfile();
-
       const {
         data: { session: updatedSession },
       } = await supabase.auth.getSession();
-
       if (updatedSession) {
         localStorage.setItem(
           "supabase_session",
-          JSON.stringify(updatedSession)
+          JSON.stringify(updatedSession),
         );
       }
-
       setStatusMessage({
         type: "success",
         message: "Profile updated successfully.",
       });
     } catch (error: any) {
-      console.error("Failed to update profile:", error);
       setStatusMessage({
         type: "error",
         message:
@@ -182,7 +157,6 @@ export const ProfilePage = () => {
       setIsSaving(false);
     }
   };
-
   if (!user) {
     return (
       <Box
@@ -199,7 +173,6 @@ export const ProfilePage = () => {
       </Box>
     );
   }
-
   if (isInitializing) {
     return (
       <Box
@@ -214,9 +187,7 @@ export const ProfilePage = () => {
       </Box>
     );
   }
-
   const emailDisplay = profile?.email || user.email;
-
   return (
     <Box
       sx={{

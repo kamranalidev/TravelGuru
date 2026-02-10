@@ -14,10 +14,7 @@ const initialState: ServerCartState = {
   error: null,
 };
 
-/**
- * Ensures the current user has an active server-side cart row.
- * Returns the cart id.
- */
+
 export const ensureActiveServerCart = createAsyncThunk(
   "serverCart/ensureActive",
   async (userId: string) => {
@@ -45,7 +42,7 @@ export const ensureActiveServerCart = createAsyncThunk(
 export const loadServerCartToLocal = createAsyncThunk(
   "serverCart/loadToLocal",
   async (userId: string): Promise<{ cartId: string; items: CartItem[] }> => {
-    // ensure active cart
+    
     const cartId = await (async () => {
       const existing = await supabase
         .from("carts")
@@ -151,7 +148,7 @@ export const addServerCartItem = createAsyncThunk(
       address: it.address,
       unit_price_micros: Math.round((Number(it.unitPrice) || 0) * 1_000_000),
       currency: "aed",
-      // Participant data
+      
       adults: it.participants?.adults ?? 1,
       children: it.participants?.children ?? 0,
       infants: it.participants?.infants ?? 0,
@@ -172,7 +169,7 @@ export const addServerCartItem = createAsyncThunk(
 
     const { error } = await supabase.from("cart_items").insert(row);
     if (error) {
-      // ignore duplicates per unique index (cart_id, service_id, booking_date, coalesce(time,'00:00:00'))
+      
       if (
         String((error as any).code) === "23505" ||
         (error as any).status === 409
@@ -194,7 +191,7 @@ export const removeServerCartItem = createAsyncThunk(
     bookingDate: string;
     bookingTime: string | null;
   }) => {
-    // We can't express the COALESCE index directly, but we can reproduce it with OR.
+    
     const t = args.bookingTime;
     let q = supabase
       .from("cart_items")
@@ -204,7 +201,7 @@ export const removeServerCartItem = createAsyncThunk(
       .eq("booking_date", args.bookingDate);
 
     if (t == null || t === "") {
-      // match rows where time is NULL OR time='00:00:00'
+      
       q = q.or(
         "departure_arrival_time.is.null,departure_arrival_time.eq.00:00:00",
       );
@@ -231,9 +228,7 @@ export const clearServerCart = createAsyncThunk(
   },
 );
 
-/**
- * Push local Redux cart items to server cart.
- */
+
 export const syncCartToServer = createAsyncThunk(
   "serverCart/syncToServer",
   async (args: { userId: string; items: CartItem[] }) => {

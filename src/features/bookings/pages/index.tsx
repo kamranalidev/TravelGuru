@@ -30,7 +30,7 @@ import type { AppDispatch, RootState } from "../../../store/store.ts";
 import { addItem, type CartItem, } from "../../../store/features/cart/cartSlice.ts";
 import { addServerCartItem } from "../../../store/features/serverCart/serverCartSlice.ts";
 import dayjs, { Dayjs } from "dayjs";
-// ============ Type Definitions ============
+
 interface ServiceImage {
     url?: string;
     path?: string;
@@ -72,8 +72,8 @@ interface PackageData {
     combo_items?: Array<{
         name: string;
         price: number;
-    }>; // Inline combo items
-    original_price?: number; // For showing savings on combo
+    }>; 
+    original_price?: number; 
     cancellation_policy?: string | {
         type?: string;
         details?: string;
@@ -118,7 +118,7 @@ interface ServiceRecord {
     updated_at?: string;
     service_image?: string | ServiceImage[] | ServiceImage;
 }
-// ============ Helper Functions ============
+
 const formatTime = (t: string | null | undefined) => {
     if (!t)
         return null;
@@ -333,7 +333,6 @@ export const BookingPage = () => {
                     .eq("service_id", pageData.id)
                     .eq("booking_date", bookingDate);
                 if (error) {
-                    console.error("Error checking booking capacity:", error);
                     setSlotsBooked(0);
                 }
                 else {
@@ -341,7 +340,6 @@ export const BookingPage = () => {
                 }
             }
             catch (err) {
-                console.error("Unexpected error checking capacity:", err);
                 setSlotsBooked(0);
             }
             finally {
@@ -438,7 +436,6 @@ export const BookingPage = () => {
             const stateRecord = state as ServiceRecord | null;
             const idToUse = stateRecord?.id ?? serviceIdFromRoute;
             if (!idToUse) {
-                console.warn("No service ID provided for fetching packages");
                 return;
             }
             try {
@@ -449,7 +446,6 @@ export const BookingPage = () => {
                     .eq("service_id", idToUse)
                     .order("price", { ascending: true });
                 if (error) {
-                    console.error("Error fetching packages:", error);
                     setPackages([]);
                 }
                 else if (Array.isArray(data)) {
@@ -462,7 +458,6 @@ export const BookingPage = () => {
                 }
             }
             catch (error) {
-                console.error("Unexpected error fetching packages:", error);
                 setPackages([]);
             }
             finally {
@@ -529,7 +524,6 @@ export const BookingPage = () => {
     // Handle booking navigation with all data
     const handleBookNow = () => {
         if (!pageData.id) {
-            console.warn("No service ID available for booking");
             return;
         }
         // Block booking if service is full for the selected date

@@ -9,14 +9,29 @@ const TARGET_DIRS = ["src", "another_dashboard/src"];
 const SUPPORTED_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx"]);
 const STRIP_COMMENTS = process.argv.includes("--comments");
 
-function isConsoleLogCall(expr) {
-  return (
-    ts.isCallExpression(expr) &&
-    ts.isPropertyAccessExpression(expr.expression) &&
-    ts.isIdentifier(expr.expression.expression) &&
-    expr.expression.expression.text === "console" &&
-    expr.expression.name.text === "log"
-  );
+function isConsoleCall(expr) {
+  if (!ts.isCallExpression(expr)) return false;
+
+  const callTarget = expr.expression;
+
+  if (
+    ts.isPropertyAccessExpression(callTarget) &&
+    ts.isIdentifier(callTarget.expression) &&
+    callTarget.expression.text === "console"
+  ) {
+    return true;
+  }
+
+  if (
+    ts.isElementAccessExpression(callTarget) &&
+    ts.isIdentifier(callTarget.expression) &&
+    callTarget.expression.text === "console" &&
+    ts.isStringLiteral(callTarget.argumentExpression)
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 function getScriptKind(filePath) {
@@ -88,10 +103,11 @@ function transformFile(filePath) {
   );
 
   let removedLogsInFile = 0;
+  const voidZero = ts.factory.createVoidZero();
 
   const transformer = (context) => {
     const visit = (node) => {
-      if (ts.isExpressionStatement(node) && isConsoleLogCall(node.expression)) {
+      if (ts.isExpressionStatement(node) && isConsoleCall(node.expression)) {
         removedLogsInFile += 1;
         const parent = node.parent;
 
@@ -106,6 +122,11 @@ function transformFile(filePath) {
         }
 
         return ts.factory.createEmptyStatement();
+      }
+
+      if (ts.isCallExpression(node) && isConsoleCall(node)) {
+        removedLogsInFile += 1;
+        return voidZero;
       }
 
       return ts.visitEachChild(node, visit, context);
@@ -153,10 +174,10 @@ for (const filePath of files) {
 
 if (STRIP_COMMENTS) {
   console.log(
-    `Removed ${totalRemovedLogs} console.log statement(s) and ${totalRemovedComments} comment(s) from ${touchedFiles} file(s).`
+    `Removed ${totalRemovedLogs} console statement(s) and ${totalRemovedComments} comment(s) from ${touchedFiles} file(s).`
   );
 } else {
   console.log(
-    `Removed ${totalRemovedLogs} console.log statement(s) from ${touchedFiles} file(s).`
+    `Removed ${totalRemovedLogs} console statement(s) from ${touchedFiles} file(s).`
   );
 }
