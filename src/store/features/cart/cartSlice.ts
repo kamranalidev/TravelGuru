@@ -30,6 +30,16 @@ export type CartItem = {
   participantPricing?: ParticipantPricing;
   childAgeRange?: string | null;
   infantAgeRange?: string | null;
+  // Selected sub-package (replaces pricingType/pricingUnitLabel/guestsPerUnit)
+  selectedSubPackage?: {
+    name: string;
+    price: number;
+  } | null;
+  // Transfer/pickup options
+  transferType?: "none" | "one_way" | "round_trip" | null;
+  transferPrice?: number;
+  // Time selection
+  selectedTime?: string | null;
 };
 
 export type CartState = {
@@ -41,23 +51,27 @@ const initialState: CartState = {
 };
 
 const keyOf = (i: CartItem) =>
-  `${i.serviceId}__${i.packageId ?? "base"}__${i.bookingDate}__${i.bookingTime ?? ""}`;
+  `${i.serviceId}__${i.packageId ?? "base"}__${i.bookingDate}__${i.bookingTime ?? ""}__${i.selectedTime ?? ""}`;
 
 // Calculate total price based on participants
 export const calculateTotalFromParticipants = (item: CartItem): number => {
   const pricing = item.participantPricing;
   const participants = item.participants;
 
+  let base: number;
   if (!pricing) {
     // Fall back to unitPrice * quantity if no participant pricing
-    return item.unitPrice * item.quantity;
+    base = item.unitPrice * item.quantity;
+  } else {
+    const adultTotal = participants.adults * pricing.adultPrice;
+    const childTotal = participants.children * (pricing.childPrice ?? 0);
+    const infantTotal = participants.infants * (pricing.infantPrice ?? 0);
+    base = adultTotal + childTotal + infantTotal;
   }
 
-  const adultTotal = participants.adults * pricing.adultPrice;
-  const childTotal = participants.children * (pricing.childPrice ?? 0);
-  const infantTotal = participants.infants * (pricing.infantPrice ?? 0);
-
-  return adultTotal + childTotal + infantTotal;
+  // Add transfer price if selected
+  const transferPrice = item.transferPrice ?? 0;
+  return base + transferPrice;
 };
 
 export const cartSlice = createSlice({

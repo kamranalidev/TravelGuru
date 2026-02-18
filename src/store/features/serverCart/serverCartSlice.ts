@@ -14,7 +14,6 @@ const initialState: ServerCartState = {
   error: null,
 };
 
-
 export const ensureActiveServerCart = createAsyncThunk(
   "serverCart/ensureActive",
   async (userId: string) => {
@@ -42,7 +41,6 @@ export const ensureActiveServerCart = createAsyncThunk(
 export const loadServerCartToLocal = createAsyncThunk(
   "serverCart/loadToLocal",
   async (userId: string): Promise<{ cartId: string; items: CartItem[] }> => {
-    
     const cartId = await (async () => {
       const existing = await supabase
         .from("carts")
@@ -65,7 +63,7 @@ export const loadServerCartToLocal = createAsyncThunk(
     const { data, error } = await supabase
       .from("cart_items")
       .select(
-        "service_id, package_id, booking_date, departure_arrival_time, airport_type, address, unit_price_micros, currency, adults, children, infants, adult_price_micros, child_price_micros, infant_price_micros, child_age_range, infant_age_range, services(service_name, location), packages(name)",
+        "service_id, package_id, booking_date, departure_arrival_time, airport_type, address, unit_price_micros, currency, adults, children, infants, adult_price_micros, child_price_micros, infant_price_micros, child_age_range, infant_age_range, transfer_type, transfer_price_micros, selected_time, services(service_name, location), packages(name)",
       )
       .eq("cart_id", cartId)
       .order("created_at", { ascending: true });
@@ -108,6 +106,12 @@ export const loadServerCartToLocal = createAsyncThunk(
         },
         childAgeRange: row.child_age_range ?? null,
         infantAgeRange: row.infant_age_range ?? null,
+        transferType: row.transfer_type ?? null,
+        transferPrice:
+          row.transfer_price_micros != null
+            ? Number(row.transfer_price_micros) / 1_000_000
+            : 0,
+        selectedTime: row.selected_time ?? null,
       };
     });
 
@@ -148,7 +152,7 @@ export const addServerCartItem = createAsyncThunk(
       address: it.address,
       unit_price_micros: Math.round((Number(it.unitPrice) || 0) * 1_000_000),
       currency: "aed",
-      
+
       adults: it.participants?.adults ?? 1,
       children: it.participants?.children ?? 0,
       infants: it.participants?.infants ?? 0,
@@ -165,11 +169,15 @@ export const addServerCartItem = createAsyncThunk(
           : null,
       child_age_range: it.childAgeRange ?? null,
       infant_age_range: it.infantAgeRange ?? null,
+      transfer_type: it.transferType ?? null,
+      transfer_price_micros: it.transferPrice
+        ? Math.round(it.transferPrice * 1_000_000)
+        : 0,
+      selected_time: it.selectedTime ?? null,
     };
 
     const { error } = await supabase.from("cart_items").insert(row);
     if (error) {
-      
       if (
         String((error as any).code) === "23505" ||
         (error as any).status === 409
@@ -191,7 +199,6 @@ export const removeServerCartItem = createAsyncThunk(
     bookingDate: string;
     bookingTime: string | null;
   }) => {
-    
     const t = args.bookingTime;
     let q = supabase
       .from("cart_items")
@@ -201,7 +208,6 @@ export const removeServerCartItem = createAsyncThunk(
       .eq("booking_date", args.bookingDate);
 
     if (t == null || t === "") {
-      
       q = q.or(
         "departure_arrival_time.is.null,departure_arrival_time.eq.00:00:00",
       );
@@ -227,7 +233,6 @@ export const clearServerCart = createAsyncThunk(
     return { cleared: true };
   },
 );
-
 
 export const syncCartToServer = createAsyncThunk(
   "serverCart/syncToServer",
@@ -266,6 +271,11 @@ export const syncCartToServer = createAsyncThunk(
       address: it.address,
       unit_price_micros: Math.round((Number(it.unitPrice) || 0) * 1_000_000),
       currency: "aed",
+      transfer_type: it.transferType ?? null,
+      transfer_price_micros: it.transferPrice
+        ? Math.round(it.transferPrice * 1_000_000)
+        : 0,
+      selected_time: it.selectedTime ?? null,
     }));
 
     let inserted = 0;
