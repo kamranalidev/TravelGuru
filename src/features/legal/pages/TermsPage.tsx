@@ -16,7 +16,7 @@ Cancellation policies vary by service. Please refer to the specific service deta
 Booking modifications are subject to availability and may incur additional charges.
 
 4. LIABILITY
-Travel Guru acts as an intermediary between customers and service providers.
+Travel Guroo acts as an intermediary between customers and service providers.
 
 5. REFUNDS
 Approved refunds will be processed within 7-14 business days to the original payment method.

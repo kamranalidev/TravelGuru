@@ -84,7 +84,7 @@ export const UpdatePasswordPage = () => {
             className="auth-logo"
           />
           <Typography variant="h4" className="auth-title">
-            Travel Guru
+            Travel Guroo
           </Typography>
           <Typography variant="h5" className="auth-subtitle">
             Update Password

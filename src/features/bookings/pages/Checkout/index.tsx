@@ -18,7 +18,10 @@ import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { useState } from "react";
 import { supabase } from "../../../../supabaseClient.ts";
 import { useDispatch, useSelector } from "react-redux";
-import { clearCart, calculateTotalFromParticipants } from "../../../../store/features/cart/cartSlice";
+import {
+  clearCart,
+  calculateTotalFromParticipants,
+} from "../../../../store/features/cart/cartSlice";
 import type { AppDispatch, RootState } from "../../../../store/store";
 import {
   clearServerCart,

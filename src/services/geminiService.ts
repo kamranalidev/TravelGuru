@@ -92,10 +92,10 @@ async function buildDynamicContext(): Promise<string> {
     fetchPackages(),
   ]);
   let context = `
-## Travel Guru - Dubai's Premier Travel Experience Platform
+## Travel Guroo - Dubai's Premier Travel Experience Platform
 
 ### Company Overview
-Travel Guru is a leading Dubai-based travel company specializing in authentic Arabian experiences. We offer desert safaris, dhow cruises, city tours, airport transfers, and more. Our mission is to create unforgettable memories for travelers from around the world.
+Travel Guroo is a leading Dubai-based travel company specializing in authentic Arabian experiences. We offer desert safaris, dhow cruises, city tours, airport transfers, and more. Our mission is to create unforgettable memories for travelers from around the world.
 
 ### Key Information
 - **Location**: Dubai, UAE
@@ -153,7 +153,7 @@ ${pkg.includes?.length > 0 ? `- Includes: ${pkg.includes.slice(0, 3).join(", ")}
 }
 
 function generateSystemPrompt(context: string): string {
-  return `You are the Travel Guru AI Assistant, a friendly and knowledgeable virtual concierge for Travel Guru - Dubai's premier travel experience company.
+  return `You are the Travel Guroo AI Assistant, a friendly and knowledgeable virtual concierge for Travel Guru - Dubai's premier travel experience company.
 
 ${context}
 
@@ -199,7 +199,7 @@ export async function getGeminiResponse(
         role: "model",
         parts: [
           {
-            text: "I understand. I'm the Travel Guru AI Assistant, ready to help with Dubai travel experiences!",
+            text: "I understand. I'm the Travel Guroo AI Assistant, ready to help with Dubai travel experiences!",
           },
         ],
       },

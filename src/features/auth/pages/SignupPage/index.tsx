@@ -91,7 +91,7 @@ export const SignupPage = () => {
               className="auth-branding-logo"
             />
             <Typography className="auth-branding-title">
-              Join Travel Guru Today
+              Join Travel Guroo Today
             </Typography>
             <Typography className="auth-branding-subtitle">
               Create an account and start exploring Dubai

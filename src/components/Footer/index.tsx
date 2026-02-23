@@ -42,7 +42,7 @@ export const Footer = () => {
                   className="footer-logo"
                 />
                 <Typography className="footer-logo-text">
-                  Travel Guru
+                  Travel Guroo
                 </Typography>
               </Box>
               <Typography className="footer-tagline">
