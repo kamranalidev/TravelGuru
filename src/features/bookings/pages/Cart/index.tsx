@@ -5,13 +5,10 @@ import {
   Button,
   Chip,
   Divider,
-  IconButton,
   Paper,
   Stack,
   Typography,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -28,7 +25,6 @@ import {
   clearCart,
   removeItem,
   addItem,
-  updateParticipants,
   type CartItem,
 } from "../../../../store/features/cart/cartSlice.ts";
 import { useAuth } from "../../../../hooks/useAuth.tsx";
@@ -84,7 +80,7 @@ export const CartPage: React.FC = () => {
         const res = await dispatch(loadServerCartToLocal(userId)).unwrap();
         dispatch(clearCart());
         for (const it of res.items) dispatch(addItem(it as CartItem));
-      } catch (e) {}
+      } catch (e) { }
     };
     void load();
   }, [dispatch, session?.user?.id]);
@@ -122,33 +118,6 @@ export const CartPage: React.FC = () => {
       setError(err?.message ?? "Failed to clear cart");
     }
   };
-  const handleParticipantChange = async (
-    it: CartItem,
-    type: "adults" | "children" | "infants",
-    delta: number,
-  ) => {
-    const current = it.participants || {
-      adults: it.quantity || 1,
-      children: 0,
-      infants: 0,
-    };
-    const newValue = (current[type] || 0) + delta;
-    // Minimum: 1 adult, 0 children/infants
-    if (type === "adults" && newValue < 1) return;
-    if (newValue < 0) return;
-    dispatch(
-      updateParticipants({
-        serviceId: it.serviceId,
-        packageId: it.packageId,
-        bookingDate: it.bookingDate,
-        bookingTime: it.bookingTime,
-        participants: {
-          ...current,
-          [type]: newValue,
-        },
-      }),
-    );
-  };
   const removeOne = async (it: CartItem) => {
     setError(null);
     const userId = session?.user?.id;
@@ -173,7 +142,7 @@ export const CartPage: React.FC = () => {
           bookingTime: it.bookingTime,
         }),
       ).unwrap();
-    } catch (e) {}
+    } catch (e) { }
   };
   const goToCheckout = () => {
     setError(null);
@@ -298,96 +267,112 @@ export const CartPage: React.FC = () => {
             </Button>
           </Paper>
         ) : (
-          <Stack spacing={2}>
-            {/* Cart Items */}
-            {items.map((it: CartItem) => (
-              <Paper
-                key={`${it.serviceId}-${it.packageId ?? "base"}-${it.bookingDate}-${it.bookingTime ?? ""}`}
-                elevation={0}
-                sx={{
-                  p: 0,
-                  borderRadius: 3,
-                  border: "1px solid #e0e0e0",
-                  overflow: "hidden",
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                    borderColor: "#FF621F40",
-                  },
-                }}
-              >
-                <Stack
-                  direction={{ xs: "column", md: "row" }}
-                  spacing={0}
-                  sx={{ height: "100%" }}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 4, alignItems: 'start' }}>
+            <Stack spacing={2}>
+              {/* Cart Items */}
+              {items.map((it: CartItem) => (
+                <Paper
+                  key={`${it.serviceId}-${it.packageId ?? "base"}-${it.bookingDate}-${it.bookingTime ?? ""}`}
+                  elevation={0}
+                  sx={{
+                    p: 0,
+                    borderRadius: 3,
+                    border: "1px solid #e0e0e0",
+                    overflow: "hidden",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+                      borderColor: "#FF621F40",
+                    },
+                  }}
                 >
-                  {/* Service Image */}
-                  {it.serviceImage && (
-                    <Box
-                      sx={{
-                        width: { xs: "100%", md: 200 },
-                        height: { xs: 150, md: "auto" },
-                        minHeight: { md: 180 },
-                        flexShrink: 0,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <img
-                        src={it.serviceImage}
-                        alt={it.serviceName || "Service"}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
+                  <Stack
+                    direction={{ xs: "column", md: "row" }}
+                    spacing={0}
+                    sx={{ height: "100%" }}
+                  >
+                    {/* Service Image */}
+                    {it.serviceImage && (
+                      <Box
+                        sx={{
+                          width: { xs: "100%", md: 200 },
+                          height: { xs: 150, md: "auto" },
+                          minHeight: { md: 180 },
+                          flexShrink: 0,
+                          overflow: "hidden",
                         }}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            "/assets/desertSafari.jpg";
-                        }}
-                      />
-                    </Box>
-                  )}
-
-                  {/* Content */}
-                  <Box sx={{ flex: 1, p: 2.5 }}>
-                    <Stack
-                      direction={{ xs: "column", sm: "row" }}
-                      justifyContent="space-between"
-                      spacing={2}
-                    >
-                      {/* Left side - Details */}
-                      <Box sx={{ flex: 1 }}>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontWeight: 700,
-                            color: "#1a1a2e",
-                            mb: 1,
-                            lineHeight: 1.3,
+                      >
+                        <img
+                          src={it.serviceImage}
+                          alt={it.serviceName || "Service"}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
                           }}
-                        >
-                          {it.serviceName ?? `Service #${it.serviceId}`}
-                        </Typography>
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "/assets/desertSafari.jpg";
+                          }}
+                        />
+                      </Box>
+                    )}
 
-                        {it.packageName && (
-                          <Chip
-                            icon={
-                              <ConfirmationNumberIcon sx={{ fontSize: 16 }} />
-                            }
-                            label={it.packageName}
-                            size="small"
+                    {/* Content */}
+                    <Box sx={{ flex: 1, p: 2.5 }}>
+                      <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        justifyContent="space-between"
+                        spacing={2}
+                      >
+                        {/* Left side - Details */}
+                        <Box sx={{ flex: 1 }}>
+                          <Typography
+                            variant="h6"
                             sx={{
-                              mb: 1.5,
-                              bgcolor: "#FF621F15",
-                              color: "#FF621F",
-                              fontWeight: 600,
-                              "& .MuiChip-icon": { color: "#FF621F" },
+                              fontWeight: 700,
+                              color: "#1a1a2e",
+                              mb: 1,
+                              lineHeight: 1.3,
                             }}
-                          />
-                        )}
+                          >
+                            {it.serviceName ?? `Service #${it.serviceId}`}
+                          </Typography>
 
-                        <Stack spacing={0.5}>
-                          {it.location && (
+                          {it.packageName && (
+                            <Chip
+                              icon={
+                                <ConfirmationNumberIcon sx={{ fontSize: 16 }} />
+                              }
+                              label={it.packageName}
+                              size="small"
+                              sx={{
+                                mb: 1.5,
+                                bgcolor: "#FF621F15",
+                                color: "#FF621F",
+                                fontWeight: 600,
+                                "& .MuiChip-icon": { color: "#FF621F" },
+                              }}
+                            />
+                          )}
+
+                          <Stack spacing={0.5}>
+                            {it.location && (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                }}
+                              >
+                                <LocationOnIcon
+                                  sx={{ fontSize: 16, color: "#999" }}
+                                />
+                                {it.location}
+                              </Typography>
+                            )}
                             <Typography
                               variant="body2"
                               color="text.secondary"
@@ -397,560 +382,284 @@ export const CartPage: React.FC = () => {
                                 gap: 0.5,
                               }}
                             >
-                              <LocationOnIcon
+                              <CalendarTodayIcon
                                 sx={{ fontSize: 16, color: "#999" }}
                               />
-                              {it.location}
+                              {it.bookingDate}
                             </Typography>
+                            {it.bookingTime && (
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                }}
+                              >
+                                <AccessTimeIcon
+                                  sx={{ fontSize: 16, color: "#999" }}
+                                />
+                                {it.bookingTime}
+                              </Typography>
+                            )}
+                          </Stack>
+
+                          {it.airportType && (
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              sx={{ mt: 1.5, flexWrap: "wrap" }}
+                            >
+                              <Chip
+                                size="small"
+                                label={`Airport ${it.airportType}`}
+                                sx={{ bgcolor: "#e3f2fd", color: "#1565c0" }}
+                              />
+                              {it.airportType === "dropoff" && it.address && (
+                                <Chip
+                                  size="small"
+                                  label={it.address}
+                                  variant="outlined"
+                                />
+                              )}
+                            </Stack>
                           )}
+
+                          {/* Selected time slot */}
+                          {it.selectedTime && (
+                            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                              <Chip
+                                size="small"
+                                icon={<AccessTimeIcon sx={{ fontSize: 14 }} />}
+                                label={it.selectedTime}
+                                sx={{ bgcolor: "#f3e8fd", color: "#7b1fa2" }}
+                              />
+                            </Stack>
+                          )}
+
+                          {/* Transfer option */}
+                          {it.transferType && it.transferType !== "none" && (
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              sx={{ mt: 1, flexWrap: "wrap" }}
+                            >
+                              <Chip
+                                size="small"
+                                label={
+                                  it.transferType === "round_trip"
+                                    ? "🚗 Round trip transfer"
+                                    : "🚗 One way transfer"
+                                }
+                                sx={{ bgcolor: "#e8f5e9", color: "#2e7d32" }}
+                              />
+                              {(it.transferPrice ?? 0) > 0 && (
+                                <Chip
+                                  size="small"
+                                  label={`+${formatAED(it.transferPrice ?? 0)}`}
+                                  variant="outlined"
+                                  sx={{
+                                    borderColor: "#2e7d32",
+                                    color: "#2e7d32",
+                                  }}
+                                />
+                              )}
+                            </Stack>
+                          )}
+                        </Box>
+
+                        {/* Right side - Price and Quantity */}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: { xs: "flex-start", sm: "flex-end" },
+                            justifyContent: "space-between",
+                            minWidth: { sm: 180 },
+                          }}
+                        >
+                          {/* Unit Price */}
                           <Typography
                             variant="body2"
                             color="text.secondary"
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
+                            sx={{ mb: 0.5 }}
                           >
-                            <CalendarTodayIcon
-                              sx={{ fontSize: 16, color: "#999" }}
-                            />
-                            {it.bookingDate}
-                          </Typography>
-                          {it.bookingTime && (
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <AccessTimeIcon
-                                sx={{ fontSize: 16, color: "#999" }}
-                              />
-                              {it.bookingTime}
-                            </Typography>
-                          )}
-                        </Stack>
-
-                        {it.airportType && (
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{ mt: 1.5, flexWrap: "wrap" }}
-                          >
-                            <Chip
-                              size="small"
-                              label={`Airport ${it.airportType}`}
-                              sx={{ bgcolor: "#e3f2fd", color: "#1565c0" }}
-                            />
-                            {it.airportType === "dropoff" && it.address && (
-                              <Chip
-                                size="small"
-                                label={it.address}
-                                variant="outlined"
-                              />
-                            )}
-                          </Stack>
-                        )}
-
-                        {/* Selected time slot */}
-                        {it.selectedTime && (
-                          <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                            <Chip
-                              size="small"
-                              icon={<AccessTimeIcon sx={{ fontSize: 14 }} />}
-                              label={it.selectedTime}
-                              sx={{ bgcolor: "#f3e8fd", color: "#7b1fa2" }}
-                            />
-                          </Stack>
-                        )}
-
-                        {/* Transfer option */}
-                        {it.transferType && it.transferType !== "none" && (
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{ mt: 1, flexWrap: "wrap" }}
-                          >
-                            <Chip
-                              size="small"
-                              label={
-                                it.transferType === "round_trip"
-                                  ? "🚗 Round trip transfer"
-                                  : "🚗 One way transfer"
-                              }
-                              sx={{ bgcolor: "#e8f5e9", color: "#2e7d32" }}
-                            />
-                            {(it.transferPrice ?? 0) > 0 && (
-                              <Chip
-                                size="small"
-                                label={`+${formatAED(it.transferPrice ?? 0)}`}
-                                variant="outlined"
-                                sx={{
-                                  borderColor: "#2e7d32",
-                                  color: "#2e7d32",
-                                }}
-                              />
-                            )}
-                          </Stack>
-                        )}
-                      </Box>
-
-                      {/* Right side - Price and Quantity */}
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: { xs: "flex-start", sm: "flex-end" },
-                          justifyContent: "space-between",
-                          minWidth: { sm: 180 },
-                        }}
-                      >
-                        {/* Unit Price */}
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ mb: 0.5 }}
-                        >
-                          {formatAED(it.unitPrice)} each
-                        </Typography>
-
-                        {/* Participant Controls */}
-                        <Box
-                          sx={{
-                            mb: 1.5,
-                            p: 1.5,
-                            bgcolor: "#f8f9fa",
-                            borderRadius: 1.5,
-                            minWidth: 220,
-                          }}
-                        >
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontWeight: 700,
-                              color: "#444",
-                              display: "block",
-                              mb: 1,
-                            }}
-                          >
-                            Guests
+                            {formatAED(it.unitPrice)} each
                           </Typography>
 
-                          {/* Adults */}
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              mb: 1,
-                            }}
-                          >
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: 600, fontSize: 13 }}
-                              >
-                                👤 Adults
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                sx={{ color: "#888" }}
-                              >
-                                {formatAED(
-                                  it.participantPricing?.adultPrice ??
-                                    it.unitPrice,
-                                )}
-                                /person
-                              </Typography>
-                            </Box>
+                          {/* Ticket Breakdown Summary */}
+                          {it.participants && (
                             <Box
                               sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
+                                mb: 1,
+                                p: 1,
+                                bgcolor: "#fff8f5",
+                                borderRadius: 1,
+                                border: "1px solid #FF621F20",
                               }}
                             >
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  void handleParticipantChange(it, "adults", -1)
-                                }
-                                disabled={(it.participants?.adults ?? 1) <= 1}
-                                sx={{
-                                  width: 28,
-                                  height: 28,
-                                  bgcolor: "white",
-                                  "&.Mui-disabled": { opacity: 0.4 },
-                                }}
-                              >
-                                <RemoveIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                              <Typography
-                                sx={{
-                                  fontWeight: 700,
-                                  minWidth: 24,
-                                  textAlign: "center",
-                                }}
-                              >
-                                {it.participants?.adults ?? 1}
-                              </Typography>
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  void handleParticipantChange(it, "adults", 1)
-                                }
-                                sx={{ width: 28, height: 28, bgcolor: "white" }}
-                              >
-                                <AddIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                            </Box>
-                          </Box>
-
-                          {/* Children - Always show so users can add children */}
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                              mb: 1,
-                            }}
-                          >
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: 600, fontSize: 13 }}
-                              >
-                                👦 Children
-                              </Typography>
                               <Typography
                                 variant="caption"
                                 sx={{
-                                  color:
-                                    !it.participantPricing?.childPrice ||
-                                    it.participantPricing?.childPrice === 0
-                                      ? "#4CAF50"
-                                      : "#888",
+                                  fontWeight: 600,
+                                  color: "#666",
+                                  display: "block",
+                                  mb: 0.5,
                                 }}
                               >
-                                {!it.participantPricing?.childPrice ||
-                                it.participantPricing?.childPrice === 0
-                                  ? "FREE"
-                                  : `${formatAED(it.participantPricing?.childPrice ?? 0)}/child`}{" "}
-                                ({it.childAgeRange || "3-12 yrs"})
+                                Price Breakdown
                               </Typography>
-                            </Box>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  void handleParticipantChange(
-                                    it,
-                                    "children",
-                                    -1,
-                                  )
-                                }
-                                disabled={(it.participants?.children ?? 0) <= 0}
-                                sx={{
-                                  width: 28,
-                                  height: 28,
-                                  bgcolor: "white",
-                                  "&.Mui-disabled": { opacity: 0.4 },
-                                }}
-                              >
-                                <RemoveIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                              <Typography
-                                sx={{
-                                  fontWeight: 700,
-                                  minWidth: 24,
-                                  textAlign: "center",
-                                }}
-                              >
-                                {it.participants?.children ?? 0}
-                              </Typography>
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  void handleParticipantChange(
-                                    it,
-                                    "children",
-                                    1,
-                                  )
-                                }
-                                sx={{
-                                  width: 28,
-                                  height: 28,
-                                  bgcolor: "white",
-                                }}
-                              >
-                                <AddIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                            </Box>
-                          </Box>
-
-                          {/* Infants - Always show so users can add infants */}
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Box>
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: 600, fontSize: 13 }}
-                              >
-                                👶 Infants
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color:
-                                    !it.participantPricing?.infantPrice ||
-                                    it.participantPricing?.infantPrice === 0
-                                      ? "#4CAF50"
-                                      : "#888",
-                                }}
-                              >
-                                {!it.participantPricing?.infantPrice ||
-                                it.participantPricing?.infantPrice === 0
-                                  ? "FREE"
-                                  : `${formatAED(it.participantPricing?.infantPrice ?? 0)}/infant`}{" "}
-                                ({it.infantAgeRange || "0-2 yrs"})
-                              </Typography>
-                            </Box>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                              }}
-                            >
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  void handleParticipantChange(
-                                    it,
-                                    "infants",
-                                    -1,
-                                  )
-                                }
-                                disabled={(it.participants?.infants ?? 0) <= 0}
-                                sx={{
-                                  width: 28,
-                                  height: 28,
-                                  bgcolor: "white",
-                                  "&.Mui-disabled": { opacity: 0.4 },
-                                }}
-                              >
-                                <RemoveIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                              <Typography
-                                sx={{
-                                  fontWeight: 700,
-                                  minWidth: 24,
-                                  textAlign: "center",
-                                }}
-                              >
-                                {it.participants?.infants ?? 0}
-                              </Typography>
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  void handleParticipantChange(it, "infants", 1)
-                                }
-                                sx={{
-                                  width: 28,
-                                  height: 28,
-                                  bgcolor: "white",
-                                }}
-                              >
-                                <AddIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                            </Box>
-                          </Box>
-                        </Box>
-
-                        {/* Ticket Breakdown Summary */}
-                        {it.participants && (
-                          <Box
-                            sx={{
-                              mb: 1,
-                              p: 1,
-                              bgcolor: "#fff8f5",
-                              borderRadius: 1,
-                              border: "1px solid #FF621F20",
-                            }}
-                          >
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                fontWeight: 600,
-                                color: "#666",
-                                display: "block",
-                                mb: 0.5,
-                              }}
-                            >
-                              Price Breakdown
-                            </Typography>
-                            {it.participants.adults > 0 && (
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontSize: 12 }}
-                                >
-                                  Adults x{it.participants.adults}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontSize: 12, fontWeight: 600 }}
-                                >
-                                  {formatAED(
-                                    (it.participantPricing?.adultPrice ??
-                                      it.unitPrice) * it.participants.adults,
-                                  )}
-                                </Typography>
-                              </Box>
-                            )}
-                            {it.participants.children > 0 && (
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontSize: 12 }}
-                                >
-                                  Children x{it.participants.children}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
+                              {it.participants.adults > 0 && (
+                                <Box
                                   sx={{
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                    color:
-                                      !it.participantPricing?.childPrice ||
-                                      it.participantPricing?.childPrice === 0
-                                        ? "#4CAF50"
-                                        : "inherit",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
                                   }}
                                 >
-                                  {!it.participantPricing?.childPrice ||
-                                  it.participantPricing?.childPrice === 0
-                                    ? "FREE"
-                                    : formatAED(
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: 12 }}
+                                  >
+                                    Adults x{it.participants.adults}
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: 12, fontWeight: 600 }}
+                                  >
+                                    {formatAED(
+                                      (it.participantPricing?.adultPrice ??
+                                        it.unitPrice) * it.participants.adults,
+                                    )}
+                                  </Typography>
+                                </Box>
+                              )}
+                              {it.participants.children > 0 && (
+                                <Box
+                                  sx={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: 12 }}
+                                  >
+                                    Children x{it.participants.children}
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      color:
+                                        !it.participantPricing?.childPrice ||
+                                          it.participantPricing?.childPrice === 0
+                                          ? "#4CAF50"
+                                          : "inherit",
+                                    }}
+                                  >
+                                    {!it.participantPricing?.childPrice ||
+                                      it.participantPricing?.childPrice === 0
+                                      ? "FREE"
+                                      : formatAED(
                                         (it.participantPricing?.childPrice ??
                                           0) * it.participants.children,
                                       )}
-                                </Typography>
-                              </Box>
-                            )}
-                            {it.participants.infants > 0 && (
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <Typography
-                                  variant="body2"
-                                  sx={{ fontSize: 12 }}
-                                >
-                                  Infants x{it.participants.infants}
-                                </Typography>
-                                <Typography
-                                  variant="body2"
+                                  </Typography>
+                                </Box>
+                              )}
+                              {it.participants.infants > 0 && (
+                                <Box
                                   sx={{
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                    color: "#4CAF50",
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
                                   }}
                                 >
-                                  {it.participantPricing?.infantPrice &&
-                                  it.participantPricing.infantPrice > 0
-                                    ? formatAED(
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: 12 }}
+                                  >
+                                    Infants x{it.participants.infants}
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      fontSize: 12,
+                                      fontWeight: 600,
+                                      color: "#4CAF50",
+                                    }}
+                                  >
+                                    {it.participantPricing?.infantPrice &&
+                                      it.participantPricing.infantPrice > 0
+                                      ? formatAED(
                                         it.participantPricing.infantPrice *
-                                          it.participants.infants,
+                                        it.participants.infants,
                                       )
-                                    : "FREE"}
-                                </Typography>
-                              </Box>
-                            )}
-                          </Box>
-                        )}
+                                      : "FREE"}
+                                  </Typography>
+                                </Box>
+                              )}
+                            </Box>
+                          )}
 
-                        {/* Subtotal */}
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontWeight: 800,
-                            color: "#FF621F",
-                          }}
-                        >
-                          {formatAED(calculateItemTotal(it))}
-                        </Typography>
+                          {/* Subtotal */}
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              fontWeight: 800,
+                              color: "#FF621F",
+                            }}
+                          >
+                            {formatAED(calculateItemTotal(it))}
+                          </Typography>
 
-                        {/* Remove Button */}
-                        <Button
-                          variant="text"
-                          color="error"
-                          size="small"
-                          startIcon={<DeleteOutlineIcon />}
-                          onClick={() => void removeOne(it)}
-                          sx={{
-                            mt: 1,
-                            textTransform: "none",
-                            fontWeight: 500,
-                          }}
-                        >
-                          Remove
-                        </Button>
-                      </Box>
-                    </Stack>
-                  </Box>
-                </Stack>
-              </Paper>
-            ))}
+                          {/* Remove Button */}
+                          <Button
+                            variant="text"
+                            color="error"
+                            size="small"
+                            startIcon={<DeleteOutlineIcon />}
+                            onClick={() => void removeOne(it)}
+                            sx={{
+                              mt: 1,
+                              textTransform: "none",
+                              fontWeight: 500,
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </Box>
+                      </Stack>
+                    </Box>
+                  </Stack>
+                </Paper>
+              ))}
 
-            {/* Order Summary */}
+            </Stack>
+
+            {/* Order Summary Sidebar */}
             <Paper
               elevation={0}
               sx={{
-                p: 3,
-                borderRadius: 3,
-                bgcolor: "#1a1a2e",
-                color: "white",
-                mt: 2,
+                p: { xs: 3, md: 4 },
+                borderRadius: 4,
+                border: "1px solid #e8e8e8",
+                position: "sticky",
+                top: 24,
+                boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
               }}
             >
+              <Typography variant="h6" sx={{ fontWeight: 800, mb: 3 }}>
+                Order Summary
+              </Typography>
+
               <Stack spacing={2}>
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Typography variant="body1" sx={{ opacity: 0.8 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body1" color="text.secondary">
                     Subtotal ({totalItems} items)
                   </Typography>
                   <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -958,20 +667,13 @@ export const CartPage: React.FC = () => {
                   </Typography>
                 </Stack>
 
-                <Divider sx={{ borderColor: "rgba(255,255,255,0.1)" }} />
+                <Divider sx={{ borderColor: "#f0f0f0" }} />
 
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="h6" sx={{ fontWeight: 800 }}>
                     Total
                   </Typography>
-                  <Typography
-                    variant="h5"
-                    sx={{ fontWeight: 800, color: "#FF621F" }}
-                  >
+                  <Typography variant="h5" sx={{ fontWeight: 800, color: "#FF621F" }}>
                     {formatAED(total)}
                   </Typography>
                 </Stack>
@@ -983,21 +685,27 @@ export const CartPage: React.FC = () => {
                   onClick={goToCheckout}
                   endIcon={<ArrowForwardIcon />}
                   sx={{
-                    mt: 1,
-                    py: 1.5,
+                    mt: 2,
+                    py: 1.8,
                     bgcolor: "#FF621F",
-                    borderRadius: 2,
+                    borderRadius: 3,
                     fontWeight: 700,
-                    fontSize: 16,
+                    fontSize: "1.05rem",
                     textTransform: "none",
-                    "&:hover": { bgcolor: "#e55519" },
+                    boxShadow: "0 4px 14px 0 rgba(255, 98, 31, 0.39)",
+                    "&:hover": {
+                      bgcolor: "#e55519",
+                      boxShadow: "0 6px 20px rgba(255, 98, 31, 0.4)",
+                      transform: "translateY(-1px)",
+                    },
+                    transition: "all 0.2s ease"
                   }}
                 >
                   Proceed to Checkout
                 </Button>
               </Stack>
             </Paper>
-          </Stack>
+          </Box>
         )}
       </Box>
     </Box>

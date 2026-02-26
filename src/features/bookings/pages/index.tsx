@@ -114,11 +114,11 @@ interface PackageData {
   }>;
   original_price?: number;
   cancellation_policy?:
-    | string
-    | {
-        type?: string;
-        details?: string;
-      };
+  | string
+  | {
+    type?: string;
+    details?: string;
+  };
   confirmation_type?: string;
   eligibility?: string[];
   terms?: string[];
@@ -381,8 +381,10 @@ export const BookingPage = () => {
   >("none");
   // Time selection state (per-package feature)
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  // Unit quantity state (for per-unit pricing like "Per Jet Ski")
-  const [unitCount, setUnitCount] = useState<number>(1);
+  // Guest selection state
+  const [adults, setAdults] = useState<number>(1);
+  const [childrenCount, setChildrenCount] = useState<number>(0);
+  const [infants, setInfants] = useState<number>(0);
   // Sub-package selection state
   const [selectedSubPackageOption, setSelectedSubPackageOption] = useState<{
     name: string;
@@ -505,7 +507,7 @@ export const BookingPage = () => {
             : null,
         days: serviceRecord?.days || null,
       });
-      setSelectedId(0);
+      setSelectedId(null);
       setSelectedPackage(null);
       setServiceLoading(false);
     };
@@ -543,7 +545,7 @@ export const BookingPage = () => {
           stateRecord?.duration != null ? Number(stateRecord.duration) : null,
         days: stateRecord?.days || null,
       });
-      setSelectedId(0);
+      setSelectedId(null);
       setSelectedPackage(null);
     }
     const fetchPackages = async () => {
@@ -588,17 +590,6 @@ export const BookingPage = () => {
     setSelectedImg("");
   };
 
-  // Find the base package from the packages array (package_type = 'base' or 'standard')
-  // NOTE: Must be defined before calculatePrice to avoid reference error
-  const basePackageFromDB = packages.find(
-    (pkg) => pkg.package_type === "base" || pkg.package_type === "standard",
-  );
-
-  // If no base package exists, show warning - services require at least one package
-  const basePackage = basePackageFromDB
-    ? { ...basePackageFromDB, isBase: true }
-    : null;
-
   // Calculate the final price based on selected package and sub-package
   const calculatePrice = () => {
     // If a sub-package is selected, use its price
@@ -609,15 +600,20 @@ export const BookingPage = () => {
     if (selectedPackage?.price) {
       return selectedPackage.price;
     }
-    // If there's a base package, use its price
-    if (basePackage?.price) {
-      return basePackage.price;
+    // Fallback: use the cheapest available package price
+    if (packages.length > 0) {
+      const cheapest = packages.reduce((min, pkg) =>
+        pkg.price < min.price ? pkg : min, packages[0]);
+      return cheapest.price;
     }
-    return 0;
+    return pageData.default_price || 0;
   };
   const finalPrice = calculatePrice();
-  // Calculate total price based on unit count
-  const totalUnitPrice = finalPrice * unitCount;
+  // Calculate total price based on participants
+  const totalUnitPrice =
+    finalPrice * adults +
+    (selectedPackage?.child_price ?? 0) * childrenCount +
+    (selectedPackage?.infant_price ?? 0) * infants;
   // Compute transfer price based on selection
   const computedTransferPrice = (() => {
     if (selectedTransfer === "one_way") {
@@ -780,9 +776,9 @@ export const BookingPage = () => {
             ? dropoffAddress.trim()
             : null,
         unitPrice: finalPrice,
-        quantity: unitCount,
+        quantity: adults + childrenCount + infants,
         selectedSubPackage: selectedSubPackageOption ?? null,
-        participants: { adults: unitCount, children: 0, infants: 0 },
+        participants: { adults, children: childrenCount, infants },
         participantPricing: {
           adultPrice: finalPrice,
           childPrice: selectedPackage?.child_price ?? null,
@@ -818,9 +814,9 @@ export const BookingPage = () => {
                 ? dropoffAddress.trim()
                 : null,
             unitPrice: finalPrice,
-            quantity: unitCount,
+            quantity: adults + childrenCount + infants,
             selectedSubPackage: selectedSubPackageOption ?? null,
-            participants: { adults: unitCount, children: 0, infants: 0 },
+            participants: { adults, children: childrenCount, infants },
             participantPricing: {
               adultPrice: finalPrice,
               childPrice: selectedPackage?.child_price ?? null,
@@ -918,9 +914,9 @@ export const BookingPage = () => {
             ? dropoffAddress.trim()
             : null,
         unitPrice: finalPrice,
-        quantity: unitCount,
+        quantity: adults + childrenCount + infants,
         selectedSubPackage: selectedSubPackageOption ?? null,
-        participants: { adults: unitCount, children: 0, infants: 0 },
+        participants: { adults, children: childrenCount, infants },
         participantPricing: {
           adultPrice: finalPrice,
           childPrice: selectedPackage?.child_price ?? null,
@@ -956,9 +952,9 @@ export const BookingPage = () => {
                 ? dropoffAddress.trim()
                 : null,
             unitPrice: finalPrice,
-            quantity: unitCount,
+            quantity: adults + childrenCount + infants,
             selectedSubPackage: selectedSubPackageOption ?? null,
-            participants: { adults: unitCount, children: 0, infants: 0 },
+            participants: { adults, children: childrenCount, infants },
             participantPricing: {
               adultPrice: finalPrice,
               childPrice: selectedPackage?.child_price ?? null,
@@ -1062,87 +1058,87 @@ export const BookingPage = () => {
               pageData.duration ||
               pageData.daily_slots ||
               pageData.days) && (
-              <Box
-                className="serviceInfoBox"
-                sx={{
-                  mt: 3,
-                  p: 2.5,
-                  bgcolor: "#f9fafb",
-                  borderRadius: 2,
-                  border: "1px solid #e5e7eb",
-                }}
-              >
-                <Typography
-                  variant="h5"
-                  sx={{ fontWeight: 700, mb: 2, fontSize: "1.1rem" }}
+                <Box
+                  className="serviceInfoBox"
+                  sx={{
+                    mt: 3,
+                    p: 2.5,
+                    bgcolor: "#f9fafb",
+                    borderRadius: 2,
+                    border: "1px solid #e5e7eb",
+                  }}
                 >
-                  Experience Details
-                </Typography>
-                <Stack spacing={1.5}>
-                  {pageData.service_type && (
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <Chip
-                        label={pageData.service_type}
-                        size="small"
-                        sx={{
-                          bgcolor: "#FF621F",
-                          color: "white",
-                          fontWeight: 600,
-                          textTransform: "capitalize",
-                        }}
-                      />
-                    </Stack>
-                  )}
-
-                  {(pageData.start_time || pageData.end_time) && (
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <ScheduleIcon sx={{ color: "#6b7280", fontSize: 20 }} />
-                      <Typography sx={{ color: "#374151", fontSize: 14 }}>
-                        <strong>Operating Hours:</strong>{" "}
-                        {formatTime(pageData.start_time) ?? "—"} –{" "}
-                        {formatTime(pageData.end_time) ?? "—"}
-                      </Typography>
-                    </Stack>
-                  )}
-
-                  {pageData.duration != null &&
-                    formatDuration(pageData.duration) && (
+                  <Typography
+                    variant="h5"
+                    sx={{ fontWeight: 700, mb: 2, fontSize: "1.1rem" }}
+                  >
+                    Experience Details
+                  </Typography>
+                  <Stack spacing={1.5}>
+                    {pageData.service_type && (
                       <Stack direction="row" alignItems="center" spacing={1}>
-                        <AccessTimeIcon
-                          sx={{ color: "#6b7280", fontSize: 20 }}
+                        <Chip
+                          label={pageData.service_type}
+                          size="small"
+                          sx={{
+                            bgcolor: "#FF621F",
+                            color: "white",
+                            fontWeight: 600,
+                            textTransform: "capitalize",
+                          }}
                         />
+                      </Stack>
+                    )}
+
+                    {(pageData.start_time || pageData.end_time) && (
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <ScheduleIcon sx={{ color: "#6b7280", fontSize: 20 }} />
                         <Typography sx={{ color: "#374151", fontSize: 14 }}>
-                          <strong>Duration:</strong>{" "}
-                          {formatDuration(pageData.duration)}
+                          <strong>Operating Hours:</strong>{" "}
+                          {formatTime(pageData.start_time) ?? "—"} –{" "}
+                          {formatTime(pageData.end_time) ?? "—"}
                         </Typography>
                       </Stack>
                     )}
 
-                  {pageData.daily_slots != null && (
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <GroupIcon sx={{ color: "#6b7280", fontSize: 20 }} />
-                      <Typography sx={{ color: "#374151", fontSize: 14 }}>
-                        <strong>Daily Availability:</strong>{" "}
-                        {Number(pageData.daily_slots).toLocaleString("en-AE")}{" "}
-                        slots
-                      </Typography>
-                    </Stack>
-                  )}
+                    {pageData.duration != null &&
+                      formatDuration(pageData.duration) && (
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <AccessTimeIcon
+                            sx={{ color: "#6b7280", fontSize: 20 }}
+                          />
+                          <Typography sx={{ color: "#374151", fontSize: 14 }}>
+                            <strong>Duration:</strong>{" "}
+                            {formatDuration(pageData.duration)}
+                          </Typography>
+                        </Stack>
+                      )}
 
-                  {pageData.days && formatDays(pageData.days) && (
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <CalendarTodayIcon
-                        sx={{ color: "#6b7280", fontSize: 20 }}
-                      />
-                      <Typography sx={{ color: "#374151", fontSize: 14 }}>
-                        <strong>Available Days:</strong>{" "}
-                        {formatDays(pageData.days)}
-                      </Typography>
-                    </Stack>
-                  )}
-                </Stack>
-              </Box>
-            )}
+                    {pageData.daily_slots != null && (
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <GroupIcon sx={{ color: "#6b7280", fontSize: 20 }} />
+                        <Typography sx={{ color: "#374151", fontSize: 14 }}>
+                          <strong>Daily Availability:</strong>{" "}
+                          {Number(pageData.daily_slots).toLocaleString("en-AE")}{" "}
+                          slots
+                        </Typography>
+                      </Stack>
+                    )}
+
+                    {pageData.days && formatDays(pageData.days) && (
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <CalendarTodayIcon
+                          sx={{ color: "#6b7280", fontSize: 20 }}
+                        />
+                        <Typography sx={{ color: "#374151", fontSize: 14 }}>
+                          <strong>Available Days:</strong>{" "}
+                          {formatDays(pageData.days)}
+                        </Typography>
+                      </Stack>
+                    )}
+                  </Stack>
+                </Box>
+              )}
 
             {/* Klook-style Package Options Section */}
             <Box className="planSection">
@@ -1192,7 +1188,7 @@ export const BookingPage = () => {
                         },
                       }}
                     >
-                      <Tab label="Standard" value="standard" />
+                      <Tab label="Standard deals" value="standard" />
                       <Tab
                         label={
                           <Box
@@ -1205,12 +1201,12 @@ export const BookingPage = () => {
                             <span>Combo deals</span>
                             {packages.filter((p) => p.package_type === "combo")
                               .length > 0 && (
-                              <Chip
-                                label={`${Math.round(
-                                  (packages.filter(
-                                    (p) => p.package_type === "combo",
-                                  )[0]?.original_price || 0) > 0
-                                    ? (((packages.filter(
+                                <Chip
+                                  label={`${Math.round(
+                                    (packages.filter(
+                                      (p) => p.package_type === "combo",
+                                    )[0]?.original_price || 0) > 0
+                                      ? (((packages.filter(
                                         (p) => p.package_type === "combo",
                                       )[0]?.original_price || 0) -
                                         (packages.filter(
@@ -1219,19 +1215,19 @@ export const BookingPage = () => {
                                         (packages.filter(
                                           (p) => p.package_type === "combo",
                                         )[0]?.original_price || 1)) *
-                                        100
-                                    : 10,
-                                )}% off`}
-                                size="small"
-                                sx={{
-                                  bgcolor: "#fff3e6",
-                                  color: "#FF621F",
-                                  fontWeight: 600,
-                                  fontSize: "0.7rem",
-                                  height: 20,
-                                }}
-                              />
-                            )}
+                                      100
+                                      : 10,
+                                  )}% off`}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: "#fff3e6",
+                                    color: "#FF621F",
+                                    fontWeight: 600,
+                                    fontSize: "0.7rem",
+                                    height: 20,
+                                  }}
+                                />
+                              )}
                           </Box>
                         }
                         value="combo"
@@ -1244,22 +1240,19 @@ export const BookingPage = () => {
                     sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                   >
                     {(packageTab === "standard"
-                      ? [
-                          basePackage,
-                          ...packages.filter((p) => p.package_type !== "combo"),
-                        ].filter((p): p is PackageData => p !== null)
+                      ? packages.filter((p) => p.package_type !== "combo")
                       : packages.filter((p) => p.package_type === "combo")
                     ).map((pack: PackageData) => {
-                      const packId = pack.isBase ? 0 : pack.id;
+                      const packId = pack.id;
                       const isSelected = selectedId === packId;
                       const isCombo = pack.package_type === "combo";
                       const savings =
                         isCombo && pack.original_price
                           ? Math.round(
-                              ((pack.original_price - pack.price) /
-                                pack.original_price) *
-                                100,
-                            )
+                            ((pack.original_price - pack.price) /
+                              pack.original_price) *
+                            100,
+                          )
                           : 0;
                       return (
                         <Box
@@ -1268,25 +1261,38 @@ export const BookingPage = () => {
                             border: isSelected
                               ? "2px solid #FF621F"
                               : "1px solid #e8e8e8",
-                            borderRadius: 2,
-                            p: 2.5,
+                            borderRadius: 3,
+                            p: { xs: 2, sm: 3 },
                             bgcolor: isSelected ? "#fff9f5" : "#fff",
-                            transition: "all 0.2s ease",
+                            transition: "all 0.25s ease",
+                            position: "relative",
+                            overflow: "hidden",
+                            "&::before": isSelected ? {
+                              content: '""',
+                              position: "absolute",
+                              left: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: 4,
+                              bgcolor: "#FF621F",
+                              borderRadius: "4px 0 0 4px",
+                            } : {},
                             "&:hover": {
                               borderColor: "#FF621F",
-                              boxShadow: "0 2px 12px rgba(255, 98, 31, 0.1)",
+                              boxShadow: "0 4px 20px rgba(255, 98, 31, 0.12)",
+                              transform: "translateY(-1px)",
                             },
                           }}
                         >
                           {/* Package Images Gallery */}
                           {(pack.package_images &&
                             pack.package_images.length > 0) ||
-                          pack.package_image ? (
+                            pack.package_image ? (
                             <Box sx={{ mb: 2 }}>
                               <ImageGallery
                                 images={
                                   pack.package_images &&
-                                  pack.package_images.length > 0
+                                    pack.package_images.length > 0
                                     ? pack.package_images
                                     : pack.package_image
                                       ? [pack.package_image]
@@ -1298,17 +1304,53 @@ export const BookingPage = () => {
                             </Box>
                           ) : null}
 
+                          {/* Recommended Badge */}
+                          {(pack as any).is_recommended && (
+                            <Chip
+                              label="★ Recommended"
+                              size="small"
+                              sx={{
+                                bgcolor: "#FF621F",
+                                color: "#fff",
+                                fontWeight: 700,
+                                fontSize: "0.7rem",
+                                mb: 1.5,
+                                height: 24,
+                                borderRadius: "6px",
+                              }}
+                            />
+                          )}
+
                           {/* Package Title */}
                           <Typography
                             sx={{
                               fontWeight: 700,
-                              fontSize: "1.1rem",
-                              mb: 1.5,
+                              fontSize: { xs: "1.05rem", sm: "1.15rem" },
+                              mb: 0.5,
                               color: "#1a1a1a",
+                              lineHeight: 1.3,
                             }}
                           >
-                            {pack.isBase ? "Standard Experience" : pack.name}
+                            {pack.name}
                           </Typography>
+
+                          {/* Package Description */}
+                          {pack.description && (
+                            <Typography
+                              sx={{
+                                fontSize: "0.875rem",
+                                color: "#666",
+                                mb: 1.5,
+                                lineHeight: 1.5,
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden",
+                              }}
+                            >
+                              {pack.description}
+                            </Typography>
+                          )}
 
                           {/* Feature Tags */}
                           <Box
@@ -1322,17 +1364,17 @@ export const BookingPage = () => {
                             <Chip
                               label={
                                 typeof pack.cancellation_policy === "object" &&
-                                pack.cancellation_policy !== null
+                                  pack.cancellation_policy !== null
                                   ? (
-                                      pack.cancellation_policy as {
-                                        type?: string;
-                                        details?: string;
-                                      }
-                                    ).type
-                                      ?.replace(/_/g, " ")
-                                      .replace(/\b\w/g, (c: string) =>
-                                        c.toUpperCase(),
-                                      ) || "No cancellation"
+                                    pack.cancellation_policy as {
+                                      type?: string;
+                                      details?: string;
+                                    }
+                                  ).type
+                                    ?.replace(/_/g, " ")
+                                    .replace(/\b\w/g, (c: string) =>
+                                      c.toUpperCase(),
+                                    ) || "No cancellation"
                                   : typeof pack.cancellation_policy === "string"
                                     ? pack.cancellation_policy
                                     : "No cancellation"
@@ -1342,21 +1384,21 @@ export const BookingPage = () => {
                                 bgcolor:
                                   typeof pack.cancellation_policy ===
                                     "object" &&
-                                  (
-                                    pack.cancellation_policy as {
-                                      type?: string;
-                                    }
-                                  )?.type === "free_cancellation"
+                                    (
+                                      pack.cancellation_policy as {
+                                        type?: string;
+                                      }
+                                    )?.type === "free_cancellation"
                                     ? "#e8f5e9"
                                     : "#f5f5f5",
                                 color:
                                   typeof pack.cancellation_policy ===
                                     "object" &&
-                                  (
-                                    pack.cancellation_policy as {
-                                      type?: string;
-                                    }
-                                  )?.type === "free_cancellation"
+                                    (
+                                      pack.cancellation_policy as {
+                                        type?: string;
+                                      }
+                                    )?.type === "free_cancellation"
                                     ? "#2e7d32"
                                     : "#666",
                                 fontSize: "0.75rem",
@@ -1485,26 +1527,33 @@ export const BookingPage = () => {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedId(packId);
-                                  setSelectedPackage(pack.isBase ? null : pack);
-                                  // Reset transfer, time, unit count, and sub-package when switching packages
+                                  setSelectedPackage(pack);
+                                  // Reset transfer, time, guests, and sub-package when switching packages
                                   setSelectedTransfer("none");
                                   setSelectedTimeSlot(null);
-                                  setUnitCount(1);
+                                  setAdults(1);
+                                  setChildrenCount(0);
+                                  setInfants(0);
                                   setSelectedSubPackageOption(null);
                                 }}
                                 sx={{
-                                  bgcolor: isSelected ? "#e0e0e0" : "#FF621F",
-                                  color: isSelected ? "#666" : "#fff",
+                                  bgcolor: isSelected ? "#f5f5f5" : "#FF621F",
+                                  color: isSelected ? "#1a1a1a" : "#fff",
                                   textTransform: "none",
                                   fontWeight: 600,
                                   px: 3,
-                                  borderRadius: 1,
+                                  py: 1,
+                                  borderRadius: 2,
+                                  border: isSelected ? "1px solid #e0e0e0" : "none",
+                                  fontSize: "0.9rem",
                                   "&:hover": {
-                                    bgcolor: isSelected ? "#d0d0d0" : "#e55519",
+                                    bgcolor: isSelected ? "#eee" : "#e55519",
+                                    transform: "translateY(-1px)",
                                   },
+                                  transition: "all 0.2s ease",
                                 }}
                               >
-                                {isSelected ? "Selected" : "Select"}
+                                {isSelected ? "✓ Selected" : "Select"}
                               </Button>
                             </Box>
                           </Box>
@@ -1524,27 +1573,23 @@ export const BookingPage = () => {
                       )}
                   </Box>
                 </>
-              ) : basePackage ? (
-                <Box className="basePlanSummary">
-                  <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
-                    {basePackage.name}
-                  </Typography>
-                  <Typography sx={{ opacity: 0.9, lineHeight: 1.6, mb: 2 }}>
-                    {basePackage.description}
-                  </Typography>
-                  <Typography sx={{ fontWeight: 700, fontSize: "1.1rem" }}>
-                    {formatCurrency(basePackage.price)}
-                  </Typography>
-                </Box>
               ) : (
-                <Box className="basePlanSummary">
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    py: 5,
+                    px: 3,
+                    bgcolor: "#f9fafb",
+                    borderRadius: 3,
+                    border: "1px dashed #d1d5db",
+                  }}
+                >
                   <Typography
-                    variant="h6"
-                    sx={{ fontWeight: 700, mb: 1, color: "#FF621F" }}
+                    sx={{ fontWeight: 600, fontSize: "1.1rem", color: "#374151", mb: 0.5 }}
                   >
-                    No Package Available
+                    No packages available yet
                   </Typography>
-                  <Typography sx={{ opacity: 0.9, lineHeight: 1.6 }}>
+                  <Typography sx={{ color: "#6b7280", fontSize: "0.9rem" }}>
                     Please contact us for pricing and availability.
                   </Typography>
                 </Box>
@@ -1828,138 +1873,142 @@ export const BookingPage = () => {
                 </Box>
               )}
 
-            {/* Quantity Selector */}
-            <Box sx={{ mt: 2 }}>
-              <Typography
-                variant="subtitle2"
-                sx={{ fontWeight: 600, mb: 1, color: "#666" }}
-              >
-                Quantity
+
+            {/* Guest Selector */}
+            <Box sx={{ mt: 2, p: 2, border: "1px solid #e8e8e8", borderRadius: 2, bgcolor: "#fafafa" }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: "#1a1a1a" }}>
+                Select Guests
               </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  p: 1.5,
-                  border: "1px solid #e8e8e8",
-                  borderRadius: 2,
-                  bgcolor: "#fafafa",
-                }}
-              >
-                <Typography sx={{ flex: 1, fontWeight: 600, color: "#1a1a1a" }}>
-                  {selectedSubPackageOption
-                    ? selectedSubPackageOption.name
-                    : "Per Person"}
-                </Typography>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => setUnitCount(Math.max(1, unitCount - 1))}
-                    disabled={unitCount <= 1}
-                    sx={{
-                      minWidth: 36,
-                      height: 36,
-                      borderRadius: 1,
-                      borderColor: "#e0e0e0",
-                      color: "#666",
-                      "&:hover": { borderColor: "#FF621F", color: "#FF621F" },
-                    }}
-                  >
-                    −
-                  </Button>
-                  <Typography
-                    sx={{
-                      minWidth: 40,
-                      textAlign: "center",
-                      fontWeight: 700,
-                      fontSize: "1.1rem",
-                    }}
-                  >
-                    {unitCount}
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => setUnitCount(unitCount + 1)}
-                    sx={{
-                      minWidth: 36,
-                      height: 36,
-                      borderRadius: 1,
-                      borderColor: "#e0e0e0",
-                      color: "#666",
-                      "&:hover": { borderColor: "#FF621F", color: "#FF621F" },
-                    }}
-                  >
-                    +
-                  </Button>
+              <Stack spacing={2}>
+                {/* Adults */}
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>👤 Adults</Typography>
+                    <Typography variant="caption" sx={{ color: "#888" }}>{formatCurrency(finalPrice)}/person</Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Button variant="outlined" size="small" onClick={() => setAdults(Math.max(1, adults - 1))} disabled={adults <= 1} sx={{ minWidth: 32, height: 32, p: 0, borderRadius: 1 }} >−</Button>
+                    <Typography sx={{ minWidth: 24, textAlign: "center", fontWeight: 700 }}>{adults}</Typography>
+                    <Button variant="outlined" size="small" onClick={() => setAdults(adults + 1)} sx={{ minWidth: 32, height: 32, p: 0, borderRadius: 1 }}>+</Button>
+                  </Box>
                 </Box>
-              </Box>
+                {/* Children */}
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>👦 Children</Typography>
+                    <Typography variant="caption" sx={{ color: (!selectedPackage?.child_price || selectedPackage.child_price === 0) ? "#4CAF50" : "#888" }}>
+                      {(!selectedPackage?.child_price || selectedPackage.child_price === 0) ? "FREE" : `${formatCurrency(selectedPackage.child_price)}/child`}
+                      {` (${selectedPackage?.child_age_range || "3-12 yrs"})`}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Button variant="outlined" size="small" onClick={() => setChildrenCount(Math.max(0, childrenCount - 1))} disabled={childrenCount <= 0} sx={{ minWidth: 32, height: 32, p: 0, borderRadius: 1 }} >−</Button>
+                    <Typography sx={{ minWidth: 24, textAlign: "center", fontWeight: 700 }}>{childrenCount}</Typography>
+                    <Button variant="outlined" size="small" onClick={() => setChildrenCount(childrenCount + 1)} sx={{ minWidth: 32, height: 32, p: 0, borderRadius: 1 }}>+</Button>
+                  </Box>
+                </Box>
+                {/* Infants */}
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>👶 Infants</Typography>
+                    <Typography variant="caption" sx={{ color: (!selectedPackage?.infant_price || selectedPackage.infant_price === 0) ? "#4CAF50" : "#888" }}>
+                      {(!selectedPackage?.infant_price || selectedPackage.infant_price === 0) ? "FREE" : `${formatCurrency(selectedPackage.infant_price)}/infant`}
+                      {` (${selectedPackage?.infant_age_range || "0-2 yrs"})`}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Button variant="outlined" size="small" onClick={() => setInfants(Math.max(0, infants - 1))} disabled={infants <= 0} sx={{ minWidth: 32, height: 32, p: 0, borderRadius: 1 }} >−</Button>
+                    <Typography sx={{ minWidth: 24, textAlign: "center", fontWeight: 700 }}>{infants}</Typography>
+                    <Button variant="outlined" size="small" onClick={() => setInfants(infants + 1)} sx={{ minWidth: 32, height: 32, p: 0, borderRadius: 1 }}>+</Button>
+                  </Box>
+                </Box>
+              </Stack>
             </Box>
 
             {/* Price summary with breakdown */}
-            {(unitCount > 1 ||
+            {(adults > 0 || childrenCount > 0 || infants > 0 ||
               computedTransferPrice > 0 ||
               selectedSubPackageOption) && (
-              <Box
-                sx={{
-                  mt: 2,
-                  p: 1.5,
-                  bgcolor: "#f9fafb",
-                  borderRadius: 2,
-                  border: "1px solid #e5e7eb",
-                }}
-              >
-                <Stack spacing={0.5}>
-                  <Stack direction="row" justifyContent="space-between">
-                    <Typography sx={{ fontSize: "0.85rem", color: "#666" }}>
-                      {selectedSubPackageOption
-                        ? `${selectedSubPackageOption.name} × ${unitCount}`
-                        : `Package × ${unitCount}`}
-                    </Typography>
-                    <Typography sx={{ fontSize: "0.85rem", color: "#333" }}>
-                      AED {totalUnitPrice.toLocaleString()}
-                    </Typography>
-                  </Stack>
-                  {computedTransferPrice > 0 && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    p: 1.5,
+                    bgcolor: "#f9fafb",
+                    borderRadius: 2,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <Stack spacing={0.5}>
+                    <Typography sx={{ fontSize: "0.75rem", fontWeight: 600, color: "#666", mb: 0.5 }}>Price Breakdown</Typography>
+                    {adults > 0 && (
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography sx={{ fontSize: "0.85rem", color: "#666" }}>
+                          {selectedSubPackageOption ? `${selectedSubPackageOption.name} (Adults × ${adults})` : `Adults × ${adults}`}
+                        </Typography>
+                        <Typography sx={{ fontSize: "0.85rem", color: "#333" }}>
+                          AED {(finalPrice * adults).toLocaleString()}
+                        </Typography>
+                      </Stack>
+                    )}
+                    {childrenCount > 0 && (
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography sx={{ fontSize: "0.85rem", color: "#666" }}>
+                          Children × {childrenCount}
+                        </Typography>
+                        <Typography sx={{ fontSize: "0.85rem", color: "#333" }}>
+                          {!selectedPackage?.child_price || selectedPackage.child_price === 0 ? "FREE" : `AED ${((selectedPackage.child_price) * childrenCount).toLocaleString()}`}
+                        </Typography>
+                      </Stack>
+                    )}
+                    {infants > 0 && (
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography sx={{ fontSize: "0.85rem", color: "#666" }}>
+                          Infants × {infants}
+                        </Typography>
+                        <Typography sx={{ fontSize: "0.85rem", color: "#333" }}>
+                          {!selectedPackage?.infant_price || selectedPackage.infant_price === 0 ? "FREE" : `AED ${((selectedPackage.infant_price) * infants).toLocaleString()}`}
+                        </Typography>
+                      </Stack>
+                    )}
+
+                    {computedTransferPrice > 0 && (
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography sx={{ fontSize: "0.85rem", color: "#666" }}>
+                          Transfer (
+                          {selectedTransfer === "round_trip"
+                            ? "Round trip"
+                            : "One way"}
+                          )
+                        </Typography>
+                        <Typography sx={{ fontSize: "0.85rem", color: "#333" }}>
+                          AED {computedTransferPrice.toLocaleString()}
+                        </Typography>
+                      </Stack>
+                    )}
+                    <Divider sx={{ my: 0.5 }} />
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography sx={{ fontSize: "0.85rem", color: "#666" }}>
-                        Transfer (
-                        {selectedTransfer === "round_trip"
-                          ? "Round trip"
-                          : "One way"}
-                        )
+                      <Typography
+                        sx={{
+                          fontSize: "0.9rem",
+                          fontWeight: 700,
+                          color: "#1a1a1a",
+                        }}
+                      >
+                        Total
                       </Typography>
-                      <Typography sx={{ fontSize: "0.85rem", color: "#333" }}>
-                        AED {computedTransferPrice.toLocaleString()}
+                      <Typography
+                        sx={{
+                          fontSize: "0.9rem",
+                          fontWeight: 700,
+                          color: "#FF621F",
+                        }}
+                      >
+                        AED {totalPriceWithExtras.toLocaleString()}
                       </Typography>
                     </Stack>
-                  )}
-                  <Divider sx={{ my: 0.5 }} />
-                  <Stack direction="row" justifyContent="space-between">
-                    <Typography
-                      sx={{
-                        fontSize: "0.9rem",
-                        fontWeight: 700,
-                        color: "#1a1a1a",
-                      }}
-                    >
-                      Total
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: "0.9rem",
-                        fontWeight: 700,
-                        color: "#FF621F",
-                      }}
-                    >
-                      AED {totalPriceWithExtras.toLocaleString()}
-                    </Typography>
                   </Stack>
-                </Stack>
-              </Box>
-            )}
+                </Box>
+              )}
 
             <Box sx={{ mt: 2, display: "grid", gap: 1 }}>
               <Button
@@ -2095,10 +2144,10 @@ export const BookingPage = () => {
           </Box>
         </Box>
         <ReviewComponent serviceId={pageData.id} limit={5} />
-      </Box>
+      </Box >
 
       {/* Dialog for fullscreen image */}
-      <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
+      < Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth >
         <Box sx={{ position: "relative", backgroundColor: "black" }}>
           <img
             src={selectedImg}
@@ -2132,10 +2181,10 @@ export const BookingPage = () => {
             ✕
           </Button>
         </Box>
-      </Dialog>
+      </Dialog >
 
       {/* Profile Modal */}
-      <ProfileModal
+      < ProfileModal
         open={showProfileModal}
         onClose={async () => {
           setShowProfileModal(false);
@@ -2280,9 +2329,7 @@ export const BookingPage = () => {
                 <Typography
                   sx={{ fontWeight: 700, fontSize: "1.25rem", mb: 2 }}
                 >
-                  {packageToView.isBase
-                    ? "Standard Experience"
-                    : packageToView.name}
+                  {packageToView.name}
                 </Typography>
 
                 {/* Quick Info Tags */}
@@ -2304,13 +2351,13 @@ export const BookingPage = () => {
                     <BlockIcon sx={{ color: "#666", fontSize: 20 }} />
                     <Typography sx={{ fontSize: "0.9rem", color: "#444" }}>
                       {typeof packageToView.cancellation_policy === "object" &&
-                      packageToView.cancellation_policy !== null
+                        packageToView.cancellation_policy !== null
                         ? (
-                            packageToView.cancellation_policy as {
-                              type?: string;
-                              details?: string;
-                            }
-                          ).type || "No cancellation"
+                          packageToView.cancellation_policy as {
+                            type?: string;
+                            details?: string;
+                          }
+                        ).type || "No cancellation"
                         : typeof packageToView.cancellation_policy === "string"
                           ? packageToView.cancellation_policy
                           : "No cancellation"}
@@ -2319,17 +2366,17 @@ export const BookingPage = () => {
                       sx={{ fontSize: "0.8rem", color: "#888", ml: 0.5 }}
                     >
                       {typeof packageToView.cancellation_policy === "object" &&
-                      packageToView.cancellation_policy !== null &&
-                      (
-                        packageToView.cancellation_policy as {
-                          details?: string;
-                        }
-                      ).details
+                        packageToView.cancellation_policy !== null &&
+                        (
+                          packageToView.cancellation_policy as {
+                            details?: string;
+                          }
+                        ).details
                         ? (
-                            packageToView.cancellation_policy as {
-                              details?: string;
-                            }
-                          ).details
+                          packageToView.cancellation_policy as {
+                            details?: string;
+                          }
+                        ).details
                         : "No cancellations, refunds, or changes can be made"}
                     </Typography>
                   </Box>
@@ -2497,7 +2544,7 @@ export const BookingPage = () => {
                     <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
                       {packageToView.description ||
                         "Please arrive at least 15 minutes before your scheduled time. " +
-                          "Remember to bring a valid ID and your booking confirmation."}
+                        "Remember to bring a valid ID and your booking confirmation."}
                     </Typography>
                   </AccordionDetails>
                 </Accordion>
@@ -2648,7 +2695,7 @@ export const BookingPage = () => {
                   </AccordionSummary>
                   <AccordionDetails>
                     {Array.isArray(packageToView.how_to_use) &&
-                    packageToView.how_to_use.length > 0 ? (
+                      packageToView.how_to_use.length > 0 ? (
                       <Stack spacing={1}>
                         {packageToView.how_to_use.map((step, idx) => (
                           <Typography
@@ -2739,11 +2786,9 @@ export const BookingPage = () => {
               variant="contained"
               onClick={() => {
                 if (packageToView) {
-                  const packId = packageToView.isBase ? 0 : packageToView.id;
+                  const packId = packageToView.id;
                   setSelectedId(packId);
-                  setSelectedPackage(
-                    packageToView.isBase ? null : packageToView,
-                  );
+                  setSelectedPackage(packageToView);
                   setSelectedTransfer("none");
                   setSelectedTimeSlot(null);
                   setSelectedSubPackageOption(null);
@@ -2768,6 +2813,6 @@ export const BookingPage = () => {
           </Box>
         </Box>
       </Drawer>
-    </div>
+    </div >
   );
 };

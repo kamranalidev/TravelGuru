@@ -37,8 +37,8 @@
 .serviceDetails {
     display: grid;
     grid-template-columns: 1fr 380px;
-    gap: 40px;
-    align-items: start; /* Changed from flex-start to start */
+    gap: 28px;
+    align-items: start;
     margin-bottom: 40px;
 }
 
@@ -46,12 +46,15 @@
     display: flex;
     flex-direction: column;
     gap: 32px;
-    min-width: 0; /* Prevents grid blowout */
-    align-self: start; /* Ensure left column aligns to top */
+    min-width: 0;
+    /* Prevents grid blowout */
+    align-self: start;
+    /* Ensure left column aligns to top */
 }
 
 .serviceDescriptionBox {
-    min-width: 0; /* Allows text to wrap properly in grid */
+    min-width: 0;
+    /* Allows text to wrap properly in grid */
 }
 
 .sectionHeading {
@@ -92,7 +95,8 @@
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.06);
     position: sticky;
     top: 90px;
-    align-self: flex-start; /* Ensures the sticky element aligns to the top of its grid cell */
+    align-self: flex-start;
+    /* Ensures the sticky element aligns to the top of its grid cell */
     min-height: fit-content;
     max-height: calc(100vh - 110px);
     overflow-y: auto;
@@ -115,8 +119,8 @@
     margin-top: 0;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    align-items: flex-start;
+    gap: 12px;
+    align-items: stretch;
 }
 
 .planSubtitle {
@@ -161,7 +165,8 @@
         position: static;
         max-width: 100%;
         margin: 0;
-        order: -1; /* Move price box above content on tablet */
+        order: -1;
+        /* Move price box above content on tablet */
     }
 
     .planSection {
@@ -281,97 +286,107 @@
 
 /* Custom Loader */
 .loader {
-  transform: rotateZ(45deg);
-  perspective: 1000px;
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  color: #fff;
-  position: relative;
+    transform: rotateZ(45deg);
+    perspective: 1000px;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    color: #fff;
+    position: relative;
 }
 
 .loader:before,
 .loader:after {
-  content: '';
-  display: block;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: inherit;
-  height: inherit;
-  border-radius: 50%;
-  transform: rotateX(70deg);
-  animation: 1s spin linear infinite;
+    content: '';
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: inherit;
+    height: inherit;
+    border-radius: 50%;
+    transform: rotateX(70deg);
+    animation: 1s spin linear infinite;
 }
 
 .loader:after {
-  color: #FF3D00;
-  transform: rotateY(70deg);
-  animation-delay: .4s;
+    color: #FF3D00;
+    transform: rotateY(70deg);
+    animation-delay: .4s;
 }
 
 @keyframes rotate {
-  0% {
-    transform: translate(-50%, -50%) rotateZ(0deg);
-  }
-  100% {
-    transform: translate(-50%, -50%) rotateZ(360deg);
-  }
+    0% {
+        transform: translate(-50%, -50%) rotateZ(0deg);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotateZ(360deg);
+    }
 }
 
 @keyframes rotateccw {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  100% {
-    transform: translate(-50%, -50%) rotate(-360deg);
-  }
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(-360deg);
+    }
 }
 
 @keyframes spin {
-  0%,
-  100% {
-    box-shadow: .2em 0px 0 0px currentcolor;
-  }
-  12% {
-    box-shadow: .2em .2em 0 0 currentcolor;
-  }
-  25% {
-    box-shadow: 0 .2em 0 0px currentcolor;
-  }
-  37% {
-    box-shadow: -.2em .2em 0 0 currentcolor;
-  }
-  50% {
-    box-shadow: -.2em 0 0 0 currentcolor;
-  }
-  62% {
-    box-shadow: -.2em -.2em 0 0 currentcolor;
-  }
-  75% {
-    box-shadow: 0px -.2em 0 0 currentcolor;
-  }
-  87% {
-    box-shadow: .2em -.2em 0 0 currentcolor;
-  }
+
+    0%,
+    100% {
+        box-shadow: .2em 0px 0 0px currentcolor;
+    }
+
+    12% {
+        box-shadow: .2em .2em 0 0 currentcolor;
+    }
+
+    25% {
+        box-shadow: 0 .2em 0 0px currentcolor;
+    }
+
+    37% {
+        box-shadow: -.2em .2em 0 0 currentcolor;
+    }
+
+    50% {
+        box-shadow: -.2em 0 0 0 currentcolor;
+    }
+
+    62% {
+        box-shadow: -.2em -.2em 0 0 currentcolor;
+    }
+
+    75% {
+        box-shadow: 0px -.2em 0 0 currentcolor;
+    }
+
+    87% {
+        box-shadow: .2em -.2em 0 0 currentcolor;
+    }
 }
 
 .loader-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 40px;
-  min-height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    min-height: 120px;
 }
 
 .loader-small {
-  width: 20px;
-  height: 20px;
+    width: 20px;
+    height: 20px;
 }
 
 .loader-small:before,
 .loader-small:after {
-  animation-duration: 0.8s;
+    animation-duration: 0.8s;
 }
 
 /* ===================================
@@ -380,141 +395,141 @@
 
 /* ImageList gallery responsive */
 .imageListContainer {
-  border-radius: 20px;
-  overflow: hidden;
+    border-radius: 20px;
+    overflow: hidden;
 }
 
 @media (max-width: 768px) {
-  .imageListContainer {
-    border-radius: 16px;
-  }
+    .imageListContainer {
+        border-radius: 16px;
+    }
 }
 
 @media (max-width: 480px) {
-  .imageListContainer {
-    border-radius: 12px;
-  }
+    .imageListContainer {
+        border-radius: 12px;
+    }
 }
 
 /* Date Calendar responsive */
 .MuiDateCalendar-root {
-  width: 100% !important;
-  max-width: 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 @media (max-width: 480px) {
-  .MuiDateCalendar-root {
-    max-height: 280px !important;
-  }
-  
-  .MuiPickersDay-root {
-    width: 32px !important;
-    height: 32px !important;
-    font-size: 0.8rem !important;
-  }
-  
-  .MuiPickersCalendarHeader-label {
-    font-size: 0.9rem !important;
-  }
+    .MuiDateCalendar-root {
+        max-height: 280px !important;
+    }
+
+    .MuiPickersDay-root {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.8rem !important;
+    }
+
+    .MuiPickersCalendarHeader-label {
+        font-size: 0.9rem !important;
+    }
 }
 
 /* Subscription box / package card responsive */
 .subscription-box {
-  padding: 24px;
-  border-radius: 24px;
+    padding: 24px;
+    border-radius: 24px;
 }
 
 @media (max-width: 768px) {
-  .subscription-box {
-    padding: 20px;
-    border-radius: 20px;
-  }
+    .subscription-box {
+        padding: 20px;
+        border-radius: 20px;
+    }
 }
 
 @media (max-width: 480px) {
-  .subscription-box {
-    padding: 16px;
-    border-radius: 16px;
-  }
+    .subscription-box {
+        padding: 16px;
+        border-radius: 16px;
+    }
 }
 
 /* Review section responsive */
 .reviewSection {
-  margin-top: 40px;
+    margin-top: 40px;
 }
 
 @media (max-width: 768px) {
-  .reviewSection {
-    margin-top: 32px;
-  }
+    .reviewSection {
+        margin-top: 32px;
+    }
 }
 
 @media (max-width: 480px) {
-  .reviewSection {
-    margin-top: 24px;
-  }
+    .reviewSection {
+        margin-top: 24px;
+    }
 }
 
 /* Dialog responsive improvements */
 .bookingDialog .MuiDialog-paper {
-  margin: 16px;
-  max-width: calc(100% - 32px);
-  border-radius: 20px;
+    margin: 16px;
+    max-width: calc(100% - 32px);
+    border-radius: 20px;
 }
 
 @media (max-width: 480px) {
-  .bookingDialog .MuiDialog-paper {
-    margin: 8px;
-    max-width: calc(100% - 16px);
-    border-radius: 16px;
-  }
+    .bookingDialog .MuiDialog-paper {
+        margin: 8px;
+        max-width: calc(100% - 16px);
+        border-radius: 16px;
+    }
 }
 
 /* Airport pickup form responsive */
 .airportPickupForm {
-  display: grid;
-  gap: 16px;
+    display: grid;
+    gap: 16px;
 }
 
 @media (max-width: 480px) {
-  .airportPickupForm {
-    gap: 12px;
-  }
-  
-  .airportPickupForm .MuiTextField-root,
-  .airportPickupForm .MuiFormControl-root {
-    width: 100%;
-  }
+    .airportPickupForm {
+        gap: 12px;
+    }
+
+    .airportPickupForm .MuiTextField-root,
+    .airportPickupForm .MuiFormControl-root {
+        width: 100%;
+    }
 }
 
 /* Action buttons responsive */
 .bookingActions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .bookingActions button {
-  min-height: 48px;
+    min-height: 48px;
 }
 
 @media (max-width: 480px) {
-  .bookingActions button {
-    font-size: 0.95rem;
-    padding: 12px 16px;
-  }
+    .bookingActions button {
+        font-size: 0.95rem;
+        padding: 12px 16px;
+    }
 }
 
 /* Alert responsive */
 .bookingFeedback {
-  margin-top: 12px;
-  border-radius: 12px;
+    margin-top: 12px;
+    border-radius: 12px;
 }
 
 @media (max-width: 480px) {
-  .bookingFeedback .MuiAlert-message {
-    font-size: 0.9rem;
-  }
+    .bookingFeedback .MuiAlert-message {
+        font-size: 0.9rem;
+    }
 }
 
 /* ===================================
@@ -957,11 +972,11 @@
     .packageOptionsHeader h5 {
         font-size: 1.1rem;
     }
-    
+
     .klookPackageCard {
         padding: 16px;
     }
-    
+
     .packageDetailsDrawer {
         width: 100%;
     }
@@ -971,23 +986,23 @@
     .packageTags {
         gap: 6px;
     }
-    
+
     .packageTag {
         font-size: 0.7rem;
         padding: 3px 8px;
     }
-    
+
     .klookPackageCard {
         padding: 14px;
     }
-    
+
     /* Stack price and button on mobile */
     .packagePriceRow {
         flex-direction: column;
         gap: 12px;
         align-items: stretch;
     }
-    
+
     .packagePriceRow button {
         width: 100%;
     }
