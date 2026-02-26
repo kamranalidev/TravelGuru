@@ -1,12 +1,13 @@
 services:
   - type: web
     name: travelguru-server
-    env: node
+    runtime: node
     plan: free
-    rootDir: server
     buildCommand: npm install
     startCommand: npm start
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -29,3 +30,4 @@ services:
         sync: false
       - key: FRONTEND_URL
         sync: false
+    healthCheckPath: /api/health
