@@ -41,23 +41,6 @@ const initialState: CartState = {
 const keyOf = (i: CartItem) =>
   `${i.serviceId}__${i.packageId ?? "base"}__${i.bookingDate}__${i.bookingTime ?? ""}`;
 
-// Calculate total price based on participants
-const calculateTotalFromParticipants = (item: CartItem): number => {
-  const pricing = item.participantPricing;
-  const participants = item.participants;
-  
-  if (!pricing) {
-    // Fall back to unitPrice * quantity if no participant pricing
-    return item.unitPrice * item.quantity;
-  }
-  
-  const adultTotal = participants.adults * pricing.adultPrice;
-  const childTotal = participants.children * (pricing.childPrice ?? 0);
-  const infantTotal = participants.infants * (pricing.infantPrice ?? 0);
-  
-  return adultTotal + childTotal + infantTotal;
-};
-
 export const cartSlice = createSlice({
   name: "cart",
   initialState,

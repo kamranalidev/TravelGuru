@@ -88,6 +88,7 @@ export const loadServerCartToLocal = createAsyncThunk(
       address: row.address ?? null,
       unitPrice: Number(row.unit_price_micros ?? 0) / 1_000_000,
       quantity: 1, // Default quantity for server cart items
+      participants: { adults: 1, children: 0, infants: 0 },
     }));
 
     return { cartId, items };
