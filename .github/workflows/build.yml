@@ -1,4 +1,4 @@
-name: Build React app
+name: Build and deploy website
 
 on:
   pull_request:
@@ -9,9 +9,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v7
@@ -20,3 +25,16 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Install FTPS client
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: sudo apt-get update && sudo apt-get install -y lftp
+      - name: Publish build over FTPS
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          FTP_HOST: ${{ secrets.DEPLOY_FTP_HOST }}
+          FTP_USER: ${{ secrets.DEPLOY_FTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.DEPLOY_FTP_PASSWORD }}
+        run: |
+          test -n "$FTP_HOST" && test -n "$FTP_USER" && test -n "$LFTP_PASSWORD"
+          test -f dist/index.html
+          lftp --env-password -u "$FTP_USER" "ftp://$FTP_HOST:21" -e "set ftp:ssl-force true; set ftp:ssl-protect-data true; set ssl:verify-certificate true; set cmd:fail-exit true; mirror --reverse --exclude-glob index.html --exclude-glob .htaccess dist/ ./; put dist/index.html -o index.html; bye"
