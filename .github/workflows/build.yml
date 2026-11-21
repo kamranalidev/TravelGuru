@@ -24,7 +24,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - name: Check production configuration
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          VITE_REACT_APP_SUPABASE_URL: ${{ secrets.VITE_REACT_APP_SUPABASE_URL }}
+          VITE_REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.VITE_REACT_APP_SUPABASE_ANON_KEY }}
+        run: |
+          test -n "$VITE_REACT_APP_SUPABASE_URL" || { echo "Missing Supabase URL"; exit 1; }
+          test -n "$VITE_REACT_APP_SUPABASE_ANON_KEY" || { echo "Missing Supabase public key"; exit 1; }
+      - name: Build website
+        env:
+          VITE_REACT_APP_SUPABASE_URL: ${{ secrets.VITE_REACT_APP_SUPABASE_URL }}
+          VITE_REACT_APP_SUPABASE_ANON_KEY: ${{ secrets.VITE_REACT_APP_SUPABASE_ANON_KEY }}
+        run: npm run build
       - name: Install FTPS client
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: sudo apt-get update && sudo apt-get install -y lftp
