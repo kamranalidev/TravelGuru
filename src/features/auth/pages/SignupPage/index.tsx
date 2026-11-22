@@ -94,7 +94,7 @@ export const SignupPage = () => {
               Join Travel Guru Today
             </Typography>
             <Typography className="auth-branding-subtitle">
-              Create an account and start exploring Dubai
+              Create an account to save and manage your bookings
             </Typography>
 
             <Box className="auth-branding-features">
@@ -102,10 +102,10 @@ export const SignupPage = () => {
                 <TravelExploreIcon className="auth-feature-icon" />
                 <Box>
                   <Typography className="auth-feature-title">
-                    Explore Dubai
+                    Explore destinations
                   </Typography>
                   <Typography className="auth-feature-desc">
-                    Access to 50+ curated experiences
+                    Browse tours, activities, and multi-day trips
                   </Typography>
                 </Box>
               </Box>

@@ -1,3 +1,5 @@
+import { calculateItemTotal } from "../../../../utils/cartPricing";
+import { tripDateLabel } from "../../../../utils/tripDates";
 import React, { useMemo, useState, useEffect } from "react";
 import {
   Alert,
@@ -10,16 +12,14 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Header, StepperComponent } from "../../../../components/index.tsx";
@@ -35,6 +35,7 @@ import { useAuth } from "../../../../hooks/useAuth.tsx";
 import {
   ensureActiveServerCart,
   loadServerCartToLocal,
+  updateServerCartParticipants,
   removeServerCartItem,
   clearServerCart,
 } from "../../../../store/features/serverCart/serverCartSlice.ts";
@@ -45,23 +46,6 @@ const formatAED = (amount: number) =>
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   })}`;
-
-// Calculate item total considering participant pricing
-const calculateItemTotal = (item: CartItem): number => {
-  const pricing = item.participantPricing;
-  const participants = item.participants;
-
-  if (!pricing) {
-    // Fall back to unitPrice * quantity
-    return item.unitPrice * item.quantity;
-  }
-
-  const adultTotal = participants.adults * pricing.adultPrice;
-  const childTotal = participants.children * (pricing.childPrice ?? 0);
-  const infantTotal = participants.infants * (pricing.infantPrice ?? 0);
-
-  return adultTotal + childTotal + infantTotal;
-};
 
 export const CartPage: React.FC = () => {
   const navigate = useNavigate();
@@ -133,18 +117,16 @@ export const CartPage: React.FC = () => {
     if (type === "adults" && newValue < 1) return;
     if (newValue < 0) return;
     
-    dispatch(
-      updateParticipants({
-        serviceId: it.serviceId,
-        packageId: it.packageId,
-        bookingDate: it.bookingDate,
-        bookingTime: it.bookingTime,
-        participants: {
-          ...current,
-          [type]: newValue,
-        },
-      }),
-    );
+    const participants = { ...current, [type]: newValue };
+    try {
+      if (session?.user?.id) {
+        const cartId = serverCartId ?? (await dispatch(ensureActiveServerCart(session.user.id)).unwrap());
+        await dispatch(updateServerCartParticipants({ cartId, item: { ...it, participants } })).unwrap();
+      }
+      dispatch(updateParticipants({ serviceId: it.serviceId, packageId: it.packageId, bookingDate: it.bookingDate, bookingTime: it.bookingTime, participants }));
+    } catch {
+      setError("Unable to update participants. Please try again.");
+    }
   };
 
   const removeOne = async (it: CartItem) => {
@@ -170,6 +152,7 @@ export const CartPage: React.FC = () => {
         removeServerCartItem({
           cartId,
           serviceId: it.serviceId,
+          packageId: it.packageId,
           bookingDate: it.bookingDate,
           bookingTime: it.bookingTime,
         }),
@@ -208,7 +191,6 @@ export const CartPage: React.FC = () => {
       <Box sx={{ maxWidth: 1000, mx: "auto", px: { xs: 2, md: 4 }, pt: 2 }}>
         <Button
           variant="text"
-          startIcon={<ArrowBackIcon />}
           onClick={goBackToServices}
           sx={{
             color: "#6b7280",
@@ -236,11 +218,9 @@ export const CartPage: React.FC = () => {
           <Box>
             <Typography
               variant="h4"
-              sx={{ fontWeight: 800, color: "#1a1a2e", mb: 0.5 }}
+              sx={{ fontWeight: 650, color: "#1a1a2e", mb: 0.5 }}
             >
-              <ShoppingCartOutlinedIcon
-                sx={{ mr: 1, verticalAlign: "middle", color: "#FF621F" }}
-              />
+
               Your Cart
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -280,7 +260,7 @@ export const CartPage: React.FC = () => {
             elevation={0}
             sx={{
               p: 6,
-              borderRadius: 3,
+              borderRadius: "10px",
               textAlign: "center",
               border: "1px solid #e0e0e0",
             }}
@@ -295,7 +275,7 @@ export const CartPage: React.FC = () => {
               variant="contained"
               onClick={() => navigate("/services")}
               sx={{
-                bgcolor: "#FF621F",
+                bgcolor: "#d74712",
                 borderRadius: 2,
                 px: 4,
                 "&:hover": { bgcolor: "#e55519" },
@@ -313,7 +293,7 @@ export const CartPage: React.FC = () => {
                 elevation={0}
                 sx={{
                   p: 0,
-                  borderRadius: 3,
+                  borderRadius: "10px",
                   border: "1px solid #e0e0e0",
                   overflow: "hidden",
                   transition: "all 0.2s ease",
@@ -386,9 +366,9 @@ export const CartPage: React.FC = () => {
                             sx={{
                               mb: 1.5,
                               bgcolor: "#FF621F15",
-                              color: "#FF621F",
+                              color: "#d74712",
                               fontWeight: 600,
-                              "& .MuiChip-icon": { color: "#FF621F" },
+                              "& .MuiChip-icon": { color: "#d74712" },
                             }}
                           />
                         )}
@@ -422,7 +402,7 @@ export const CartPage: React.FC = () => {
                             <CalendarTodayIcon
                               sx={{ fontSize: 16, color: "#999" }}
                             />
-                            {it.bookingDate}
+                            {tripDateLabel(it.bookingDate, it.bookingEndDate)}{(it.durationDays || 1) > 1 ? ` · ${it.durationDays} days` : ""}
                           </Typography>
                           {it.bookingTime && (
                             <Typography
@@ -493,7 +473,7 @@ export const CartPage: React.FC = () => {
                           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                             <Box>
                               <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
-                                👤 Adults
+                                 Adults
                               </Typography>
                               <Typography variant="caption" sx={{ color: "#888" }}>
                                 {formatAED(it.participantPricing?.adultPrice ?? it.unitPrice)}/person
@@ -526,7 +506,7 @@ export const CartPage: React.FC = () => {
                             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                               <Box>
                                 <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
-                                  👦 Children
+                                   Children
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: "#888" }}>
                                   {formatAED(it.participantPricing?.childPrice ?? 0)}/child (3-12)
@@ -560,7 +540,7 @@ export const CartPage: React.FC = () => {
                             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                               <Box>
                                 <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
-                                  👶 Infants
+                                   Infants
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: it.participantPricing?.infantPrice === 0 ? "#4CAF50" : "#888" }}>
                                   {it.participantPricing?.infantPrice === 0 ? "FREE" : `${formatAED(it.participantPricing?.infantPrice ?? 0)}/infant`} (0-2)
@@ -635,8 +615,8 @@ export const CartPage: React.FC = () => {
                         <Typography
                           variant="h6"
                           sx={{
-                            fontWeight: 800,
-                            color: "#FF621F",
+                            fontWeight: 650,
+                            color: "#d74712",
                           }}
                         >
                           {formatAED(calculateItemTotal(it))}
@@ -669,9 +649,10 @@ export const CartPage: React.FC = () => {
               elevation={0}
               sx={{
                 p: 3,
-                borderRadius: 3,
-                bgcolor: "#1a1a2e",
-                color: "white",
+                borderRadius: "10px",
+                bgcolor: "#fff",
+                border: "1px solid #e5e5e5",
+                color: "#242424",
                 mt: 2,
               }}
             >
@@ -689,7 +670,7 @@ export const CartPage: React.FC = () => {
                   </Typography>
                 </Stack>
 
-                <Divider sx={{ borderColor: "rgba(255,255,255,0.1)" }} />
+                <Divider sx={{ borderColor: "#e6e6e6" }} />
 
                 <Stack
                   direction="row"
@@ -701,7 +682,7 @@ export const CartPage: React.FC = () => {
                   </Typography>
                   <Typography
                     variant="h5"
-                    sx={{ fontWeight: 800, color: "#FF621F" }}
+                    sx={{ fontWeight: 650, color: "#d74712" }}
                   >
                     {formatAED(total)}
                   </Typography>
@@ -712,11 +693,10 @@ export const CartPage: React.FC = () => {
                   size="large"
                   fullWidth
                   onClick={goToCheckout}
-                  endIcon={<ArrowForwardIcon />}
                   sx={{
                     mt: 1,
                     py: 1.5,
-                    bgcolor: "#FF621F",
+                    bgcolor: "#d74712",
                     borderRadius: 2,
                     fontWeight: 700,
                     fontSize: 16,

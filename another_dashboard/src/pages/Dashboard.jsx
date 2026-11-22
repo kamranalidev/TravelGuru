@@ -1,3 +1,5 @@
+import { summarizeCountryBookings } from "../utils/countryReports";
+import { useCountry } from "../context/CountryContext";
 import { useState, useEffect } from "react";
 import {
   Row,
@@ -9,6 +11,10 @@ import {
   Typography,
   Spin,
   DatePicker,
+  Select,
+  Alert,
+  Space,
+  Empty,
 } from "antd";
 import {
   CalendarOutlined,
@@ -39,9 +45,15 @@ import { supabase } from "../lib/supabase";
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
+const COLORS = ["#d74712", "#557d70", "#8f9f98", "#bd8865", "#596f83"];
 
 const Dashboard = () => {
+  const { countryCode, error: countryError } = useCountry();
+  const [range, setRange] = useState(null);
+  const [tripType, setTripType] = useState("all");
+  const [currency, setCurrency] = useState("AED");
+  const [currencies, setCurrencies] = useState(["AED"]);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalBookings: 0,
@@ -55,119 +67,56 @@ const Dashboard = () => {
   const [paymentStatusData, setPaymentStatusData] = useState([]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    setLoading(true);
-    try {
-      // Fetch total bookings
-      const { count: bookingsCount } = await supabase
-        .from("bookings")
-        .select("*", { count: "exact", head: true });
-
-      // Fetch total revenue
-      const { data: revenueResult } = await supabase
-        .from("bookings")
-        .select("amount")
-        .eq("payment_status", "succeeded");
-
-      const totalRevenue =
-        revenueResult?.reduce((sum, b) => sum + (b.amount || 0), 0) || 0;
-
-      // Fetch total users
-      const { count: usersCount } = await supabase
-        .from("user_profiles")
-        .select("*", { count: "exact", head: true });
-
-      // Fetch active carts
-      const { count: cartsCount } = await supabase
-        .from("carts")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "active");
-
-      setStats({
-        totalBookings: bookingsCount || 0,
-        totalRevenue: totalRevenue / 100, // Convert from cents
-        totalUsers: usersCount || 0,
-        activeCarts: cartsCount || 0,
-      });
-
-      // Fetch recent bookings
-      const { data: bookings } = await supabase
-        .from("bookings")
-        .select(
-          `
-          *,
-          services:service_id(service_name),
-          user_profiles:user_id(full_name, email)
-        `,
-        )
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      setRecentBookings(bookings || []);
-
-      // Fetch bookings by service for pie chart
-      const { data: serviceBookings } = await supabase.from("bookings").select(`
-          service_id,
-          services:service_id(service_name)
-        `);
-
-      const serviceCount = {};
-      serviceBookings?.forEach((b) => {
-        const name = b.services?.service_name || "Unknown";
-        serviceCount[name] = (serviceCount[name] || 0) + 1;
-      });
-
-      setBookingsByService(
-        Object.entries(serviceCount).map(([name, value]) => ({ name, value })),
-      );
-
-      // Fetch payment status distribution
-      const { data: paymentData } = await supabase
-        .from("bookings")
-        .select("payment_status");
-
-      const statusCount = {};
-      paymentData?.forEach((b) => {
-        const status = b.payment_status || "pending";
-        statusCount[status] = (statusCount[status] || 0) + 1;
-      });
-
-      setPaymentStatusData(
-        Object.entries(statusCount).map(([name, value]) => ({ name, value })),
-      );
-
-      // Generate revenue data for the last 7 days
-      const last7Days = [];
-      for (let i = 6; i >= 0; i--) {
-        const date = dayjs().subtract(i, "day").format("YYYY-MM-DD");
-        last7Days.push({ date, revenue: 0, bookings: 0 });
-      }
-
-      const { data: weeklyBookings } = await supabase
-        .from("bookings")
-        .select("created_at, amount")
-        .gte("created_at", dayjs().subtract(7, "day").toISOString())
-        .eq("payment_status", "succeeded");
-
-      weeklyBookings?.forEach((booking) => {
-        const date = dayjs(booking.created_at).format("YYYY-MM-DD");
-        const dayData = last7Days.find((d) => d.date === date);
-        if (dayData) {
-          dayData.revenue += (booking.amount || 0) / 100;
-          dayData.bookings += 1;
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        // Page through results so analytics are not truncated by Supabase's row limit.
+        const bookings = [];
+        for (let offset = 0; ; offset += 1000) {
+          let query = supabase.from("bookings").select(`*,
+            services:service_id${countryCode ? "!inner" : ""}(service_name, country_code),
+            user_profiles:user_id(full_name, email)`)
+            .order("created_at", { ascending: false }).order("id", { ascending: false });
+          if (countryCode) query = query.eq("services.country_code", countryCode);
+          if (tripType === "multi") query = query.gt("duration_days", 1);
+          if (tripType === "single") query = query.eq("duration_days", 1);
+          if (range?.[0] && range?.[1]) query = query.gte("created_at", range[0].startOf("day").toISOString()).lte("created_at", range[1].endOf("day").toISOString());
+          const { data, error } = await query.range(offset, offset + 999);
+          if (!active) return;
+          if (error) throw error;
+          bookings.push(...(data || []));
+          if (!data || data.length < 1000) break;
         }
-      });
-
-      setRevenueData(last7Days);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+        const [users, carts] = await Promise.all([
+          supabase.from("user_profiles").select("*", { count: "exact", head: true }),
+          supabase.from("carts").select("*", { count: "exact", head: true }).eq("status", "active"),
+        ]);
+        if (users.error) throw users.error;
+        if (carts.error) throw carts.error;
+        if (!active) return;
+        const report = summarizeCountryBookings(bookings, currency, range?.[1] || dayjs());
+        setCurrencies([...new Set(["AED", currency, ...bookings.map(b => (b.currency || "AED").toUpperCase())])].sort());
+        setStats({ totalBookings: bookings.length, totalRevenue: report.totalRevenue,
+          totalUsers: users.count || 0, activeCarts: carts.count || 0 });
+        setRecentBookings(bookings.slice(0, 5));
+        setBookingsByService(report.bookingsByService);
+        setPaymentStatusData(report.paymentStatuses);
+        setRevenueData(report.days);
+      } catch (e) {
+        if (active) {
+          setError(`Unable to load dashboard: ${e.message}`);
+          setStats({ totalBookings: 0, totalRevenue: 0, totalUsers: 0, activeCarts: 0 });
+          setRecentBookings([]); setBookingsByService([]); setPaymentStatusData([]); setRevenueData([]);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    void load();
+    return () => { active = false; };
+  }, [countryCode, range, currency, tripType]);
 
   const bookingColumns = [
     {
@@ -185,7 +134,9 @@ const Dashboard = () => {
       title: "Date",
       dataIndex: "booking_date",
       key: "date",
-      render: (date) => dayjs(date).format("MMM DD, YYYY"),
+      render: (date, record) => record.booking_end_date && record.booking_end_date !== date
+        ? `${dayjs(date).format("MMM DD")} – ${dayjs(record.booking_end_date).format("MMM DD, YYYY")} (${record.duration_days} days)`
+        : dayjs(date).format("MMM DD, YYYY"),
     },
     {
       title: "Amount",
@@ -239,19 +190,21 @@ const Dashboard = () => {
         }}
       >
         <Title level={2} style={{ margin: 0 }}>
-          Dashboard
+          Overview
         </Title>
-        <RangePicker />
+        <Space wrap><Select aria-label="Trip type" value={tripType} onChange={setTripType} options={[{ value: "all", label: "All trip lengths" }, { value: "single", label: "Single day" }, { value: "multi", label: "Multi-day trips" }]} /><Select aria-label="Revenue currency" value={currency} onChange={setCurrency} options={currencies.map(value => ({ value, label: value }))} /><RangePicker value={range} onChange={setRange} /></Space>
       </div>
 
+      {(error || countryError) && <Alert type="error" showIcon message={error || countryError} style={{ marginBottom: 16 }} />}
+      <Typography.Paragraph type="secondary" style={{ marginBottom: 24 }}>Bookings count trips. Revenue includes successful payments in {currency}. Date filters use booking creation dates.</Typography.Paragraph>
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
               title="Total Bookings"
               value={stats.totalBookings}
-              prefix={<CalendarOutlined style={{ color: "#1890ff" }} />}
-              valueStyle={{ color: "#1890ff" }}
+              prefix={<CalendarOutlined style={{ color: "#53645f" }} />}
+              valueStyle={{ color: "#53645f" }}
             />
           </Card>
         </Col>
@@ -261,29 +214,29 @@ const Dashboard = () => {
               title="Total Revenue"
               value={stats.totalRevenue}
               precision={2}
-              prefix={<DollarOutlined style={{ color: "#52c41a" }} />}
-              suffix="AED"
-              valueStyle={{ color: "#52c41a" }}
+              prefix={<DollarOutlined style={{ color: "#337462" }} />}
+              suffix={currency}
+              valueStyle={{ color: "#337462" }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="Total Users"
+              title="Total Users (All Countries)"
               value={stats.totalUsers}
-              prefix={<UserOutlined style={{ color: "#722ed1" }} />}
-              valueStyle={{ color: "#722ed1" }}
+              prefix={<UserOutlined style={{ color: "#53645f" }} />}
+              valueStyle={{ color: "#53645f" }}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="Active Carts"
+              title="Active Carts (All Countries)"
               value={stats.activeCarts}
-              prefix={<ShoppingCartOutlined style={{ color: "#fa8c16" }} />}
-              valueStyle={{ color: "#fa8c16" }}
+              prefix={<ShoppingCartOutlined style={{ color: "#c44516" }} />}
+              valueStyle={{ color: "#c44516" }}
             />
           </Card>
         </Col>
@@ -292,7 +245,7 @@ const Dashboard = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} lg={16}>
           <Card
-            title="Revenue & Bookings (Last 7 Days)"
+            title="Revenue & bookings · last 7 days"
             style={{ height: "100%" }}
           >
             <ResponsiveContainer width="100%" height={300}>
@@ -310,17 +263,17 @@ const Dashboard = () => {
                   yAxisId="left"
                   type="monotone"
                   dataKey="revenue"
-                  stroke="#8884d8"
-                  fill="#8884d8"
+                  stroke="#d74712"
+                  fill="#d74712"
                   fillOpacity={0.3}
-                  name="Revenue (AED)"
+                  name={`Revenue (${currency})`}
                 />
                 <Area
                   yAxisId="right"
                   type="monotone"
                   dataKey="bookings"
-                  stroke="#82ca9d"
-                  fill="#82ca9d"
+                  stroke="#557d70"
+                  fill="#557d70"
                   fillOpacity={0.3}
                   name="Bookings"
                 />
@@ -330,6 +283,7 @@ const Dashboard = () => {
         </Col>
         <Col xs={24} lg={8}>
           <Card title="Bookings by Service" style={{ height: "100%" }}>
+            {bookingsByService.length ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -341,7 +295,7 @@ const Dashboard = () => {
                     `${name} (${(percent * 100).toFixed(0)}%)`
                   }
                   outerRadius={80}
-                  fill="#8884d8"
+                  fill="#d74712"
                   dataKey="value"
                 >
                   {bookingsByService.map((entry, index) => (
@@ -354,6 +308,7 @@ const Dashboard = () => {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            ) : <div style={{ height: 300, display: "grid", placeItems: "center" }}><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No bookings in this view" /></div>}
           </Card>
         </Col>
       </Row>
@@ -361,19 +316,20 @@ const Dashboard = () => {
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={8}>
           <Card title="Payment Status Distribution" style={{ height: "100%" }}>
+            {paymentStatusData.length ? (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={paymentStatusData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
                 <YAxis dataKey="name" type="category" width={80} />
                 <Tooltip />
-                <Bar dataKey="value" fill="#8884d8">
+                <Bar dataKey="value" fill="#d74712">
                   {paymentStatusData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={
                         entry.name === "succeeded"
-                          ? "#52c41a"
+                          ? "#337462"
                           : entry.name === "pending"
                             ? "#faad14"
                             : "#f5222d"
@@ -383,6 +339,7 @@ const Dashboard = () => {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            ) : <div style={{ height: 300, display: "grid", placeItems: "center" }}><Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No bookings in this view" /></div>}
           </Card>
         </Col>
         <Col xs={24} lg={16}>

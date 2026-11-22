@@ -1,3 +1,4 @@
+import { tripDateLabel } from "../../../../utils/tripDates";
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -22,6 +23,8 @@ import "./index.css";
 type BookingRow = {
   id: number;
   booking_date: string;
+  booking_end_date?: string | null;
+  duration_days?: number;
   payment_status: string | null;
   amount: number | null;
   currency: string | null;
@@ -44,6 +47,8 @@ type BookingDetailsRow = {
   id: number;
   created_at?: string | null;
   booking_date: string;
+  booking_end_date?: string | null;
+  duration_days?: number;
   payment_status: string | null;
   amount: number | null;
   currency: string | null;
@@ -143,7 +148,7 @@ export const UserBookingsPage = () => {
       } = await supabase
         .from("bookings")
         .select(
-          "id, booking_date, payment_status, amount, currency, service_id, package_id, departure_arrival_time, type, address, created_at, voucher_code, voucher_status, services(service_name, location), packages(name)",
+          "id, booking_date, booking_end_date, duration_days, payment_status, amount, currency, service_id, package_id, departure_arrival_time, type, address, created_at, voucher_code, voucher_status, services(service_name, location), packages(name)",
           { count: "exact" },
         )
         .eq("user_id", user.id)
@@ -209,7 +214,7 @@ export const UserBookingsPage = () => {
       const { data, error: fetchError } = await supabase
         .from("bookings")
         .select(
-          "id, created_at, booking_date, payment_status, amount, currency, service_id, package_id, payment_intent_id, voucher_code, voucher_status, departure_arrival_time, type, address, services(service_name, location), packages(name)",
+          "id, created_at, booking_date, booking_end_date, duration_days, payment_status, amount, currency, service_id, package_id, payment_intent_id, voucher_code, voucher_status, departure_arrival_time, type, address, services(service_name, location), packages(name)",
         )
         .eq("id", bookingId)
         .eq("user_id", user.id)
@@ -330,7 +335,7 @@ export const UserBookingsPage = () => {
                     <strong>Booking ID:</strong> {selectedBooking.id}
                   </Typography>
                   <Typography>
-                    <strong>Date:</strong> {selectedBooking.booking_date}
+                    <strong>Date:</strong> {tripDateLabel(selectedBooking.booking_date, selectedBooking.booking_end_date)}
                   </Typography>
                   {selectedBooking.departure_arrival_time ? (
                     <Typography>
@@ -450,7 +455,7 @@ export const UserBookingsPage = () => {
                         color="text.secondary"
                         sx={{ fontSize: "0.9rem" }}
                       >
-                        📅 {b.booking_date}
+                        📅 {tripDateLabel(b.booking_date, b.booking_end_date)}
                         {b.departure_arrival_time &&
                           ` • 🕒 ${b.departure_arrival_time}`}
                       </Typography>

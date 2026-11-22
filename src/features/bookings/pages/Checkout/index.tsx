@@ -1,7 +1,9 @@
+import dayjs from "dayjs";
+import { calculateItemTotal } from "../../../../utils/cartPricing";
+import { tripEndDate, tripDateLabel } from "../../../../utils/tripDates";
 import Box from "@mui/material/Box";
 import {
   Typography,
-  Chip,
   Stack,
   Collapse,
   LinearProgress,
@@ -30,8 +32,6 @@ import CreditCardIcon from "@mui/icons-material/CreditCard";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import ShieldIcon from "@mui/icons-material/Shield";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import "./index.css";
 
 const normalizeTime = (value: unknown): string | null => {
@@ -146,6 +146,39 @@ export const Checkout = () => {
         throw new Error("Please log in to complete your booking.");
       }
 
+      // Revalidate the package length and every occupied day before charging.
+      const packageIds = [...new Set(cartItems.map(it => it.packageId).filter(id => id != null))];
+      const { data: currentPackages, error: packagesError } = packageIds.length
+        ? await supabase.from("packages").select("id, service_id, duration_days, is_active").in("id", packageIds)
+        : { data: [], error: null };
+      if (packagesError) throw new Error("Unable to verify package details. Please try again.");
+      const requestedSlots = new Map<string, number>();
+      for (const it of cartItems) {
+        const length = it.durationDays || 1;
+        const expectedEnd = tripEndDate(it.bookingDate, length);
+        if (it.bookingDate < dayjs().format("YYYY-MM-DD")) throw new Error("Your trip start date has passed. Please choose new dates.");
+        if (it.bookingEndDate && it.bookingEndDate !== expectedEnd) throw new Error("Your trip dates have changed. Please remove and re-add the package.");
+        const pkg = currentPackages?.find(p => p.id === it.packageId);
+        if (it.packageId != null && (!pkg || pkg.is_active === false || pkg.service_id !== it.serviceId || (pkg.duration_days || 1) !== length)) {
+          throw new Error("A package in your cart has changed. Please remove it and select the package again.");
+        }
+        if (it.packageId == null && length !== 1) throw new Error("Select a package for your multi-day trip.");
+        const { data: availability, error: availabilityError } = await supabase.rpc("get_trip_availability", {
+          p_service_id: it.serviceId, p_start_date: it.bookingDate, p_end_date: expectedEnd,
+        });
+        if (availabilityError || !availability?.length) throw new Error("Unable to verify trip availability. Please try again.");
+        for (const day of availability) {
+          const key = `${it.serviceId}:${day.trip_date}`;
+          const requested = (requestedSlots.get(key) || 0) + 1;
+          requestedSlots.set(key, requested);
+          if (day.daily_capacity > 0 && Number(day.slots_booked) + requested > Number(day.daily_capacity)) {
+            throw new Error(`This trip is no longer available on ${day.trip_date}. Please choose another start date.`);
+          }
+        }
+      }
+      const verifiedTotal = cartItems.reduce((sum, item) => sum + calculateItemTotal(item), 0);
+      if (Math.round(verifiedTotal * 100) !== Math.round(cartFinalPrice * 100)) throw new Error("Your cart total changed. Please return to your cart and try again.");
+
       // Check for duplicate bookings BEFORE processing payment
       console.log("[Checkout] Checking for duplicate bookings...");
       for (const it of cartItems) {
@@ -158,7 +191,9 @@ export const Checkout = () => {
           .select("id")
           .eq("user_id", currentUser.id)
           .eq("service_id", serviceId)
-          .eq("booking_date", bDate);
+          .eq("booking_date", bDate)
+          .in("payment_status", ["succeeded", "paid", "completed", "processing", "requires_capture"]);
+        existingQuery = it.packageId == null ? existingQuery.is("package_id", null) : existingQuery.eq("package_id", it.packageId);
 
         existingQuery =
           safeTime == null
@@ -337,7 +372,7 @@ export const Checkout = () => {
         const safeTime = sanitizeNullableTime(it.bookingTime);
         const packageId = it.packageId ?? null;
         const unitPriceMajor = Number(it.unitPrice ?? 0);
-        const unitAmountInFils = Math.round(unitPriceMajor * 100);
+        const unitAmountInFils = Math.round(calculateItemTotal(it) * 100);
 
         // Duplicate check already done before payment - no need to repeat
 
@@ -360,6 +395,8 @@ export const Checkout = () => {
           user_id: user.id,
           service_id: serviceId,
           booking_date: bDate,
+          booking_end_date: tripEndDate(bDate, it.durationDays || 1),
+          duration_days: it.durationDays || 1,
           package_id: packageId,
           payment_intent_id: paymentIntentId,
           payment_status: paymentStatus,
@@ -432,7 +469,7 @@ export const Checkout = () => {
         }
       }
 
-      console.log("[Checkout] Payment flow completed successfully ✓");
+      console.log("[Checkout] Payment flow completed successfully ");
       setConfirmationOpen(true);
       setLoading(false);
     } catch (e) {
@@ -471,7 +508,6 @@ export const Checkout = () => {
       >
         <Button
           variant="text"
-          startIcon={<ArrowBackIcon />}
           onClick={handleGoBack}
           disabled={loading}
           sx={{
@@ -495,12 +531,12 @@ export const Checkout = () => {
         maxWidth="sm"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: "20px", overflow: "hidden" },
+          sx: { borderRadius: "10px", overflow: "hidden" },
         }}
       >
         <Box
           sx={{
-            background: "linear-gradient(135deg, #10b981, #059669)",
+            background: "#257052",
             p: 4,
             textAlign: "center",
             color: "white",
@@ -549,9 +585,9 @@ export const Checkout = () => {
               borderRadius: 2,
               fontWeight: 700,
               textTransform: "none",
-              background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+              background: "#d74712",
               "&:hover": {
-                background: "linear-gradient(135deg, #E5541B, #E67B44)",
+                background: "#b63e11",
               },
             }}
           >
@@ -576,7 +612,7 @@ export const Checkout = () => {
             backgroundColor: "#fff",
             boxShadow:
               "0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)",
-            borderRadius: "16px",
+            borderRadius: "10px",
             flex: { xs: "1 1 100%", md: "1 1 55%" },
             minHeight: "300px",
             overflow: "hidden",
@@ -597,54 +633,12 @@ export const Checkout = () => {
             <Typography
               sx={{ color: "#1a1a1a", fontWeight: 700, fontSize: "1.2rem" }}
             >
-              Payment Information
+              Payment details
             </Typography>
           </Box>
 
           <Box sx={{ p: "24px" }}>
-            {/* Security badges */}
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ mb: 3, flexWrap: "wrap", gap: 1 }}
-            >
-              <Chip
-                icon={<LockIcon sx={{ fontSize: 16 }} />}
-                label="SSL Encrypted"
-                size="small"
-                sx={{
-                  bgcolor: "#f0fdf4",
-                  color: "#166534",
-                  fontWeight: 600,
-                  fontSize: "0.75rem",
-                  border: "1px solid #bbf7d0",
-                }}
-              />
-              <Chip
-                icon={<ShieldIcon sx={{ fontSize: 16 }} />}
-                label="PCI Compliant"
-                size="small"
-                sx={{
-                  bgcolor: "#eff6ff",
-                  color: "#1e40af",
-                  fontWeight: 600,
-                  fontSize: "0.75rem",
-                  border: "1px solid #bfdbfe",
-                }}
-              />
-              <Chip
-                icon={<VerifiedUserIcon sx={{ fontSize: 16 }} />}
-                label="Secure Payment"
-                size="small"
-                sx={{
-                  bgcolor: "#faf5ff",
-                  color: "#6b21a8",
-                  fontWeight: 600,
-                  fontSize: "0.75rem",
-                  border: "1px solid #e9d5ff",
-                }}
-              />
-            </Stack>
+            <Typography sx={{ mb: 3, fontSize: 14, color: "text.secondary" }}>Pay by card. Your payment is processed by Stripe.</Typography>
 
             {/* Card input */}
             <Typography
@@ -763,7 +757,7 @@ export const Checkout = () => {
                     bgcolor: "#f3f4f6",
                     "& .MuiLinearProgress-bar": {
                       borderRadius: 3,
-                      background: "linear-gradient(90deg, #FF621F, #FF8A4F)",
+                      background: "#d74712",
                     },
                   }}
                 />
@@ -784,10 +778,10 @@ export const Checkout = () => {
                 fontWeight: 700,
                 fontSize: "1.05rem",
                 textTransform: "none",
-                background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+                background: "#d74712",
                 boxShadow: "0 4px 14px rgba(255, 98, 31, 0.35)",
                 "&:hover": {
-                  background: "linear-gradient(135deg, #E5541B, #E67B44)",
+                  background: "#b63e11",
                   boxShadow: "0 6px 20px rgba(255, 98, 31, 0.45)",
                 },
                 "&:disabled": {
@@ -867,7 +861,7 @@ export const Checkout = () => {
             >
               <LockIcon sx={{ fontSize: 14, color: "#9ca3af" }} />
               <Typography sx={{ fontSize: "0.75rem", color: "#9ca3af" }}>
-                Secured by Stripe — we never store your card details
+                Payments processed by Stripe
               </Typography>
             </Box>
           </Box>
@@ -879,7 +873,7 @@ export const Checkout = () => {
             backgroundColor: "#fff",
             boxShadow:
               "0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)",
-            borderRadius: "16px",
+            borderRadius: "10px",
             flex: { xs: "1 1 100%", md: "0 1 40%" },
             height: "fit-content",
             position: { md: "sticky" },
@@ -891,7 +885,7 @@ export const Checkout = () => {
             sx={{
               p: "20px 24px",
               borderBottom: "1px solid #f0f0f0",
-              background: "linear-gradient(135deg, #fefce8 0%, #fff7ed 100%)",
+              background: "#fafafa",
             }}
           >
             <Typography
@@ -929,16 +923,16 @@ export const Checkout = () => {
                 <Stack spacing={0.5}>
                   {it.location && (
                     <Typography sx={{ color: "#6b7280", fontSize: "0.85rem" }}>
-                      📍 {it.location}
+                       {it.location}
                     </Typography>
                   )}
                   <Typography sx={{ color: "#6b7280", fontSize: "0.85rem" }}>
-                    📅 {it.bookingDate}
-                    {it.bookingTime ? ` • 🕒 ${it.bookingTime}` : ""}
+                     {tripDateLabel(it.bookingDate, it.bookingEndDate)}{(it.durationDays || 1) > 1 ? ` · ${it.durationDays} days` : ""}
+                    {it.bookingTime ? ` •  ${it.bookingTime}` : ""}
                   </Typography>
                   {it.airportType && (
                     <Typography sx={{ color: "#6b7280", fontSize: "0.85rem" }}>
-                      🚗{" "}
+                      {" "}
                       {it.airportType === "pickup"
                         ? "Airport Pickup"
                         : it.airportType === "dropoff"
@@ -948,12 +942,12 @@ export const Checkout = () => {
                   )}
                   {it.airportType === "dropoff" && it.address && (
                     <Typography sx={{ color: "#6b7280", fontSize: "0.8rem" }}>
-                      🏠 {it.address}
+                       {it.address}
                     </Typography>
                   )}
                   {it.packageName && (
                     <Typography sx={{ color: "#6b7280", fontSize: "0.85rem" }}>
-                      📦 {it.packageName}
+                       {it.packageName}
                     </Typography>
                   )}
                 </Stack>
@@ -1013,10 +1007,10 @@ export const Checkout = () => {
                     color: "#166534",
                   }}
                 >
-                  Secure Checkout
+                  Payment information
                 </Typography>
                 <Typography sx={{ fontSize: "0.75rem", color: "#15803d" }}>
-                  256-bit SSL encryption protects your information
+                  Card payments are processed by Stripe
                 </Typography>
               </Box>
             </Box>

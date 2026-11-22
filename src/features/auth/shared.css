@@ -637,3 +637,22 @@
     transform: none;
   }
 }
+
+/* Account screens share the storefront's restrained surfaces and typography. */
+.auth-main { background: #f6f7f7; padding: 32px 20px; }
+.auth-background { display: none; }
+.auth-split-container { border: 1px solid #e4e7e6; border-radius: 12px; min-height: 570px; box-shadow: 0 4px 24px #00000008; animation: none; }
+.auth-branding-panel { background: #263f3b; padding: 42px 36px; }
+.auth-branding-panel::before, .auth-branding-panel::after { display: none; }
+.auth-branding-title { font-size: 28px; letter-spacing: -.6px; line-height: 1.25; }
+.auth-branding-subtitle, .auth-feature-desc { color: #e0e8e4; }
+.auth-branding-features { gap: 24px; }
+.auth-feature-icon { background: none; border: none; box-shadow: none; border-radius: 0; }
+.auth-card, .auth-split-container .auth-card { border-radius: 0; box-shadow: none; animation: none; background: #fff; }
+.auth-main > .auth-card { border: 1px solid #e5e7e6; border-radius: 12px; }
+.auth-icon-circle { background: #f6f6f4; border-radius: 10px; }
+.auth-title { font-size: 28px; font-weight: 650; letter-spacing: -.5px; color: #242424; }
+.auth-link, .auth-footer-link { color: #b93b0d; }
+.auth-form .MuiOutlinedInput-root { border-radius: 7px; background: #fff; }
+.auth-popup.success { background: #2f7156; }
+.auth-popup.error { background: #b44237; }

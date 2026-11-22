@@ -123,7 +123,7 @@ const VoucherVerification = () => {
       // Auto-update expired vouchers
       if (
         data.voucher_status === "active" &&
-        isVoucherExpired(data.booking_date)
+        isVoucherExpired(data.booking_end_date || data.booking_date)
       ) {
         await supabase
           .from("bookings")
@@ -154,7 +154,7 @@ const VoucherVerification = () => {
     // Check if expired
     if (
       booking.voucher_status === "expired" ||
-      isVoucherExpired(booking.booking_date)
+      isVoucherExpired(booking.booking_end_date || booking.booking_date)
     ) {
       message.error("This voucher has expired!");
       return;
@@ -185,7 +185,7 @@ const VoucherVerification = () => {
           </p>
           <p>
             <strong>Booking Date:</strong>{" "}
-            {dayjs(booking.booking_date).format("MMMM DD, YYYY")}
+            {dayjs(booking.booking_date).format("MMMM DD, YYYY")}{booking.booking_end_date && booking.booking_end_date !== booking.booking_date ? ` – ${dayjs(booking.booking_end_date).format("MMMM DD, YYYY")} (${booking.duration_days} days)` : ""}
           </p>
         </div>
       ),
@@ -461,8 +461,8 @@ const VoucherVerification = () => {
             <Alert
               message="Voucher Expired"
               description={`This voucher expired on ${dayjs(
-                booking.booking_date,
-              ).format("MMMM DD, YYYY")}. The booking date has passed.`}
+                booking.booking_end_date || booking.booking_date,
+              ).format("MMMM DD, YYYY")}. The trip has ended.`}
               type="warning"
               showIcon
               style={{ marginBottom: 24 }}
@@ -566,7 +566,7 @@ const VoucherVerification = () => {
               }
             >
               <Text strong>
-                {dayjs(booking.booking_date).format("MMMM DD, YYYY")}
+                {dayjs(booking.booking_date).format("MMMM DD, YYYY")}{booking.booking_end_date && booking.booking_end_date !== booking.booking_date ? ` – ${dayjs(booking.booking_end_date).format("MMMM DD, YYYY")} (${booking.duration_days} days)` : ""}
               </Text>
             </Descriptions.Item>
 

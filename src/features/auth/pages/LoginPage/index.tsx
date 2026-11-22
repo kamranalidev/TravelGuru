@@ -106,7 +106,7 @@ export const LoginPage = () => {
               Welcome Back to Travel Guru
             </Typography>
             <Typography className="auth-branding-subtitle">
-              Your gateway to unforgettable Dubai experiences
+              Access your bookings and plan your next trip.
             </Typography>
 
             <Box className="auth-branding-features">
@@ -114,7 +114,7 @@ export const LoginPage = () => {
                 <TravelExploreIcon className="auth-feature-icon" />
                 <Box>
                   <Typography className="auth-feature-title">
-                    50+ Curated Experiences
+                    Tours & activities
                   </Typography>
                   <Typography className="auth-feature-desc">
                     Desert safaris, city tours, cruises & more
@@ -128,7 +128,7 @@ export const LoginPage = () => {
                     Secure Payments
                   </Typography>
                   <Typography className="auth-feature-desc">
-                    256-bit SSL encrypted transactions
+                    Card payments processed by Stripe
                   </Typography>
                 </Box>
               </Box>
@@ -136,10 +136,10 @@ export const LoginPage = () => {
                 <SupportAgentIcon className="auth-feature-icon" />
                 <Box>
                   <Typography className="auth-feature-title">
-                    24/7 Support
+                    Booking support
                   </Typography>
                   <Typography className="auth-feature-desc">
-                    Dedicated team at your service
+                    Contact us about your travel plans
                   </Typography>
                 </Box>
               </Box>

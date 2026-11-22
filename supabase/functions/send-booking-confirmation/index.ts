@@ -107,7 +107,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from("bookings")
       .select(
-        "id, user_id, booking_date, departure_arrival_time, address, type, amount, currency, payment_intent_id, payment_status, package_id, service_id, services(name, location, service_description, service_type), packages(name, duration, includes, excludes, price)"
+        "id, user_id, booking_date, booking_end_date, duration_days, departure_arrival_time, address, type, amount, currency, payment_intent_id, payment_status, package_id, service_id, services(service_name, location, service_description, service_type), packages(name, duration, includes, excludes, price)"
       )
       .eq("id", body.booking_id)
       .maybeSingle();
@@ -145,6 +145,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     type JoinedService = {
       name?: string | null;
+      service_name?: string | null;
       location?: string | null;
       service_description?: string | null;
       service_type?: string | null;
@@ -168,7 +169,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       ? rawPackages[0] ?? null
       : rawPackages ?? null;
 
-    const serviceName = serviceRow?.name ?? "Your booking";
+    const serviceName = serviceRow?.service_name ?? serviceRow?.name ?? "Your booking";
     const location = serviceRow?.location ?? "";
     const packageName = packageRow?.name ?? "";
     const serviceDescription = serviceRow?.service_description ?? "";
@@ -195,7 +196,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         <p><strong>Service:</strong> ${escapeHtml(serviceName)}</p>
         ${location ? `<p><strong>Location:</strong> ${escapeHtml(location)}</p>` : ""}
         ${serviceType ? `<p><strong>Service Type:</strong> ${escapeHtml(serviceType)}</p>` : ""}
-        <p><strong>Date:</strong> ${escapeHtml(String(booking.booking_date))}</p>
+        <p><strong>Date:</strong> ${escapeHtml(booking.booking_end_date && booking.booking_end_date !== booking.booking_date ? `${booking.booking_date} – ${booking.booking_end_date} (${booking.duration_days} days)` : String(booking.booking_date))}</p>
         ${
           booking.departure_arrival_time
             ? `<p><strong>Time:</strong> ${escapeHtml(String(booking.departure_arrival_time))}</p>`

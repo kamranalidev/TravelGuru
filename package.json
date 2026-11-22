@@ -9,6 +9,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:trips": "node --experimental-strip-types --test src/utils/tripDates.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

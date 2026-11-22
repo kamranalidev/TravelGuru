@@ -987,3 +987,39 @@
         width: 100%;
     }
 }
+
+/* Shared booking hierarchy: clear content, compact controls, quiet surfaces. */
+.servicePageContainer { padding-top: 30px; }
+.servicePageContainer .serviceTitle { font-size: clamp(26px, 3.2vw, 36px); letter-spacing: -.8px; line-height: 1.25; font-weight: 700; }
+.servicePageContainer .serviceLocationTag { color: #666; font-size: 14px; font-weight: 400; }
+.servicePageContainer .serviceGalleryWrapper { border-radius: 10px; box-shadow: none; margin-bottom: 30px; }
+.servicePageContainer .serviceDetails { grid-template-columns: minmax(0, 1fr) 350px; gap: 32px; }
+.servicePageContainer .priceBox { border-radius: 10px; box-shadow: 0 3px 16px #00000008; border-color: #e4e4e4; padding: 22px; top: 148px; gap: 12px; }
+.servicePageContainer .priceLabel { color: #666; font-size: 14px; font-weight: 400; }
+.servicePageContainer .priceValue { color: #242424; font-size: 30px; letter-spacing: -.8px; }
+.servicePageContainer .sectionHeading { font-size: 23px; letter-spacing: -.5px; font-weight: 650; }
+.servicePageContainer .basePlanSummary { box-shadow: none; border: 1px solid #e5e5e5; border-radius: 10px; padding: 24px; }
+.servicePageContainer .serviceDescriptionText { line-height: 1.7; font-size: 16px; }
+.servicePageContainer .packageCard { border-radius: 10px; box-shadow: none; transform: none; }
+.servicePageContainer .packageCard.selected { background: #fff8f4; box-shadow: none; }
+.servicePageContainer .MuiTab-root { font-size: 14px; }
+.servicePageContainer .MuiAlert-root { border-radius: 7px; font-size: 14px; }
+.servicePageContainer .loader { width: 30px; height: 30px; border: 3px solid #eee; border-top-color: #d74712; transform: none; animation: booking-loading 1s linear infinite; }
+.servicePageContainer .loader::before, .servicePageContainer .loader::after { display: none; }
+@keyframes booking-loading { to { transform: rotate(360deg); } }
+@media (max-width: 900px) { .servicePageContainer .serviceDetails { grid-template-columns: 1fr; gap: 24px; } .servicePageContainer .priceBox { position: static; } }
+@media (max-width: 600px) { .servicePageContainer { padding: 24px 18px 48px; } .servicePageContainer .priceBox { padding: 18px; } }
+.servicePageContainer .planSection { align-items: stretch; }
+.servicePageContainer .priceLabel { text-transform: none; letter-spacing: 0; }
+.servicePageContainer .priceBox .MuiAlert-standardInfo { background: #f6f7f6; border: 1px solid #e6e8e5; color: #505852; }
+.servicePageContainer .priceBox .MuiAlert-standardInfo .MuiAlert-icon { color: #66796b; }
+.booking-gallery { display: grid; height: 360px; gap: 5px; grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 1fr 1fr; overflow: hidden; border-radius: 10px; }
+.gallery-photo { min-width: 0; min-height: 0; padding: 0; border: 0; background: #f3f4f3; overflow: hidden; cursor: pointer; }
+.gallery-photo:first-child { grid-row: 1 / -1; }
+.gallery-photo img { width: 100%; height: 100%; object-fit: cover; transition: opacity .2s; }
+.gallery-photo:hover img { opacity: .9; }
+.gallery-count-1 { grid-template-columns: 1fr; }
+.gallery-count-2 { grid-template-columns: 1fr 1fr; }
+.gallery-count-2 .gallery-photo { grid-row: 1 / -1; }
+.gallery-count-3 { grid-template-columns: 2fr 1fr; }
+@media (max-width: 600px) { .booking-gallery { height: 240px; grid-template-columns: 2fr 1fr; } .gallery-photo:nth-child(n+4) { display: none; } .gallery-count-1 { grid-template-columns: 1fr; } }

@@ -256,3 +256,11 @@
     padding: 16px;
   }
 }
+
+.catalog-heading { margin-bottom: 30px; }
+.catalog-heading > p { margin: 0 0 12px; color: #777; font-size: 13px; }
+.catalog-heading h1 { font-size: clamp(26px, 4vw, 34px); line-height: 1.25; letter-spacing: -.8px; margin: 0 0 10px; font-weight: 700; color: #242424; }
+.catalog-heading > span { font-size: 15px; color: #666; }
+.services-loader { border: 3px solid #eee; border-top-color: #d74712; width: 30px; height: 30px; transform: none; animation: service-loading 1s linear infinite; }
+.services-loader::before, .services-loader::after { display: none; }
+@keyframes service-loading { to { transform: rotate(360deg); } }

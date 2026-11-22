@@ -1,3 +1,4 @@
+import { useCountry } from "../context/CountryContext";
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -61,6 +62,7 @@ const log = {
 };
 
 const Packages = () => {
+  const { countries, countryCode } = useCountry();
   const [loading, setLoading] = useState(false);
   const [packages, setPackages] = useState([]);
   const [services, setServices] = useState([]);
@@ -72,12 +74,16 @@ const Packages = () => {
   const [activeTab, setActiveTab] = useState("basic");
   const [validationErrors, setValidationErrors] = useState({});
   const packageType = Form.useWatch("package_type", form);
+  const durationDays = Form.useWatch("duration_days", form) || 1;
 
   // ==================== VALIDATION FUNCTIONS ====================
   const validateBasicInfo = () => {
-    const values = form.getFieldsValue();
+    const values = form.getFieldsValue(true);
     const errors = [];
 
+    if (!Number.isInteger(values.duration_days) || values.duration_days < 1) errors.push("Enter a positive whole number of days");
+    if ((values.itinerary || []).some(day => !Number.isInteger(day.day) || day.day < 1 || day.day > values.duration_days || !day.title?.trim())) errors.push("Each itinerary day needs a title and must fall within the package length");
+    if (new Set((values.itinerary || []).map(day => day.day)).size !== (values.itinerary || []).length) errors.push("Itinerary day numbers must be unique");
     if (!values.name?.trim()) errors.push("Package name is required");
     if (!values.service_id) errors.push("Service selection is required");
     if (!values.price || values.price <= 0)
@@ -100,7 +106,7 @@ const Packages = () => {
   };
 
   const validateCombo = () => {
-    const values = form.getFieldsValue();
+    const values = form.getFieldsValue(true);
     const errors = [];
 
     if (values.package_type === "combo") {
@@ -203,7 +209,7 @@ const Packages = () => {
         .select(
           `
           *,
-          services:service_id(id, service_name)
+          services:service_id(id, service_name, country_code)
         `,
         )
         .order("created_at", { ascending: false });
@@ -223,7 +229,7 @@ const Packages = () => {
     log.info("Fetching services for dropdown");
     const { data, error } = await supabase
       .from("services")
-      .select("id, service_name");
+      .select("id, service_name, country_code");
     if (error) {
       log.error("Failed to fetch services", error);
     } else {
@@ -262,6 +268,8 @@ const Packages = () => {
       infant_price: record.infant_price,
       package_image: record.package_image || "",
       duration: record.duration,
+      duration_days: record.duration_days || 1,
+      itinerary: record.itinerary || [],
       pricing_type: record.pricing_type || "per_person",
       min_duration: record.min_duration,
       max_duration: record.max_duration,
@@ -355,7 +363,9 @@ const Packages = () => {
         child_price: values.child_price || null,
         infant_price: values.infant_price || null,
         package_image: values.package_image || null,
-        duration: values.duration,
+        duration: values.duration_days > 1 ? `${values.duration_days} days` : values.duration,
+        duration_days: values.duration_days,
+        itinerary: (values.itinerary || []).map(day => ({ ...day, title: day.title.trim() })).sort((a, b) => a.day - b.day),
         pricing_type: values.pricing_type,
         min_duration: values.min_duration,
         max_duration: values.max_duration,
@@ -438,6 +448,7 @@ const Packages = () => {
   };
 
   const filteredPackages = packages.filter((pkg) => {
+    if (countryCode && pkg.services?.country_code !== countryCode) return false;
     const searchLower = searchText.toLowerCase();
     return (
       pkg.name?.toLowerCase().includes(searchLower) ||
@@ -446,6 +457,7 @@ const Packages = () => {
   });
 
   const columns = [
+    { title: "Country", render: (_, pkg) => countries.find(c => c.code === pkg.services?.country_code)?.name || "Unassigned" },
     {
       title: "ID",
       dataIndex: "id",
@@ -491,6 +503,9 @@ const Packages = () => {
       title: "Duration",
       dataIndex: "duration",
       key: "duration",
+      render: (duration, record) => record.duration_days > 1 ? `${record.duration_days} days / ${record.duration_days - 1} nights` : duration || "1 day",
+      filters: [{ text: "Single day", value: "single" }, { text: "Multi-day", value: "multi" }],
+      onFilter: (value, record) => value === "multi" ? record.duration_days > 1 : (record.duration_days || 1) === 1,
     },
     {
       title: "Type",
@@ -686,7 +701,7 @@ const Packages = () => {
           />
         )}
 
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ duration_days: 1, itinerary: [] }}>
           <Tabs
             activeKey={activeTab}
             onChange={(key) => {
@@ -727,7 +742,7 @@ const Packages = () => {
                       ]}
                     >
                       <Select placeholder="Select service">
-                        {services.map((service) => (
+                        {services.filter(s => !countryCode || s.country_code === countryCode || s.id === editingPackage?.service_id).map((service) => (
                           <Option key={service.id} value={service.id}>
                             {service.service_name}
                           </Option>
@@ -810,9 +825,24 @@ const Packages = () => {
                       style={{ marginBottom: 16 }}
                     />
 
+                    <Alert type="info" showIcon style={{ marginBottom: 16 }} message="Prices cover the complete trip per participant. Customers select a start date; the end date is calculated from the number of days." />
+                    <Form.Item name="duration_days" label="Number of days" rules={[{ required: true, type: "integer", min: 1 }]}>
+                      <InputNumber min={1} precision={0} style={{ width: "100%" }} />
+                    </Form.Item>
+                    <Form.List name="itinerary">
+                      {(fields, { add, remove }) => <>
+                        <Typography.Title level={5}>Day-by-day itinerary (optional)</Typography.Title>
+                        {fields.map(({ key, name, ...rest }) => <Card key={key} size="small" style={{ marginBottom: 12 }} extra={<Button danger onClick={() => remove(name)}>Remove day</Button>}>
+                          <Form.Item {...rest} name={[name, "day"]} label="Day number" rules={[{ required: true, type: "integer", min: 1, max: durationDays }]}><InputNumber min={1} max={durationDays} precision={0} /></Form.Item>
+                          <Form.Item {...rest} name={[name, "title"]} label="Day title" rules={[{ required: true, whitespace: true }]}><Input placeholder="Arrival and city tour" /></Form.Item>
+                          <Form.Item {...rest} name={[name, "description"]} label="Activities / accommodation / transfers"><TextArea rows={3} /></Form.Item>
+                        </Card>)}
+                        <Button onClick={() => add({ day: fields.length + 1, title: "", description: "" })} style={{ marginBottom: 16 }}>Add itinerary day</Button>
+                      </>}
+                    </Form.List>
                     <Row gutter={16}>
                       <Col span={8}>
-                        <Form.Item name="duration" label="Duration">
+                        <Form.Item name="duration" label="Single-day duration (optional)">
                           <Input placeholder="e.g., 2 hours" />
                         </Form.Item>
                       </Col>

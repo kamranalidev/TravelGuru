@@ -15,5 +15,4 @@ export { StepperComponent } from "./StepperComponent";
 export { ProfileModal } from "./ProfileModal";
 export { WhatsAppWidget } from "./WhatsAppWidget";
 export { ScrollAnimation } from "./ScrollAnimation";
-export { Chatbot } from "./Chatbot";
 export { default as ErrorBoundary } from "./ErrorBoundary";

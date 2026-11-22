@@ -21,6 +21,8 @@ export type CartItem = {
   packageName?: string | null;
   packageImage?: string | null; // Package-specific image
   bookingDate: string; // YYYY-MM-DD
+  bookingEndDate?: string; // inclusive; same day for single-day experiences
+  durationDays?: number;
   bookingTime: string | null; // HH:mm (optional)
   airportType: "pickup" | "dropoff" | null;
   address: string | null;

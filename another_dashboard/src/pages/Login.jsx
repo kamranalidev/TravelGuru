@@ -52,7 +52,7 @@ const Login = () => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background: "#f5f6f6",
         }}
       >
         <Spin size="large" />
@@ -67,7 +67,7 @@ const Login = () => {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        background: "#f5f6f6",
         padding: 24,
       }}
     >
@@ -75,8 +75,8 @@ const Login = () => {
         style={{
           width: "100%",
           maxWidth: 400,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-          borderRadius: 16,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.05)",
+          borderRadius: 10,
         }}
       >
         <div style={{ textAlign: "center", marginBottom: 32 }}>

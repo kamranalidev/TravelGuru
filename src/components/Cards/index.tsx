@@ -45,7 +45,7 @@ export const CardComponent = (props: {
           }}
         >
           <span style={{ fontWeight: "bold", color: "#999999" }}>
-            <img src="/assets/Vector.svg" /> {props.location ?? "Dubai"}
+            <img src="/assets/Vector.svg" /> {props.location ?? "Explore"}
           </span>
           <div
             style={{ display: "flex", justifyContent: "flex-end" }}

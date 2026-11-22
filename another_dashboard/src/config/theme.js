@@ -1,8 +1,8 @@
 export const theme = {
   colors: {
-    primary: "#6366F1",
-    primaryHover: "#4F46E5",
-    secondary: "#8B5CF6",
+    primary: "#D74712",
+    primaryHover: "#B93B0D",
+    secondary: "#536B63",
     success: "#10B981",
     successLight: "#D1FAE5",
     warning: "#F59E0B",
@@ -20,7 +20,7 @@ export const theme = {
 
     background: {
       primary: "#FFFFFF",
-      secondary: "#F9FAFB",
+      secondary: "#F7F8F8",
       tertiary: "#F3F4F6",
     },
 
@@ -72,15 +72,15 @@ export const antdThemeConfig = {
       headerHeight: 64,
       headerPadding: "0 24px",
       siderBg: "#FFFFFF",
-      bodyBg: "#F9FAFB",
+      bodyBg: "#F7F8F8",
     },
     Menu: {
       itemBg: "transparent",
-      itemSelectedBg: "#EEF2FF",
+      itemSelectedBg: "#FFF3ED",
       itemSelectedColor: theme.colors.primary,
-      itemHoverBg: "#F9FAFB",
+      itemHoverBg: "#F7F8F8",
       itemHoverColor: theme.colors.primary,
-      itemActiveBg: "#EEF2FF",
+      itemActiveBg: "#FFF3ED",
       itemMarginInline: 8,
       itemBorderRadius: 8,
       iconSize: 18,
@@ -95,7 +95,7 @@ export const antdThemeConfig = {
       fontWeight: 500,
     },
     Table: {
-      headerBg: "#F9FAFB",
+      headerBg: "#F7F8F8",
       headerColor: theme.colors.text.primary,
       borderRadius: 8,
     },

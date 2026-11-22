@@ -85,11 +85,11 @@ Deno.serve(async (req) => {
 
           if (error) throw error;
         } else {
+          // Each booking stores its own line total; the payment intent covers the whole cart.
           const { error } = await supabaseAdmin
             .from("bookings")
             .update({
               payment_status,
-              amount,
               currency,
             })
             .eq("payment_intent_id", paymentIntentId);

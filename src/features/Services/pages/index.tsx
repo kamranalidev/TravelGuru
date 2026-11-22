@@ -1,5 +1,6 @@
+import { useCountry } from "../../../context/CountryContext";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Container,
@@ -23,6 +24,8 @@ import "./index.css";
 
 type Service = {
   id: string;
+  country_code?: string;
+  is_active?: boolean;
   service_name: string;
   service_description: string;
   location: string;
@@ -70,7 +73,7 @@ const getServiceImages = (service: Service): string[] => {
     }
   } catch (_e) {}
 
-  return ["/assets/burjKhalifa.jpg"];
+  return ["/Travel-Guru-Logo-Final.png"];
 };
 
 const formatAED = (amount: number | null | undefined) => {
@@ -128,16 +131,19 @@ const formatDays = (value: any): string | null => {
 };
 
 const SORT_OPTIONS = [
-  { value: "recommended", label: "Recommended" },
+  { value: "recommended", label: "Recently added" },
   { value: "price_asc", label: "Price: Low to High" },
   { value: "price_desc", label: "Price: High to Low" },
 ];
 
 export const ServicesPage = () => {
+  const { countryCode, country } = useCountry();
+  const [searchParams] = useSearchParams();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("recommended");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("query") || "");
+  useEffect(() => { setSearchQuery(searchParams.get("query") || ""); }, [searchParams]);
   const [priceRange, setPriceRange] = useState<number[]>([0, 6000]);
   const navigate = useNavigate();
 
@@ -176,7 +182,7 @@ export const ServicesPage = () => {
   }, [derivedMaxPrice]);
 
   const filteredAndSorted = useMemo(() => {
-    let list = [...services];
+    let list = services.filter(s => s.is_active !== false && (!countryCode || s.country_code === countryCode));
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -208,7 +214,7 @@ export const ServicesPage = () => {
     }
 
     return list;
-  }, [services, searchQuery, priceRange, sortBy]);
+  }, [countryCode, services, searchQuery, priceRange, sortBy]);
 
   const resultsCount = loading ? 0 : filteredAndSorted.length;
 
@@ -219,10 +225,10 @@ export const ServicesPage = () => {
       ...service,
       service_description:
         service.service_description ||
-        "Premium experience curated by Travel Guroo.",
+        "View the package details, itinerary, and inclusions.",
       description:
         service.service_description ||
-        "Premium experience curated by Travel Guroo.",
+        "View the package details, itinerary, and inclusions.",
       name: service.service_name,
       price: service.default_price,
       default_price: service.default_price,
@@ -248,11 +254,12 @@ export const ServicesPage = () => {
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#f5f5f5" }}>
       <Header />
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <div className="catalog-heading"><p>Explore / {country?.name || "All destinations"}</p><h1>{country ? `Things to do in ${country.destination_label}` : "Tours, activities & things to do"}</h1><span>Compare experiences and find a package that fits your plans.</span></div>
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", lg: "280px 1fr" },
+            gridTemplateColumns: { xs: "1fr", lg: "248px minmax(0, 1fr)" },
             gap: 3,
             alignItems: "start",
           }}
@@ -446,10 +453,10 @@ export const ServicesPage = () => {
               sx={{
                 display: "grid",
                 gridTemplateColumns: {
-                  xs: "repeat(2, 1fr)",
+                  xs: "1fr",
                   sm: "repeat(2, 1fr)",
                   md: "repeat(3, 1fr)",
-                  lg: "repeat(4, 1fr)",
+                  lg: "repeat(3, minmax(0, 1fr))",
                 },
                 gap: 2.5,
               }}
@@ -503,9 +510,13 @@ export const ServicesPage = () => {
                   return (
                     <Card
                       key={service.id}
-                      onClick={() => handleServiceClick(service)}
+                      component="a"
+                      href={`/bookings/${service.id}`}
+                      onClick={e => { if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) { e.preventDefault(); handleServiceClick(service); } }}
                       sx={{
-                        borderRadius: "12px",
+                        textDecoration: "none",
+                        color: "inherit",
+                        borderRadius: "10px",
                         overflow: "hidden",
                         bgcolor: "white",
                         boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
@@ -515,8 +526,8 @@ export const ServicesPage = () => {
                         flexDirection: "column",
                         transition: "transform 0.2s ease, box-shadow 0.2s ease",
                         "&:hover": {
-                          transform: "translateY(-4px)",
-                          boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
+                          transform: "none",
+                          boxShadow: "0 3px 12px rgba(0,0,0,0.06)",
                         },
                         "&:hover .service-image": {
                           transform: "scale(1.05)",
@@ -545,7 +556,7 @@ export const ServicesPage = () => {
                             left: 0,
                             width: "100%",
                             height: "100%",
-                            objectFit: "contain",
+                            objectFit: "cover",
                             bgcolor: "#f5f5f5",
                             transition: "transform 0.3s ease",
                           }}
@@ -555,7 +566,7 @@ export const ServicesPage = () => {
                       {/* Content */}
                       <CardContent sx={{ p: 2.5 }}>
                         <Typography
-                          sx={{ fontWeight: 800, fontSize: 18, mb: 0.75 }}
+                          sx={{ fontWeight: 650, fontSize: 16, mb: 0.75 }}
                         >
                           {service.service_name}
                         </Typography>
@@ -584,13 +595,13 @@ export const ServicesPage = () => {
                           }}
                         >
                           {service.service_description ||
-                            "Premium experience curated by Travel Guroo."}
+                            "View the package details, itinerary, and inclusions."}
                         </Typography>
 
                         <Stack spacing={0.5} sx={{ mb: 2 }}>
                           <Typography
                             sx={{
-                              fontWeight: 800,
+                              fontWeight: 650,
                               fontSize: 18,
                               color: "#111827",
                             }}

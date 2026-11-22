@@ -9,7 +9,7 @@ interface WhatsAppWidgetProps {
 
 export const WhatsAppWidget = ({
   phoneNumber = "+971501234567", // Default UAE number - update with your actual number
-  message = "Hello! I'm interested in your Dubai travel services.",
+  message = "Hello! I'm interested in your travel services.",
 }: WhatsAppWidgetProps) => {
   const handleClick = () => {
     const encodedMessage = encodeURIComponent(message);
@@ -33,7 +33,6 @@ export const WhatsAppWidget = ({
           <WhatsAppIcon className="whatsapp-icon" />
         </Fab>
       </Tooltip>
-      <Box className="whatsapp-pulse-ring" />
     </Box>
   );
 };

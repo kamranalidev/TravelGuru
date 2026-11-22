@@ -313,11 +313,11 @@ const Carts = () => {
       ),
     },
     {
-      title: "Booking Date",
+      title: "Trip dates",
       dataIndex: "booking_date",
       key: "booking_date",
-      render: (date) => (
-        <Text style={{ color: colors.text }}>{formatDate(date)}</Text>
+      render: (date, record) => (
+        <Text style={{ color: colors.text }}>{formatDate(date)}{record.booking_end_date && record.booking_end_date !== date ? ` – ${formatDate(record.booking_end_date)} (${record.duration_days} days)` : ""}</Text>
       ),
     },
     {

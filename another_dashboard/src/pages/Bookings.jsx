@@ -1,3 +1,4 @@
+import { useCountry } from "../context/CountryContext";
 import { useState, useEffect } from "react";
 import {
   Table,
@@ -32,6 +33,7 @@ const { Title } = Typography;
 const { Option } = Select;
 
 const Bookings = () => {
+  const { countryCode, countries } = useCountry();
   const [loading, setLoading] = useState(false);
   const [bookings, setBookings] = useState([]);
   const [services, setServices] = useState([]);
@@ -43,6 +45,9 @@ const Bookings = () => {
   const [editingBooking, setEditingBooking] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [form] = Form.useForm();
+  const selectedServiceId = Form.useWatch("service_id", form);
+  const selectedPackageId = Form.useWatch("package_id", form);
+  const selectedStartDate = Form.useWatch("booking_date", form);
 
   useEffect(() => {
     fetchBookings();
@@ -59,7 +64,7 @@ const Bookings = () => {
         .select(
           `
           *,
-          services:service_id(id, service_name),
+          services:service_id(id, service_name, country_code),
           packages:package_id(id, name),
           user_profiles:user_id(user_id, full_name, email, phone_number)
         `,
@@ -77,14 +82,14 @@ const Bookings = () => {
   };
 
   const fetchServices = async () => {
-    const { data } = await supabase.from("services").select("id, service_name");
+    const { data } = await supabase.from("services").select("id, service_name, country_code");
     setServices(data || []);
   };
 
   const fetchPackages = async () => {
     const { data } = await supabase
       .from("packages")
-      .select("id, name, service_id");
+      .select("id, name, service_id, duration_days");
     setPackages(data || []);
   };
 
@@ -162,6 +167,7 @@ const Bookings = () => {
   };
 
   const filteredBookings = bookings.filter((booking) => {
+    if (countryCode && booking.services?.country_code !== countryCode) return false;
     const searchLower = searchText.toLowerCase();
     return (
       booking.user_profiles?.full_name?.toLowerCase().includes(searchLower) ||
@@ -173,6 +179,7 @@ const Bookings = () => {
   });
 
   const columns = [
+    { title: "Country", render: (_, booking) => countries.find(c => c.code === booking.services?.country_code)?.name || "Unassigned" },
     {
       title: "ID",
       dataIndex: "id",
@@ -234,10 +241,12 @@ const Bookings = () => {
       render: (text) => text || "-",
     },
     {
-      title: "Booking Date",
+      title: "Trip dates",
       dataIndex: "booking_date",
       key: "booking_date",
-      render: (date) => (date ? dayjs(date).format("MMM DD, YYYY") : "-"),
+      render: (date, record) => !date ? "-" : record.booking_end_date && record.booking_end_date !== date
+        ? `${dayjs(date).format("MMM DD, YYYY")} – ${dayjs(record.booking_end_date).format("MMM DD, YYYY")} (${record.duration_days} days)`
+        : dayjs(date).format("MMM DD, YYYY"),
       sorter: (a, b) =>
         dayjs(a.booking_date).unix() - dayjs(b.booking_date).unix(),
     },
@@ -388,8 +397,8 @@ const Bookings = () => {
             label="Service"
             rules={[{ required: true }]}
           >
-            <Select placeholder="Select service">
-              {services.map((service) => (
+            <Select placeholder="Select service" onChange={() => form.setFieldValue("package_id", undefined)}>
+              {services.filter(s => !countryCode || s.country_code === countryCode || s.id === editingBooking?.service_id).map((service) => (
                 <Option key={service.id} value={service.id}>
                   {service.service_name}
                 </Option>
@@ -399,17 +408,19 @@ const Bookings = () => {
 
           <Form.Item name="package_id" label="Package">
             <Select placeholder="Select package" allowClear>
-              {packages.map((pkg) => (
+              {packages.filter(pkg => pkg.service_id === selectedServiceId).map((pkg) => (
                 <Option key={pkg.id} value={pkg.id}>
-                  {pkg.name}
+                  {pkg.name} · {pkg.duration_days || 1} day(s)
                 </Option>
               ))}
             </Select>
           </Form.Item>
 
+          {selectedStartDate && <Typography.Paragraph>Trip: {selectedStartDate.format("YYYY-MM-DD")} – {selectedStartDate.add(
+            (editingBooking && selectedPackageId === editingBooking.package_id ? editingBooking.duration_days || 1 : packages.find(p => p.id === selectedPackageId)?.duration_days || 1) - 1, "day").format("YYYY-MM-DD")}</Typography.Paragraph>}
           <Form.Item
             name="booking_date"
-            label="Booking Date"
+            label="Trip start date"
             rules={[{ required: true }]}
           >
             <DatePicker style={{ width: "100%" }} />
@@ -497,9 +508,9 @@ const Bookings = () => {
             <Descriptions.Item label="Package">
               {selectedBooking.packages?.name || "-"}
             </Descriptions.Item>
-            <Descriptions.Item label="Booking Date">
+            <Descriptions.Item label="Trip dates">
               {selectedBooking.booking_date
-                ? dayjs(selectedBooking.booking_date).format("MMMM DD, YYYY")
+                ? `${dayjs(selectedBooking.booking_date).format("MMMM DD, YYYY")} – ${dayjs(selectedBooking.booking_end_date || selectedBooking.booking_date).format("MMMM DD, YYYY")}`
                 : "-"}
             </Descriptions.Item>
             <Descriptions.Item label="Time">

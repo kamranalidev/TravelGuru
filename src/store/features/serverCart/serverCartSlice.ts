@@ -1,6 +1,20 @@
+import { firstServiceImage } from "../../../utils/serviceImages";
+import { tripEndDate } from "../../../utils/tripDates";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { supabase } from "../../../supabaseClient";
 import type { CartItem } from "../cart/cartSlice";
+
+const cartRow = (cartId: string, it: CartItem) => ({
+  cart_id: cartId, service_id: it.serviceId, package_id: it.packageId,
+  booking_date: it.bookingDate, booking_end_date: it.bookingEndDate || tripEndDate(it.bookingDate, it.durationDays || 1),
+  duration_days: it.durationDays || 1,
+  departure_arrival_time: it.bookingTime || null, airport_type: it.airportType, address: it.address,
+  unit_price_micros: Math.round((Number(it.unitPrice) || 0) * 1_000_000), currency: "aed",
+  adults: it.participants.adults, children: it.participants.children, infants: it.participants.infants,
+  adult_price_micros: Math.round((it.participantPricing?.adultPrice ?? it.unitPrice) * 1_000_000),
+  child_price_micros: it.participantPricing?.childPrice == null ? null : Math.round(it.participantPricing.childPrice * 1_000_000),
+  infant_price_micros: it.participantPricing?.infantPrice == null ? null : Math.round(it.participantPricing.infantPrice * 1_000_000),
+});
 
 export type ServerCartState = {
   cartId: string | null;
@@ -68,7 +82,7 @@ export const loadServerCartToLocal = createAsyncThunk(
     const { data, error } = await supabase
       .from("cart_items")
       .select(
-        "service_id, package_id, booking_date, departure_arrival_time, airport_type, address, unit_price_micros, currency, services(service_name, location), packages(name)",
+        "service_id, package_id, booking_date, booking_end_date, duration_days, departure_arrival_time, airport_type, address, unit_price_micros, currency, adults, children, infants, adult_price_micros, child_price_micros, infant_price_micros, services(service_name, location, service_image), packages(name, package_image)",
       )
       .eq("cart_id", cartId)
       .order("created_at", { ascending: true });
@@ -78,17 +92,26 @@ export const loadServerCartToLocal = createAsyncThunk(
     const items: CartItem[] = (data ?? []).map((row: any) => ({
       serviceId: Number(row.service_id),
       serviceName: row.services?.service_name ?? null,
+      serviceImage: firstServiceImage(row.services?.service_image) ?? null,
       location: row.services?.location ?? null,
       packageId: row.package_id == null ? null : Number(row.package_id),
       packageName:
         row.packages?.name ?? (row.package_id ? null : "Standard Experience"),
       bookingDate: String(row.booking_date),
+      bookingEndDate: row.booking_end_date || row.booking_date,
+      durationDays: row.duration_days || 1,
+      packageImage: row.packages?.package_image || null,
       bookingTime: row.departure_arrival_time ?? null,
       airportType: row.airport_type ?? null,
       address: row.address ?? null,
       unitPrice: Number(row.unit_price_micros ?? 0) / 1_000_000,
-      quantity: 1, // Default quantity for server cart items
-      participants: { adults: 1, children: 0, infants: 0 },
+      quantity: (row.adults ?? 1) + (row.children ?? 0) + (row.infants ?? 0),
+      participants: { adults: row.adults ?? 1, children: row.children ?? 0, infants: row.infants ?? 0 },
+      participantPricing: {
+        adultPrice: Number(row.adult_price_micros ?? row.unit_price_micros ?? 0) / 1_000_000,
+        childPrice: row.child_price_micros == null ? null : Number(row.child_price_micros) / 1_000_000,
+        infantPrice: row.infant_price_micros == null ? null : Number(row.infant_price_micros) / 1_000_000,
+      },
     }));
 
     return { cartId, items };
@@ -118,31 +141,23 @@ export const addServerCartItem = createAsyncThunk(
     })();
 
     const it = args.item;
-    const row = {
-      cart_id: cartId,
-      service_id: it.serviceId,
-      package_id: it.packageId,
-      booking_date: it.bookingDate,
-      departure_arrival_time: it.bookingTime ?? null,
-      airport_type: it.airportType,
-      address: it.address,
-      unit_price_micros: Math.round((Number(it.unitPrice) || 0) * 1_000_000),
-      currency: "aed",
-    };
+    const row = cartRow(cartId, it);
 
-    const { error } = await supabase.from("cart_items").insert(row);
-    if (error) {
-      // ignore duplicates per unique index (cart_id, service_id, booking_date, coalesce(time,'00:00:00'))
-      if (
-        String((error as any).code) === "23505" ||
-        (error as any).status === 409
-      ) {
-        return { cartId, inserted: false };
-      }
-      throw new Error(error.message);
-    }
-
-    return { cartId, inserted: true };
+    let lookup = supabase.from("cart_items").select("id, adults, children, infants")
+      .eq("cart_id", cartId).eq("service_id", it.serviceId).eq("booking_date", it.bookingDate);
+    lookup = it.packageId == null ? lookup.is("package_id", null) : lookup.eq("package_id", it.packageId);
+    lookup = it.bookingTime ? lookup.eq("departure_arrival_time", it.bookingTime) : lookup.is("departure_arrival_time", null);
+    const { data: existing, error: lookupError } = await lookup.limit(1).maybeSingle();
+    if (lookupError) throw new Error(lookupError.message);
+    const result = existing
+      ? await supabase.from("cart_items").update({ ...row,
+          adults: (existing.adults ?? 1) + row.adults,
+          children: (existing.children ?? 0) + row.children,
+          infants: (existing.infants ?? 0) + row.infants,
+        }).eq("id", existing.id)
+      : await supabase.from("cart_items").insert(row);
+    if (result.error) throw new Error(result.error.message);
+    return { cartId, inserted: !existing };
   },
 );
 
@@ -151,6 +166,7 @@ export const removeServerCartItem = createAsyncThunk(
   async (args: {
     cartId: string;
     serviceId: number;
+    packageId: number | null;
     bookingDate: string;
     bookingTime: string | null;
   }) => {
@@ -163,6 +179,7 @@ export const removeServerCartItem = createAsyncThunk(
       .eq("service_id", args.serviceId)
       .eq("booking_date", args.bookingDate);
 
+    q = args.packageId == null ? q.is("package_id", null) : q.eq("package_id", args.packageId);
     if (t == null || t === "") {
       // match rows where time is NULL OR time='00:00:00'
       q = q.or(
@@ -176,6 +193,20 @@ export const removeServerCartItem = createAsyncThunk(
     if (error) throw new Error(error.message);
 
     return { removed: true };
+  },
+);
+
+export const updateServerCartParticipants = createAsyncThunk(
+  "serverCart/updateParticipants",
+  async (args: { cartId: string; item: CartItem }) => {
+    const it = args.item;
+    let query = supabase.from("cart_items").update({
+      adults: it.participants.adults, children: it.participants.children, infants: it.participants.infants,
+    }).eq("cart_id", args.cartId).eq("service_id", it.serviceId).eq("booking_date", it.bookingDate);
+    query = it.packageId == null ? query.is("package_id", null) : query.eq("package_id", it.packageId);
+    query = it.bookingTime ? query.eq("departure_arrival_time", it.bookingTime) : query.is("departure_arrival_time", null);
+    const { error } = await query;
+    if (error) throw new Error(error.message);
   },
 );
 
@@ -221,17 +252,7 @@ export const syncCartToServer = createAsyncThunk(
       cartId = created.id as string;
     }
 
-    const rows = items.map((it) => ({
-      cart_id: cartId,
-      service_id: it.serviceId,
-      package_id: it.packageId,
-      booking_date: it.bookingDate,
-      departure_arrival_time: it.bookingTime ?? null,
-      airport_type: it.airportType,
-      address: it.address,
-      unit_price_micros: Math.round((Number(it.unitPrice) || 0) * 1_000_000),
-      currency: "aed",
-    }));
+    const rows = items.map(it => cartRow(cartId, it));
 
     let inserted = 0;
     for (const row of rows) {

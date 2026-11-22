@@ -1,250 +1,30 @@
-/* ===================================
-   HEADER RESPONSIVE STYLES
-   Production-level responsiveness
-   =================================== */
-
-/* Mobile menu toggle */
-.mobile-menu-toggle {
-  display: none;
-  background: transparent;
-  border: none;
-  padding: 8px;
-  cursor: pointer;
-  color: #333;
-}
-
-@media (max-width: 899px) {
-  .mobile-menu-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
-/* Mobile Drawer Styles */
-.mobile-drawer {
-  width: 100%;
-  max-width: 320px;
-  height: 100vh;
-  min-height: 100%;
-  background: #ffffff;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.mobile-drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #fafafa;
-}
-
-.mobile-drawer-logo {
-  height: 35px;
-  width: auto;
-}
-
-.mobile-drawer-close {
-  padding: 8px;
-  color: #666;
-  transition: color 0.2s ease;
-}
-
-.mobile-drawer-close:hover {
-  color: #333;
-}
-
-.mobile-drawer-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 8px 0;
-  -webkit-overflow-scrolling: touch;
-}
-
-.mobile-drawer-nav-item {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 16px 24px;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #333;
-  text-decoration: none;
-  background: transparent;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.mobile-drawer-nav-item:hover,
-.mobile-drawer-nav-item:focus {
-  background-color: #f5f5f5;
-  color: #FF621F;
-}
-
-.mobile-drawer-nav-item.active {
-  color: #FF621F;
-  background-color: rgba(255, 98, 31, 0.08);
-  font-weight: 600;
-}
-
-.mobile-drawer-divider {
-  height: 1px;
-  background: #e0e0e0;
-  margin: 8px 16px;
-}
-
-.mobile-drawer-footer {
-  padding: 16px 20px;
-  border-top: 1px solid #e0e0e0;
-  background: #fafafa;
-}
-
-.mobile-drawer-user-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.mobile-drawer-user-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.mobile-drawer-user-name {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #333;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mobile-drawer-user-email {
-  font-size: 0.8rem;
-  color: #666;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mobile-drawer-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mobile-drawer-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #333;
-  background: #f5f5f5;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.mobile-drawer-action-btn:hover {
-  background: #ebebeb;
-}
-
-.mobile-drawer-action-btn.primary {
-  background: linear-gradient(135deg, #FF621F, #FF8A4F);
-  color: white;
-}
-
-.mobile-drawer-action-btn.primary:hover {
-  background: linear-gradient(135deg, #e55519, #e67b44);
-}
-
-.mobile-drawer-action-btn.danger {
-  color: #dc2626;
-}
-
-.mobile-drawer-action-btn.danger:hover {
-  background: rgba(220, 38, 38, 0.1);
-}
-
-/* Header responsive adjustments */
-@media (max-width: 1024px) {
-  header img[alt="TravelGuru Logo"] {
-    width: 88px !important;
-  }
-}
-
-@media (max-width: 768px) {
-  header img[alt="TravelGuru Logo"] {
-    width: 80px !important;
-    min-width: 70px;
-  }
-}
-
-@media (max-width: 480px) {
-  header img[alt="TravelGuru Logo"] {
-    width: 70px !important;
-  }
-  
-  .mobile-drawer {
-    max-width: 100%;
-  }
-}
-
-/* Ensure drawer takes full height */
-.MuiDrawer-root .MuiDrawer-paper {
-  height: 100vh !important;
-  height: 100dvh !important; /* Dynamic viewport height for mobile */
-  top: 0 !important;
-  bottom: 0 !important;
-}
-
-/* Safe area insets for notched devices */
-@supports (padding: max(0px)) {
-  .mobile-drawer-header {
-    padding-top: max(16px, env(safe-area-inset-top));
-  }
-  
-  .mobile-drawer-footer {
-    padding-bottom: max(16px, env(safe-area-inset-bottom));
-  }
-}
-
-/* Ensure proper touch targets */
-.header-nav-btn,
-.header-icon-btn {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-/* Desktop navigation improvements */
-@media (min-width: 900px) {
-  .desktop-nav-link {
-    padding: 10px 16px;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-  }
-  
-  .desktop-nav-link:hover {
-    background-color: #f5f5f5;
-    color: #FF621F;
-  }
-}
-
-/* Cart badge responsive */
-@media (max-width: 480px) {
-  .MuiBadge-badge {
-    font-size: 0.65rem;
-    min-width: 16px;
-    height: 16px;
-  }
-}
+.site-header { position: sticky; top: 0; z-index: 1100; background: #fff; border-bottom: 1px solid #e8e8e8; }
+.header-main, .header-nav-inner { width: min(1200px, calc(100% - 64px)); margin-inline: auto; display: flex; align-items: center; }
+.header-main { min-height: 78px; gap: 32px; }
+.brand { display: flex; flex-shrink: 0; align-items: center; gap: 8px; text-decoration: none; color: #242424; }
+.brand > img { width: 43px; height: 48px; object-fit: contain; }
+.brand > span { font-size: 24px; font-weight: 750; letter-spacing: -1.2px; }
+.brand > span > span { color: #d74712; }
+.header-search { display: flex; align-items: center; gap: 10px; border-radius: 24px; background: #f5f5f5; padding: 4px 5px 4px 16px; max-width: 405px; flex: 1; color: #777; }
+.header-search input { width: 100%; min-width: 0; font: inherit; font-size: 14px; border: 0; outline: none; background: transparent; color: #242424; }
+.header-search button { display: grid; place-items: center; border: 0; background: transparent; color: #777; cursor: pointer; min-width: 36px; }
+.header-actions { display: flex; align-items: center; gap: 14px; margin-left: auto; flex-shrink: 0; }
+.header-actions .MuiButton-root { font-size: 14px; white-space: nowrap; }
+.header-help { color: #454545; font-size: 14px; text-decoration: none; }
+.header-help:hover { text-decoration: underline; }
+.header-actions .mobile-nav-toggle { display: none; }
+.header-navigation { border-top: 1px solid #f1f1f1; }
+.header-nav-inner { min-height: 48px; gap: 26px; }
+.header-country { border-right: 1px solid #e7e7e7; padding-right: 20px; }
+.header-country select { border: 0 !important; padding-left: 0 !important; padding-block: 10px !important; font-size: 14px; font-family: inherit; font-weight: 600; max-width: 240px !important; }
+.header-nav-links { display: flex; gap: 28px; align-self: stretch; }
+.header-nav-links > a { display: flex; align-items: center; border-bottom: 2px solid transparent; color: #555; text-decoration: none; font-size: 14px; font-weight: 500; }
+.header-nav-links > a.active { border-bottom-color: #e95118; color: #bd3f11; }
+.header-currency { color: #777; font-size: 13px; margin-left: auto; white-space: nowrap; }
+.mobile-navigation { width: min(330px, 90vw); padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.mobile-navigation-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.mobile-navigation > a { text-decoration: none; color: #333; padding: 12px; border-radius: 6px; }
+.mobile-navigation > a.active { background: #fff3ed; color: #b43d12; }
+.mobile-country { margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; }
+@media (max-width: 1000px) { .header-main { gap: 20px; } .header-help { display: none; } .header-actions { gap: 8px; } .brand > span { font-size: 22px; } }
+@media (max-width: 760px) { .header-main, .header-nav-inner { width: calc(100% - 32px); } .header-main { min-height: 66px; gap: 12px; flex-wrap: wrap; padding-block: 7px; } .brand > img { width: 34px; height: 39px; } .brand > span { font-size: 21px; } .header-search { order: 3; flex-basis: 100%; max-width: none; margin-bottom: 5px; } .header-actions .mobile-nav-toggle { display: inline-flex; } .header-actions .account-button { min-width: 36px; padding: 6px; font-size: 0; gap: 0; } .account-button .MuiButton-startIcon { margin: 0; } .account-button .MuiButton-endIcon { display: none; } .header-nav-links { display: none; } .header-nav-inner { min-height: 42px; gap: 0; } .header-country { border: 0; padding: 0; } .header-country select { max-width: 210px !important; } .header-currency { font-size: 12px; } .header-actions { gap: 3px; } .header-actions .MuiButton-root { min-height: 36px; padding: 7px 12px; } }

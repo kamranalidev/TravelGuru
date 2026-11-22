@@ -174,7 +174,9 @@ const generateVoucherEmailHTML = (
   const amount = formatMoney(booking.amount, booking.currency);
   const bookingTime = booking.departure_arrival_time || "";
   const greeting = userName ? escapeHtml(userName) : "Valued Customer";
-  const bookingDate = booking.booking_date || "";
+  const bookingDate = booking.booking_end_date && booking.booking_end_date !== booking.booking_date
+    ? `${booking.booking_date} – ${booking.booking_end_date} (${booking.duration_days} days)`
+    : booking.booking_date || "";
 
   // Participant information
   const adults = booking.adults || 1;
@@ -582,7 +584,7 @@ const generateAdminNotificationHTML = (
           </tr>
           <tr style="background-color: #f8f9fa;">
             <td style="border-bottom: 1px solid #e0e0e0; font-weight: 600; color: #333;">Date</td>
-            <td style="border-bottom: 1px solid #e0e0e0; color: #1a1a1a;">📅 ${escapeHtml(booking.booking_date)}</td>
+            <td style="border-bottom: 1px solid #e0e0e0; color: #1a1a1a;">📅 ${escapeHtml(booking.booking_end_date && booking.booking_end_date !== booking.booking_date ? `${booking.booking_date} – ${booking.booking_end_date}` : booking.booking_date)}</td>
           </tr>
           <tr>
             <td style="border-bottom: 1px solid #e0e0e0; font-weight: 600; color: #333;">Time</td>
@@ -727,7 +729,7 @@ const generateBookingEmailHTML = (booking, service, packageInfo, userName) => {
                       <tr>
                         <td style="padding: 8px 0; color: #666; font-size: 14px;">Date</td>
                         <td style="padding: 8px 0; color: #1a1a1a; font-size: 14px; text-align: right;">${
-                          booking.booking_date
+                          escapeHtml(booking.booking_end_date && booking.booking_end_date !== booking.booking_date ? `${booking.booking_date} – ${booking.booking_end_date}` : booking.booking_date)
                         }</td>
                       </tr>
                       ${
@@ -961,6 +963,8 @@ const sendBookingConfirmationEmail = async (bookingId) => {
         `
         id, 
         booking_date, 
+        booking_end_date,
+        duration_days,
         departure_arrival_time,
         address,
         type,
@@ -1376,6 +1380,8 @@ app.get("/api/voucher/:code", async (req, res) => {
         `
         id,
         booking_date,
+        booking_end_date,
+        duration_days,
         departure_arrival_time,
         voucher_code,
         voucher_status,
@@ -1408,7 +1414,7 @@ app.get("/api/voucher/:code", async (req, res) => {
     }
 
     // Check if expired based on booking date
-    const isExpired = isVoucherExpired(booking.booking_date);
+    const isExpired = isVoucherExpired(booking.booking_end_date || booking.booking_date);
     let status = booking.voucher_status;
 
     // Auto-update status if expired
@@ -1434,6 +1440,8 @@ app.get("/api/voucher/:code", async (req, res) => {
       booking: {
         id: booking.id,
         date: booking.booking_date,
+        endDate: booking.booking_end_date || booking.booking_date,
+        durationDays: booking.duration_days || 1,
         time: booking.departure_arrival_time,
         service: service?.service_name || "N/A",
         location: service?.location || "N/A",
@@ -1474,6 +1482,8 @@ app.post("/api/voucher/verify", async (req, res) => {
         `
         id,
         booking_date,
+        booking_end_date,
+        duration_days,
         departure_arrival_time,
         voucher_code,
         voucher_status,
@@ -1526,7 +1536,7 @@ app.post("/api/voucher/verify", async (req, res) => {
     }
 
     // Check if expired
-    if (isVoucherExpired(booking.booking_date)) {
+    if (isVoucherExpired(booking.booking_end_date || booking.booking_date)) {
       // Update status to expired
       await supabase
         .from("bookings")
@@ -1536,8 +1546,10 @@ app.post("/api/voucher/verify", async (req, res) => {
       log.warn(`Voucher expired: ${code}`);
       return res.status(400).json({
         success: false,
-        error: "Voucher has expired (booking date has passed)",
+        error: "Voucher has expired (trip has ended)",
         bookingDate: booking.booking_date,
+          bookingEndDate: booking.booking_end_date || booking.booking_date,
+          durationDays: booking.duration_days || 1,
         code: booking.voucher_code,
       });
     }
@@ -1573,6 +1585,8 @@ app.post("/api/voucher/verify", async (req, res) => {
       booking: {
         id: booking.id,
         date: booking.booking_date,
+        endDate: booking.booking_end_date || booking.booking_date,
+        durationDays: booking.duration_days || 1,
         time: booking.departure_arrival_time,
         service: service?.service_name || "N/A",
         location: service?.location || "N/A",
@@ -1605,6 +1619,8 @@ app.get("/api/vouchers", async (req, res) => {
         `
         id,
         booking_date,
+        booking_end_date,
+        duration_days,
         departure_arrival_time,
         voucher_code,
         voucher_status,
@@ -1630,7 +1646,7 @@ app.get("/api/vouchers", async (req, res) => {
     }
 
     if (date) {
-      query = query.eq("booking_date", date);
+      query = query.lte("booking_date", date).gte("booking_end_date", date);
     }
 
     const { data: bookings, error } = await query;
@@ -1665,7 +1681,7 @@ app.get("/api/vouchers", async (req, res) => {
 
         // Check if should be expired
         let status = booking.voucher_status;
-        if (status === "active" && isVoucherExpired(booking.booking_date)) {
+        if (status === "active" && isVoucherExpired(booking.booking_end_date || booking.booking_date)) {
           status = "expired";
         }
 
@@ -1674,6 +1690,8 @@ app.get("/api/vouchers", async (req, res) => {
           status: status,
           bookingId: booking.id,
           bookingDate: booking.booking_date,
+          bookingEndDate: booking.booking_end_date || booking.booking_date,
+          durationDays: booking.duration_days || 1,
           bookingTime: booking.departure_arrival_time,
           service: service?.service_name || "N/A",
           location: service?.location || "N/A",

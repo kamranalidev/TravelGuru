@@ -86,7 +86,7 @@ const ContactPage: React.FC = () => {
             Contact Us
           </Typography>
           <Typography variant="h6" className="contact-hero-subtitle">
-            Get in touch with our team - we're here to help make your Dubai experience unforgettable
+            Contact us about a package, your travel dates, or an existing booking.
           </Typography>
         </Container>
       </Box>

@@ -1,3 +1,4 @@
+import { useCountry } from "../context/CountryContext";
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -123,6 +124,7 @@ const getFirstImage = (serviceImage) => {
 };
 
 function Services() {
+  const { countries, countryCode, error: countryError } = useCountry();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -141,6 +143,7 @@ function Services() {
     const values = form.getFieldsValue();
     const errors = [];
 
+    if (!values.country_code) errors.push("Country selection is required");
     if (!values.service_name?.trim()) errors.push("Service name is required");
     if (!values.service_type) errors.push("Service type is required");
     if (!values.service_description?.trim())
@@ -600,6 +603,7 @@ function Services() {
         service_name: values.service_name,
         service_description: values.service_description,
         location: values.location || null,
+        country_code: values.country_code,
         service_type: values.service_type || "tour",
         category: values.category || null,
         subcategory: values.subcategory || null,
@@ -689,6 +693,7 @@ function Services() {
   };
 
   const columns = [
+    { title: "Country", dataIndex: "country_code", render: code => countries.find(c => c.code === code)?.name || code || "Unassigned" },
     {
       title: "Image",
       dataIndex: "service_image",
@@ -932,8 +937,9 @@ function Services() {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="location" label="Location">
-                <Input placeholder="e.g., Dubai, Abu Dhabi" />
+              <Form.Item name="country_code" label="Country" rules={[{ required: true, message: "Select a country" }]}><Select showSearch optionFilterProp="label" options={countries.map(c => ({ value: c.code, label: c.name }))} /></Form.Item>
+              <Form.Item name="location" label="City / location">
+                <Input placeholder="e.g., Baku, Kuala Lumpur, Dubai" />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -1322,9 +1328,10 @@ function Services() {
           </Button>
         }
       >
+        {countryError && <Alert type="error" message={countryError} />}
         <Table
           columns={columns}
-          dataSource={services}
+          dataSource={services.filter(s => !countryCode || s.country_code === countryCode)}
           rowKey="id"
           loading={loading}
           scroll={{ x: 1200 }}
@@ -1379,6 +1386,7 @@ function Services() {
           onFinish={handleSubmit}
           initialValues={{
             is_active: true,
+            country_code: countryCode || undefined,
             service_type: "tour",
             instant_confirmation: true,
             mobile_voucher: true,

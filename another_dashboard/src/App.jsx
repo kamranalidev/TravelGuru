@@ -1,5 +1,7 @@
+import Countries from "./pages/Countries";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ConfigProvider, theme } from "antd";
+import { ConfigProvider } from "antd";
+import { antdThemeConfig } from "./config/theme";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/Layout/AdminLayout";
 import Login from "./pages/Login";
@@ -17,25 +19,7 @@ import "./App.css";
 function App() {
   return (
     <ConfigProvider
-      theme={{
-        algorithm: theme.defaultAlgorithm,
-        token: {
-          colorPrimary: "#6366f1",
-          borderRadius: 8,
-          fontFamily:
-            '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial',
-        },
-        components: {
-          Layout: {
-            siderBg: "#ffffff",
-          },
-          Menu: {
-            itemBg: "transparent",
-            itemSelectedBg: "#f0f0ff",
-            itemSelectedColor: "#6366f1",
-          },
-        },
-      }}
+      theme={antdThemeConfig}
     >
       <BrowserRouter>
         <Routes>
@@ -49,6 +33,7 @@ function App() {
             }
           >
             <Route index element={<Dashboard />} />
+            <Route path="countries" element={<Countries />} />
             <Route path="bookings" element={<Bookings />} />
             <Route path="services" element={<Services />} />
             <Route path="packages" element={<Packages />} />

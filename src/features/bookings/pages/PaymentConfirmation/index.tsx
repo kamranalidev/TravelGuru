@@ -6,7 +6,7 @@ export const PaymentConfirmation = () => {
   return (
     <Box sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
       <Header hidePages />
-      <StepperComponent activeStep={2} />
+      <StepperComponent activeStep={3} />
       <Box sx={{ p: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Payment confirmation

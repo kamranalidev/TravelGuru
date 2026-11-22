@@ -1,5 +1,6 @@
+import CountrySelector from "../CountrySelector";
 import { useState } from "react";
-import { Layout, Menu, Avatar, Dropdown, Button, theme } from "antd";
+import { Layout, Menu, Avatar, Dropdown, Button, theme, Grid } from "antd";
 import {
   DashboardOutlined,
   ShoppingCartOutlined,
@@ -21,7 +22,9 @@ import travelGuruLogo from "../../assets/Travel-Guru-Logo-Final.png";
 const { Header, Sider, Content } = Layout;
 
 const AdminLayout = () => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => window.innerWidth < 992);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.lg;
   const navigate = useNavigate();
   const location = useLocation();
   const { userProfile, signOut } = useAuthStore();
@@ -31,7 +34,7 @@ const AdminLayout = () => {
     {
       key: "/admin",
       icon: <DashboardOutlined />,
-      label: "Dashboard",
+      label: "Overview",
     },
     {
       key: "/admin/bookings",
@@ -43,6 +46,7 @@ const AdminLayout = () => {
       icon: <QrcodeOutlined />,
       label: "Verify Voucher",
     },
+    { key: "/admin/countries", icon: <AppstoreOutlined />, label: "Countries" },
     {
       key: "/admin/services",
       icon: <AppstoreOutlined />,
@@ -80,6 +84,7 @@ const AdminLayout = () => {
 
   const handleMenuClick = ({ key }) => {
     navigate(key);
+    if (isMobile) setCollapsed(true);
   };
 
   const handleSignOut = async () => {
@@ -112,13 +117,17 @@ const AdminLayout = () => {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
+      {isMobile && !collapsed && <button className="admin-nav-backdrop" aria-label="Close navigation" onClick={() => setCollapsed(true)} />}
       <Sider
+        breakpoint="lg"
+        onBreakpoint={broken => setCollapsed(broken)}
         trigger={null}
         collapsible
         collapsed={collapsed}
         width={240}
-        collapsedWidth={80}
+        collapsedWidth={isMobile ? 0 : 76}
         style={{
+          zIndex: 1100,
           overflow: "auto",
           height: "100vh",
           position: "fixed",
@@ -149,7 +158,7 @@ const AdminLayout = () => {
             <img
               src={travelGuruLogo}
               alt="Travel Guru"
-              style={{ height: 50, width: "100%", objectFit: "contain" }}
+              style={{ height: 46, width: "auto", objectFit: "contain" }}
             />
           )}
         </div>
@@ -163,13 +172,13 @@ const AdminLayout = () => {
       </Sider>
       <Layout
         style={{
-          marginLeft: collapsed ? 80 : 240,
+          marginLeft: isMobile ? 0 : collapsed ? 76 : 240,
           transition: "margin-left 0.2s",
         }}
       >
         <Header
           style={{
-            padding: "0 24px",
+            padding: isMobile ? "0 12px" : "0 24px",
             background: token.colorBgContainer,
             display: "flex",
             alignItems: "center",
@@ -187,6 +196,8 @@ const AdminLayout = () => {
             onClick={() => setCollapsed(!collapsed)}
             style={{ fontSize: "16px", width: 64, height: 64 }}
           />
+          {!isMobile && <span className="admin-header-label">{menuItems.find(item => item.key === location.pathname)?.label || "Travel Guroo"}</span>}
+          {["/admin", "/admin/", "/admin/services", "/admin/packages", "/admin/bookings"].includes(location.pathname) && <CountrySelector />}
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <div
               style={{
@@ -201,13 +212,13 @@ const AdminLayout = () => {
                 icon={<UserOutlined />}
                 style={{ backgroundColor: token.colorPrimary }}
               />
-              <span>{userProfile?.full_name || "Admin"}</span>
+              <span className="admin-user-name">{userProfile?.full_name || "Admin"}</span>
             </div>
           </Dropdown>
         </Header>
         <Content
           style={{
-            padding: "24px",
+            padding: isMobile ? "20px 14px" : "32px",
             minHeight: 280,
             maxWidth: "1600px",
             margin: "0 auto",

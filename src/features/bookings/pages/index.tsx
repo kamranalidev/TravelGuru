@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { tripEndDate, tripDateLabel } from "../../../utils/tripDates";
+import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import {
   ButtonComponent,
@@ -44,8 +45,6 @@ import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import BlockIcon from "@mui/icons-material/Block";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import ImageList from "@mui/material/ImageList";
-import ImageListItem from "@mui/material/ImageListItem";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import Dialog from "@mui/material/Dialog";
@@ -72,11 +71,7 @@ interface DaysValue {
   [key: string]: boolean | string[] | undefined;
 }
 
-interface ImageItem {
-  src: string;
-  rows: number;
-  cols: number;
-}
+
 
 interface ImageListProps {
   Images?: string[];
@@ -92,6 +87,9 @@ interface PackageData {
   infant_price?: number | null;
   package_image?: string | null;
   duration?: string;
+  duration_days?: number;
+  itinerary?: Array<{ day: number; title: string; description?: string }>;
+  is_active?: boolean;
   max_guests?: number;
   includes?: string[];
   excludes?: string[];
@@ -226,78 +224,13 @@ const extractImageUrls = (
 };
 
 // ============ StandardImageList Component ============
-function StandardImageList(props: ImageListProps) {
-  const images: ImageItem[] =
-    props?.Images?.map((imgUrl: string, index: number, arr: string[]) => ({
-      src: imgUrl,
-      rows: arr.length % 2 !== 0 && index === arr.length - 1 ? 3 : 2,
-      cols: arr.length % 2 !== 0 && index === arr.length - 1 ? 2 : 1,
-    })) || [];
-
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const target = e.target as HTMLImageElement;
-    target.src = "/assets/desertSafari.jpg";
-  };
-
-  return (
-    <ImageList
-      sx={{
-        borderRadius: "20px",
-        width: "100%",
-        height: 450,
-        // Promote the list into its own layer in Chrome. This costs memory, but helps keeping high FPS.
-        transform: "translateZ(0)",
-        overflowY: "auto",
-        overflowX: "hidden",
-        "&::-webkit-scrollbar": {
-          width: "8px",
-        },
-        "&::-webkit-scrollbar-track": {
-          backgroundColor: "#f1f1f1",
-          borderRadius: "10px",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          backgroundColor: "#FF621F",
-          borderRadius: "10px",
-          "&:hover": {
-            backgroundColor: "#e55519",
-          },
-        },
-      }}
-      rowHeight={200}
-      gap={1}
-    >
-      {images.map((item: ImageItem, idx: number) => (
-        <ImageListItem
-          key={idx}
-          cols={item.cols || 1}
-          rows={item.rows || 1}
-          onClick={() => props.handleClick(item.src)}
-          sx={{
-            overflow: "hidden",
-            borderRadius: "8px",
-            bgcolor: "#f5f5f5",
-          }}
-        >
-          <img
-            src={item.src}
-            alt={`Service image ${idx + 1}`}
-            loading="lazy"
-            onError={handleImageError}
-            style={{
-              cursor: "pointer",
-              objectFit: "contain",
-              objectPosition: "center",
-              width: "100%",
-              height: "100%",
-              display: "block",
-              backgroundColor: "#f5f5f5",
-            }}
-          />
-        </ImageListItem>
-      ))}
-    </ImageList>
-  );
+function StandardImageList({ Images, handleClick }: ImageListProps) {
+  const images = Images?.length ? Images.slice(0, 5) : ["/Travel-Guru-Logo-Final.png"];
+  return <div className={`booking-gallery gallery-count-${images.length}`}>
+    {images.map((src, index) => <button type="button" key={`${src}-${index}`} className="gallery-photo" onClick={() => handleClick(src)} aria-label={`View experience photo ${index + 1}`}>
+      <img src={src} alt={`Experience photo ${index + 1}`} loading={index ? "lazy" : "eager"} onError={e => { e.currentTarget.src = "/Travel-Guru-Logo-Final.png"; }} />
+    </button>)}
+  </div>;
 }
 
 export const BookingPage = () => {
@@ -328,13 +261,18 @@ export const BookingPage = () => {
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [isBooking] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+  const [capacityError, setCapacityError] = useState("");
+  const [dayFilter, setDayFilter] = useState("all");
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
 
   // Scroll to top when page loads
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
+    setSelectedPackage(null);
+    setSelectedId(null);
+    setDayFilter("all");
   }, [serviceIdFromRoute]);
 
   // === Booking capacity state ===
@@ -383,45 +321,38 @@ export const BookingPage = () => {
       ? Math.max(0, pageData.daily_slots - slotsBooked)
       : null;
 
-  // Check booking capacity whenever date or service changes
+  const durationDays = selectedPackage?.duration_days || 1;
+  const startDate = date.format("YYYY-MM-DD");
+  const endDate = tripEndDate(startDate, durationDays);
+  const dateLabel = tripDateLabel(startDate, endDate);
+  const requiresPackage = packages.some(p => (p.duration_days || 1) > 1);
+  const bookingBlocked = isBooking || packagesLoading || capacityLoading || !!capacityError || isServiceFull || (requiresPackage && !selectedPackage);
+
+  // Availability must cover every day, including bookings that started before this trip.
   useEffect(() => {
+    let active = true;
     const checkCapacity = async () => {
-      if (
-        !pageData.id ||
-        !date ||
-        pageData.daily_slots == null ||
-        pageData.daily_slots <= 0
-      ) {
-        setSlotsBooked(0);
-        return;
+      setCapacityError("");
+      if (!pageData.id || !pageData.daily_slots || pageData.daily_slots <= 0) {
+        setSlotsBooked(0); setCapacityLoading(false); return;
       }
-
+      setCapacityLoading(true);
       try {
-        setCapacityLoading(true);
-        const bookingDate = date.format("YYYY-MM-DD");
-
-        const { count, error } = await supabase
-          .from("bookings")
-          .select("id", { count: "exact", head: true })
-          .eq("service_id", pageData.id)
-          .eq("booking_date", bookingDate);
-
-        if (error) {
-          console.error("Error checking booking capacity:", error);
-          setSlotsBooked(0);
-        } else {
-          setSlotsBooked(count ?? 0);
-        }
-      } catch (err) {
-        console.error("Unexpected error checking capacity:", err);
-        setSlotsBooked(0);
+        const { data, error } = await supabase.rpc("get_trip_availability", {
+          p_service_id: pageData.id, p_start_date: startDate, p_end_date: endDate,
+        });
+        if (error) throw error;
+        if (!data?.length) throw new Error("No availability returned");
+        if (active) setSlotsBooked(Math.max(...data.map((day: { slots_booked: number }) => Number(day.slots_booked))));
+      } catch {
+        if (active) setCapacityError("Unable to check trip availability. Please try again before booking.");
       } finally {
-        setCapacityLoading(false);
+        if (active) setCapacityLoading(false);
       }
     };
-
     void checkCapacity();
-  }, [pageData.id, pageData.daily_slots, date]);
+    return () => { active = false; };
+  }, [pageData.id, pageData.daily_slots, startDate, endDate]);
 
   useEffect(() => {
     if (!serviceIdFromRoute || Number.isNaN(serviceIdFromRoute)) return;
@@ -461,10 +392,10 @@ export const BookingPage = () => {
         description:
           serviceRecord?.service_description ||
           serviceRecord?.description ||
-          "Experience Dubai like never before.",
+          "Discover an unforgettable travel experience.",
         id: serviceRecord?.id ?? 0,
-        location: serviceRecord?.location || "Dubai",
-        service_name: serviceRecord?.service_name || "Dubai Experience",
+        location: serviceRecord?.location || "Explore",
+        service_name: serviceRecord?.service_name || "Travel Experience",
         updated_at: serviceRecord?.updated_at || "",
         default_price: Number(serviceRecord?.default_price ?? 0),
         service_type: serviceRecord?.service_type || null,
@@ -505,10 +436,10 @@ export const BookingPage = () => {
         description:
           stateRecord?.service_description ||
           stateRecord?.description ||
-          "Experience Dubai like never before.",
+          "Discover an unforgettable travel experience.",
         id: stateRecord?.id ?? 0,
-        location: stateRecord?.location || "Dubai",
-        service_name: stateRecord?.service_name || "Dubai Experience",
+        location: stateRecord?.location || "Explore",
+        service_name: stateRecord?.service_name || "Travel Experience",
         updated_at: stateRecord?.updated_at || "",
         default_price: stateRecord?.default_price ?? 0,
         service_type: stateRecord?.service_type || null,
@@ -548,7 +479,7 @@ export const BookingPage = () => {
           // Filter out any invalid packages
           const validPackages = data.filter(
             (pkg): pkg is PackageData =>
-              pkg && typeof pkg.id === "number" && typeof pkg.name === "string",
+              pkg && pkg.is_active !== false && typeof pkg.id === "number" && typeof pkg.name === "string",
           );
           setPackages(validPackages);
           console.log(
@@ -628,19 +559,24 @@ export const BookingPage = () => {
     };
   };
 
-  const basePackage = {
+  const basePackage: PackageData = {
     id: 0,
     name: "Standard Experience",
     description:
-      "Includes our signature highlights, guided support, and convenient transfers.",
+      "Review the inclusions and booking details before selecting your date.",
     price: pageData.default_price,
     isBase: true,
   };
 
   const hasAddOnPackages = Array.isArray(packages) && packages.length > 0;
+  const listedPackages: PackageData[] = (packageTab === "standard"
+    ? [...(requiresPackage ? [] : [basePackage]), ...packages.filter(p => p.package_type !== "combo")]
+    : packages.filter(p => p.package_type === "combo"))
+    .filter(pack => dayFilter === "all" || String(pack.duration_days || 1) === dayFilter);
 
   // Handle booking navigation with all data
   const handleBookNow = () => {
+    if (bookingBlocked) return;
     if (!pageData.id) {
       console.warn("No service ID available for booking");
       return;
@@ -687,7 +623,8 @@ export const BookingPage = () => {
   };
 
   // Proceed to checkout for payment
-  const proceedWithBooking = () => {
+  const proceedWithBooking = async () => {
+    if (bookingBlocked) return;
     setShowConfirmationDialog(false);
     setBookingFeedback(null);
 
@@ -728,70 +665,82 @@ export const BookingPage = () => {
       return t;
     })();
 
-    dispatch(
-      addItem({
-        serviceId: pageData.id,
-        serviceName: pageData.service_name,
-        serviceImage: pageData.Image?.[0] || null,
-        location: pageData.location,
-        packageId: selectedPackage?.id ?? null,
-        packageName: selectedPackage?.name ?? "Standard Experience",
-        packageImage: selectedPackage?.package_image || null,
-        bookingDate: date.format("YYYY-MM-DD"),
-        bookingTime: normalizedAirportTime,
-        airportType: isAirportPickup ? airportTransferType : null,
-        address:
-          isAirportPickup && airportTransferType === "dropoff"
-            ? dropoffAddress.trim()
-            : null,
-        unitPrice: finalPrice,
-        quantity: 1,
-        participants: { adults: 1, children: 0, infants: 0 },
-        participantPricing: {
-          adultPrice: finalPrice,
-          childPrice: selectedPackage?.child_price ?? null,
-          infantPrice: selectedPackage?.infant_price ?? null,
-        },
-      }),
-    );
-
-    // Persist to server-side cart when authenticated
-    if (session?.user?.id) {
-      void dispatch(
-        addServerCartItem({
-          userId: session.user.id,
-          item: {
-            serviceId: pageData.id,
-            serviceName: pageData.service_name,
-            serviceImage: pageData.Image?.[0] || null,
-            location: pageData.location,
-            packageId: selectedPackage?.id ?? null,
-            packageName: selectedPackage?.name ?? "Standard Experience",
-            packageImage: selectedPackage?.package_image || null,
-            bookingDate: date.format("YYYY-MM-DD"),
-            bookingTime: normalizedAirportTime,
-            airportType: isAirportPickup ? airportTransferType : null,
-            address:
-              isAirportPickup && airportTransferType === "dropoff"
-                ? dropoffAddress.trim()
-                : null,
-            unitPrice: finalPrice,
-            quantity: 1,
-            participants: { adults: 1, children: 0, infants: 0 },
-            participantPricing: {
-              adultPrice: finalPrice,
-              childPrice: selectedPackage?.child_price ?? null,
-              infantPrice: selectedPackage?.infant_price ?? null,
+    setIsBooking(true);
+    try {
+      // Persist before navigation so the cart reload sees this trip.
+      if (session?.user?.id) {
+        await dispatch(
+          addServerCartItem({
+            userId: session.user.id,
+            item: {
+              serviceId: pageData.id,
+              serviceName: pageData.service_name,
+              serviceImage: pageData.Image?.[0] || null,
+              location: pageData.location,
+              packageId: selectedPackage?.id ?? null,
+              packageName: selectedPackage?.name ?? "Standard Experience",
+              packageImage: selectedPackage?.package_image || null,
+              bookingDate: startDate,
+              bookingEndDate: endDate,
+              durationDays,
+              bookingTime: normalizedAirportTime,
+              airportType: isAirportPickup ? airportTransferType : null,
+              address:
+                isAirportPickup && airportTransferType === "dropoff"
+                  ? dropoffAddress.trim()
+                  : null,
+              unitPrice: finalPrice,
+              quantity: 1,
+              participants: { adults: 1, children: 0, infants: 0 },
+              participantPricing: {
+                adultPrice: finalPrice,
+                childPrice: selectedPackage?.child_price ?? null,
+                infantPrice: selectedPackage?.infant_price ?? null,
+              },
             },
+          }),
+        ).unwrap();
+      }
+
+      dispatch(
+        addItem({
+          serviceId: pageData.id,
+          serviceName: pageData.service_name,
+          serviceImage: pageData.Image?.[0] || null,
+          location: pageData.location,
+          packageId: selectedPackage?.id ?? null,
+          packageName: selectedPackage?.name ?? "Standard Experience",
+          packageImage: selectedPackage?.package_image || null,
+          bookingDate: startDate,
+          bookingEndDate: endDate,
+          durationDays,
+          bookingTime: normalizedAirportTime,
+          airportType: isAirportPickup ? airportTransferType : null,
+          address:
+            isAirportPickup && airportTransferType === "dropoff"
+              ? dropoffAddress.trim()
+              : null,
+          unitPrice: finalPrice,
+          quantity: 1,
+          participants: { adults: 1, children: 0, infants: 0 },
+          participantPricing: {
+            adultPrice: finalPrice,
+            childPrice: selectedPackage?.child_price ?? null,
+            infantPrice: selectedPackage?.infant_price ?? null,
           },
         }),
       );
-    }
 
-    navigate("/cart");
+      navigate("/cart");
+    } catch {
+      setBookingFeedback({ type: "error", message: "Unable to save this trip to your cart. Please try again." });
+    } finally {
+      setIsBooking(false);
+    }
   };
 
-  const addToCart = () => {
+  const addToCart = async () => {
+    if (bookingBlocked) return;
     if (!pageData.id || !date) return;
 
     // Block if service is full for the selected date
@@ -829,67 +778,78 @@ export const BookingPage = () => {
       return t;
     })();
 
-    dispatch(
-      addItem({
-        serviceId: pageData.id,
-        serviceName: pageData.service_name,
-        serviceImage: pageData.Image?.[0] || null,
-        location: pageData.location,
-        packageId: selectedPackage?.id ?? null,
-        packageName: selectedPackage?.name ?? "Standard Experience",
-        packageImage: selectedPackage?.package_image || null,
-        bookingDate: date.format("YYYY-MM-DD"),
-        bookingTime: normalizedAirportTime,
-        airportType: isAirportPickup ? airportTransferType : null,
-        address:
-          isAirportPickup && airportTransferType === "dropoff"
-            ? dropoffAddress.trim()
-            : null,
-        unitPrice: finalPrice,
-        quantity: 1,
-        participants: { adults: 1, children: 0, infants: 0 },
-        participantPricing: {
-          adultPrice: finalPrice,
-          childPrice: selectedPackage?.child_price ?? null,
-          infantPrice: selectedPackage?.infant_price ?? null,
-        },
-      }),
-    );
-
-    // Persist to server-side cart when authenticated
-    if (session?.user?.id) {
-      void dispatch(
-        addServerCartItem({
-          userId: session.user.id,
-          item: {
-            serviceId: pageData.id,
-            serviceName: pageData.service_name,
-            serviceImage: pageData.Image?.[0] || null,
-            location: pageData.location,
-            packageId: selectedPackage?.id ?? null,
-            packageName: selectedPackage?.name ?? "Standard Experience",
-            packageImage: selectedPackage?.package_image || null,
-            bookingDate: date.format("YYYY-MM-DD"),
-            bookingTime: normalizedAirportTime,
-            airportType: isAirportPickup ? airportTransferType : null,
-            address:
-              isAirportPickup && airportTransferType === "dropoff"
-                ? dropoffAddress.trim()
-                : null,
-            unitPrice: finalPrice,
-            quantity: 1,
-            participants: { adults: 1, children: 0, infants: 0 },
-            participantPricing: {
-              adultPrice: finalPrice,
-              childPrice: selectedPackage?.child_price ?? null,
-              infantPrice: selectedPackage?.infant_price ?? null,
+    setIsBooking(true);
+    try {
+      // Persist before navigation so the cart reload sees this trip.
+      if (session?.user?.id) {
+        await dispatch(
+          addServerCartItem({
+            userId: session.user.id,
+            item: {
+              serviceId: pageData.id,
+              serviceName: pageData.service_name,
+              serviceImage: pageData.Image?.[0] || null,
+              location: pageData.location,
+              packageId: selectedPackage?.id ?? null,
+              packageName: selectedPackage?.name ?? "Standard Experience",
+              packageImage: selectedPackage?.package_image || null,
+              bookingDate: startDate,
+              bookingEndDate: endDate,
+              durationDays,
+              bookingTime: normalizedAirportTime,
+              airportType: isAirportPickup ? airportTransferType : null,
+              address:
+                isAirportPickup && airportTransferType === "dropoff"
+                  ? dropoffAddress.trim()
+                  : null,
+              unitPrice: finalPrice,
+              quantity: 1,
+              participants: { adults: 1, children: 0, infants: 0 },
+              participantPricing: {
+                adultPrice: finalPrice,
+                childPrice: selectedPackage?.child_price ?? null,
+                infantPrice: selectedPackage?.infant_price ?? null,
+              },
             },
+          }),
+        ).unwrap();
+      }
+
+      dispatch(
+        addItem({
+          serviceId: pageData.id,
+          serviceName: pageData.service_name,
+          serviceImage: pageData.Image?.[0] || null,
+          location: pageData.location,
+          packageId: selectedPackage?.id ?? null,
+          packageName: selectedPackage?.name ?? "Standard Experience",
+          packageImage: selectedPackage?.package_image || null,
+          bookingDate: startDate,
+          bookingEndDate: endDate,
+          durationDays,
+          bookingTime: normalizedAirportTime,
+          airportType: isAirportPickup ? airportTransferType : null,
+          address:
+            isAirportPickup && airportTransferType === "dropoff"
+              ? dropoffAddress.trim()
+              : null,
+          unitPrice: finalPrice,
+          quantity: 1,
+          participants: { adults: 1, children: 0, infants: 0 },
+          participantPricing: {
+            adultPrice: finalPrice,
+            childPrice: selectedPackage?.child_price ?? null,
+            infantPrice: selectedPackage?.infant_price ?? null,
           },
         }),
       );
-    }
 
-    setBookingFeedback({ type: "success", message: "Added to cart." });
+      setBookingFeedback({ type: "success", message: "Added to cart." });
+    } catch {
+      setBookingFeedback({ type: "error", message: "Unable to save this trip to your cart. Please try again." });
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   const MAX_CHARS = 500;
@@ -927,7 +887,7 @@ export const BookingPage = () => {
               {pageData?.service_name}
             </Typography>
             <Typography className="serviceLocationTag">
-              {pageData?.location ? `📍 ${pageData.location}` : "📍 Dubai, UAE"}
+              {pageData?.location ? ` ${pageData.location}` : "Travel experience"}
             </Typography>
           </Box>
         </Box>
@@ -1152,17 +1112,18 @@ export const BookingPage = () => {
                     </Tabs>
                   </Box>
 
+                  <FormControl size="small" sx={{ mb: 2, minWidth: 180 }}>
+                    <InputLabel>Trip length</InputLabel>
+                    <Select value={dayFilter} label="Trip length" onChange={e => setDayFilter(e.target.value)}>
+                      <MenuItem value="all">All trip lengths</MenuItem>
+                      {Array.from(new Set(packages.map(p => p.duration_days || 1))).sort((a, b) => a - b).map(days => <MenuItem key={days} value={String(days)}>{days} day(s)</MenuItem>)}
+                    </Select>
+                  </FormControl>
                   {/* Package List - Klook Style */}
                   <Box
                     sx={{ display: "flex", flexDirection: "column", gap: 2 }}
                   >
-                    {(packageTab === "standard"
-                      ? [
-                          basePackage,
-                          ...packages.filter((p) => p.package_type !== "combo"),
-                        ]
-                      : packages.filter((p) => p.package_type === "combo")
-                    ).map((pack: PackageData) => {
+                    {listedPackages.map((pack: PackageData) => {
                       const packId = pack.isBase ? 0 : pack.id;
                       const isSelected = selectedId === packId;
                       const isCombo = pack.package_type === "combo";
@@ -1257,7 +1218,7 @@ export const BookingPage = () => {
                               }}
                             />
                             <Chip
-                              label="Valid on the selected date"
+                              label={(pack.duration_days || 1) > 1 ? `${pack.duration_days} days / ${(pack.duration_days || 1) - 1} nights` : "Valid on the selected date"}
                               size="small"
                               sx={{
                                 bgcolor: "#f5f5f5",
@@ -1411,12 +1372,10 @@ export const BookingPage = () => {
                     })}
 
                     {/* Empty state for combo tab */}
-                    {packageTab === "combo" &&
-                      packages.filter((p) => p.package_type === "combo")
-                        .length === 0 && (
+                    {listedPackages.length === 0 && (
                         <Box sx={{ textAlign: "center", py: 4, color: "#666" }}>
                           <Typography>
-                            No combo deals available for this service yet.
+                            No packages match these options. Try another trip length or package type.
                           </Typography>
                         </Box>
                       )}
@@ -1489,28 +1448,12 @@ export const BookingPage = () => {
               </Box>
             ) : null}
 
-            <Box sx={{ mt: 2, display: "grid", gap: 1 }}>
-              <Button
-                variant="outlined"
-                onClick={addToCart}
-                disabled={isBooking || isServiceFull}
-                sx={{
-                  borderRadius: 2,
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderColor: isServiceFull ? "#ef4444" : "#d0d5dd",
-                  color: isServiceFull ? "#ef4444" : undefined,
-                }}
-              >
-                {isServiceFull ? "Fully Booked" : "Add to cart"}
-              </Button>
-            </Box>
 
             <Typography
               variant="h6"
               sx={{ fontWeight: 600, marginTop: "8px", marginBottom: "12px" }}
             >
-              Select your date
+              {durationDays > 1 ? "Select your trip start date" : "Select your date"}
             </Typography>
             {isViewDatePicker && (
               <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -1545,6 +1488,9 @@ export const BookingPage = () => {
               </LocalizationProvider>
             )}
 
+            <Alert severity="info" sx={{ my: 2 }}>{durationDays} {durationDays === 1 ? "day" : "days"} · {dateLabel}. Prices cover the complete trip per participant.</Alert>
+            {requiresPackage && !selectedPackage && <Alert severity="info">Select a package to choose your trip length.</Alert>}
+            {capacityError && <Alert severity="error">{capacityError}</Alert>}
             {/* Availability indicator */}
             {pageData.daily_slots != null && pageData.daily_slots > 0 && (
               <Box
@@ -1574,7 +1520,7 @@ export const BookingPage = () => {
                         fontWeight: 600,
                       }}
                     >
-                      Fully booked for {date.format("MMM DD, YYYY")}
+                      No availability across {dateLabel}
                     </Typography>
                   </>
                 ) : (
@@ -1589,12 +1535,29 @@ export const BookingPage = () => {
                         fontWeight: 600,
                       }}
                     >
-                      {slotsRemaining} of {pageData.daily_slots} slots available
+                      {slotsRemaining} of {pageData.daily_slots} slots available on every trip day
                     </Typography>
                   </>
                 )}
               </Box>
             )}
+
+            <Box sx={{ mt: 2, display: "grid", gap: 1 }}>
+              <Button
+                variant="outlined"
+                onClick={addToCart}
+                disabled={bookingBlocked}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: isServiceFull ? "#ef4444" : "#d0d5dd",
+                  color: isServiceFull ? "#ef4444" : undefined,
+                }}
+              >
+                {isServiceFull ? "Fully Booked" : "Add to cart"}
+              </Button>
+            </Box>
 
             <ButtonComponent
               title={
@@ -1602,14 +1565,14 @@ export const BookingPage = () => {
                   ? "Fully Booked"
                   : isBooking
                     ? "Processing..."
-                    : "Book Now"
+                    : "Book now"
               }
               width="100%"
               bgColor={isServiceFull ? "#d1d5db" : "#FF621F"}
               onClick={handleBookNow}
               isLoading={isBooking}
               loadingText="Processing..."
-              disabled={isBooking || isServiceFull}
+              disabled={bookingBlocked}
             />
             {bookingFeedback && (
               <Alert
@@ -1657,7 +1620,7 @@ export const BookingPage = () => {
               },
             }}
           >
-            ✕
+
           </Button>
         </Box>
       </Dialog>
@@ -1689,7 +1652,7 @@ export const BookingPage = () => {
       >
         <DialogTitle
           sx={{
-            background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+            background: "#d74712",
             color: "white",
             textAlign: "center",
           }}
@@ -1703,13 +1666,13 @@ export const BookingPage = () => {
             {pageData.service_name}
           </Typography>
           <Typography variant="body1" sx={{ mb: 1 }}>
-            📍 {pageData.location}
+             {pageData.location}
           </Typography>
           <Typography variant="body1" sx={{ mb: 1 }}>
-            📅 {date.format("MMMM DD, YYYY")}
+             {dateLabel} · {durationDays} day(s)
           </Typography>
           <Typography variant="body1" sx={{ mb: 1 }}>
-            🎫 {selectedPackage?.name || "Standard Experience"}
+             {selectedPackage?.name || "Standard Experience"}
           </Typography>
           <Typography
             variant="h6"
@@ -1741,9 +1704,9 @@ export const BookingPage = () => {
             variant="contained"
             disabled={isBooking}
             sx={{
-              background: "linear-gradient(135deg, #FF621F, #FF8A4F)",
+              background: "#d74712",
               "&:hover": {
-                background: "linear-gradient(135deg, #E5541B, #E67B44)",
+                background: "#b63e11",
               },
               "&:disabled": {
                 background: "#ccc",
@@ -1790,6 +1753,14 @@ export const BookingPage = () => {
           <Box sx={{ flex: 1, overflowY: "auto", p: 2.5 }}>
             {packageToView && (
               <>
+                <Chip label={`${packageToView.duration_days || 1} day(s)`} sx={{ mb: 2 }} />
+                {(packageToView.itinerary || []).length > 0 && <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6">Your itinerary</Typography>
+                  {[...(packageToView.itinerary || [])].sort((a, b) => a.day - b.day).map(day => <Box key={day.day} sx={{ py: 1.5, borderBottom: "1px solid #eee" }}>
+                    <Typography fontWeight={700}>Day {day.day}: {day.title}</Typography>
+                    <Typography sx={{ whiteSpace: "pre-line", color: "text.secondary" }}>{day.description}</Typography>
+                  </Box>)}
+                </Box>}
                 {/* Package Name */}
                 <Typography
                   sx={{ fontWeight: 700, fontSize: "1.25rem", mb: 2 }}
@@ -1819,12 +1790,12 @@ export const BookingPage = () => {
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <EventAvailableIcon sx={{ color: "#666", fontSize: 20 }} />
                     <Typography sx={{ fontSize: "0.9rem", color: "#444" }}>
-                      Valid on the selected date
+                      Valid for the selected trip dates
                     </Typography>
                     <Typography
                       sx={{ fontSize: "0.8rem", color: "#888", ml: 0.5 }}
                     >
-                      The voucher is valid only on the specified date (and time
+                      The voucher covers the selected trip dates (and departure time
                       if applicable)
                     </Typography>
                   </Box>
@@ -2054,7 +2025,7 @@ export const BookingPage = () => {
                           gap: 1,
                         }}
                       >
-                        🎁 Combo Includes
+                         Combo Includes
                       </Typography>
                       <Stack spacing={1}>
                         {packageToView.combo_items.map((item, idx) => (
